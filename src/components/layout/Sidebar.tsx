@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -8,7 +9,8 @@ import {
   Settings,
   ChevronLeft,
   Sparkles,
-  GraduationCap
+  GraduationCap,
+  Upload
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: BookOpen, label: "Courses", href: "/courses", badge: "3" },
+  { icon: Upload, label: "Upload Syllabus", href: "/syllabus-upload" },
   { icon: Brain, label: "Flashcards", href: "/flashcards" },
   { icon: FileQuestion, label: "Mock Exams", href: "/exams" },
   { icon: BarChart3, label: "Progress", href: "/progress" },
@@ -35,7 +38,8 @@ interface SidebarProps {
 
 export const Sidebar = ({ onCollapse }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeItem, setActiveItem] = useState("/");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleCollapse = () => {
     const newState = !collapsed;
@@ -64,11 +68,11 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = activeItem === item.href;
+          const isActive = location.pathname === item.href;
           return (
             <button
               key={item.href}
-              onClick={() => setActiveItem(item.href)}
+              onClick={() => navigate(item.href)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
                 isActive 
