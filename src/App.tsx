@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
+import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
           <Route path="/syllabus-upload" element={<SyllabusUpload />} />
           <Route path="/mock-exam" element={<MockExamRunner />} />
           <Route path="/instructor" element={<InstructorDashboard />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:courseId" element={<CourseDetail />} />
+          <Route path="/flashcards" element={<Flashcards />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
