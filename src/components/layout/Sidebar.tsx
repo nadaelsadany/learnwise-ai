@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Brain, 
-  FileQuestion, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Brain,
+  FileQuestion,
+  BarChart3,
   Settings,
   ChevronLeft,
   Sparkles,
@@ -27,9 +27,10 @@ const navItems: NavItem[] = [
   { icon: BookOpen, label: "Courses", href: "/courses", badge: "3" },
   { icon: Upload, label: "Upload Syllabus", href: "/syllabus-upload" },
   { icon: Brain, label: "Flashcards", href: "/flashcards" },
-  { icon: FileQuestion, label: "Mock Exams", href: "/exams" },
+  { icon: FileQuestion, label: "Mock Exams", href: "/mock-exam" },
   { icon: BarChart3, label: "Progress", href: "/progress" },
   { icon: Sparkles, label: "AI Tutor", href: "/ai-tutor" },
+  { icon: BarChart3, label: "Instructor View", href: "/instructor" },
 ];
 
 interface SidebarProps {
@@ -75,8 +76,8 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
               onClick={() => navigate(item.href)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
-                isActive 
-                  ? "bg-primary text-primary-foreground shadow-soft" 
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-soft"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
               )}
             >
@@ -92,8 +93,8 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
               {!collapsed && item.badge && (
                 <span className={cn(
                   "px-2 py-0.5 text-xs rounded-full animate-fade-in",
-                  isActive 
-                    ? "bg-primary-foreground/20 text-primary-foreground" 
+                  isActive
+                    ? "bg-primary-foreground/20 text-primary-foreground"
                     : "bg-primary/10 text-primary"
                 )}>
                   {item.badge}
@@ -116,7 +117,7 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
             </span>
           )}
         </button>
-        
+
         {/* Collapse Button */}
         <Button
           variant="ghost"
