@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { CourseCardEnhanced, mockCourses, categoryLabels, levelLabels, CourseCategory, CourseLevel } from "@/components/courses";
@@ -90,8 +90,8 @@ const Courses = () => {
 
     return (
         <div className="min-h-screen bg-background">
-            <Sidebar onCollapse={setSidebarCollapsed} />
-            <Header sidebarCollapsed={sidebarCollapsed} />
+            <ApplicantSidebar onCollapse={setSidebarCollapsed} />
+            <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
 
             <main
                 className={cn(

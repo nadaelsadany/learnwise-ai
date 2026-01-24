@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { useExamTimer } from "@/hooks/useExamTimer";
@@ -98,8 +98,8 @@ const MockExamRunner = () => {
 
     return (
         <div className="min-h-screen bg-background">
-            <Sidebar onCollapse={setSidebarCollapsed} />
-            <Header sidebarCollapsed={sidebarCollapsed} />
+            <ApplicantSidebar onCollapse={setSidebarCollapsed} />
+            <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
 
             <main
                 className={cn(

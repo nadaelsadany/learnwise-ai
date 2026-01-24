@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, FileText, Sparkles, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { FileDropzone } from "@/components/syllabus/FileDropzone";
 import { ParsingProgress } from "@/components/syllabus/ParsingProgress";
@@ -111,8 +111,8 @@ const SyllabusUpload = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar onCollapse={setSidebarCollapsed} />
-      <Header sidebarCollapsed={sidebarCollapsed} />
+      <InstructorSidebar onCollapse={setSidebarCollapsed} />
+      <Header sidebarCollapsed={sidebarCollapsed} userRole="Instructor" />
 
       <main className={cn(
         "pt-20 pb-12 px-6 transition-all duration-300",
