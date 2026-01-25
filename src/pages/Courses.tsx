@@ -1,12 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
-import { CourseCardEnhanced, mockCourses, categoryLabels, levelLabels, CourseCategory, CourseLevel } from "@/components/courses";
+import { CourseCardEnhanced, mockCourses, categoryLabels, levelLabels, CourseCategory, CourseLevel, Course } from "@/components/courses";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCourses } from "@/hooks/useCourses";
+import { Loader2 } from "lucide-react";
 import {
     BookOpen,
     Search,
@@ -35,13 +37,47 @@ const Courses = () => {
     const [selectedCategories, setSelectedCategories] = useState<CourseCategory[]>([]);
     const [selectedLevels, setSelectedLevels] = useState<CourseLevel[]>([]);
 
+    const { courses: dbCourses, loading, fetchPublishedCourses } = useCourses();
+
+    useEffect(() => {
+        fetchPublishedCourses();
+    }, []);
+
+    const allCourses = useMemo(() => {
+        // Map DB courses to the format expected by CourseCardEnhanced
+        const mappedDbCourses: Course[] = dbCourses.map(c => ({
+            id: c.id,
+            title: c.title,
+            description: c.description || "",
+            progress: (c as any).enrollment?.progress_percentage || 0,
+            duration: `${c.duration_hours || 0} hours`,
+            lessons: 0, // Need to fetch lesson count separately if needed
+            category: (c.category as any) || "certification",
+            level: (c.level as any) || "beginner",
+            instructor: "Instructor",
+            rating: 4.5,
+            studentsEnrolled: 0,
+            tags: [],
+            image_url: c.image_url || undefined
+        }));
+
+        // Merge mock and DB courses, avoiding duplicates if they have the same ID
+        const combined = [...mappedDbCourses];
+        mockCourses.forEach(mock => {
+            if (!combined.find(c => c.id === mock.id)) {
+                combined.push(mock);
+            }
+        });
+        return combined;
+    }, [dbCourses]);
+
     const filteredCourses = useMemo(() => {
-        return mockCourses.filter((course) => {
+        return allCourses.filter((course) => {
             // Search filter
             const matchesSearch =
                 course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 course.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                course.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+                (course.tags && course.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
 
             // Tab filter
             const matchesTab =
@@ -62,7 +98,7 @@ const Courses = () => {
 
             return matchesSearch && matchesTab && matchesCategory && matchesLevel;
         });
-    }, [searchQuery, activeTab, selectedCategories, selectedLevels]);
+    }, [allCourses, searchQuery, activeTab, selectedCategories, selectedLevels]);
 
     const toggleCategory = (category: CourseCategory) => {
         setSelectedCategories(prev =>
@@ -82,10 +118,10 @@ const Courses = () => {
 
     // Stats
     const stats = {
-        total: mockCourses.length,
-        inProgress: mockCourses.filter(c => c.progress > 0 && c.progress < 100).length,
-        completed: mockCourses.filter(c => c.progress === 100).length,
-        totalHours: mockCourses.reduce((sum, c) => sum + parseInt(c.duration), 0),
+        total: allCourses.length,
+        inProgress: allCourses.filter(c => c.progress > 0 && c.progress < 100).length,
+        completed: allCourses.filter(c => c.progress === 100).length,
+        totalHours: allCourses.reduce((sum, c) => sum + parseInt(c.duration || "0"), 0),
     };
 
     return (
@@ -237,7 +273,12 @@ const Courses = () => {
 
                     {/* Course Grid */}
                     <section className="animate-slide-up" style={{ animationDelay: "200ms" }}>
-                        {filteredCourses.length > 0 ? (
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+                                <p className="text-muted-foreground">Loading courses...</p>
+                            </div>
+                        ) : filteredCourses.length > 0 ? (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredCourses.map((course) => (
                                     <CourseCardEnhanced
