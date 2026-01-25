@@ -14,6 +14,7 @@ import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { useCourses } from "@/hooks/useCourses";
+import { useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,40 @@ const CourseEditor = () => {
     });
 
     const [chapters, setChapters] = useState<Chapter[]>([]);
+    const [loadingCourse, setLoadingCourse] = useState(true);
 
-    const { updateCourse } = useCourses(); // Assuming we use existing hook for basic updates
-    const { analyzeSyllabus, uploadMedia, analyzing, uploading } = useCourseEditor();
+    const { updateCourse, getCourseById } = useCourses(); // Assuming we use existing hook for basic updates
+    const { analyzeSyllabus, uploadMedia, saveCurriculum, fetchCurriculum, analyzing, loading: savingCurriculum, uploading } = useCourseEditor();
+
+    useEffect(() => {
+        const loadData = async () => {
+            if (!courseId) return;
+
+            setLoadingCourse(true);
+            const { course } = await getCourseById(courseId);
+            if (course) {
+                setCourseInfo({
+                    title: course.title || "",
+                    description: course.description || "",
+                    category: course.category || "",
+                    level: course.level || "beginner",
+                    minApplicants: 0, // Not in DB
+                    pdfUrl: course.attachment_url || "",
+                    startDate: course.start_date || "",
+                    endDate: course.end_date || "",
+                    attachmentUrl: course.attachment_url || ""
+                });
+            }
+
+            const curriculum = await fetchCurriculum(courseId);
+            if (curriculum) {
+                setChapters(curriculum);
+            }
+            setLoadingCourse(false);
+        };
+
+        loadData();
+    }, [courseId]);
 
     const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -74,16 +106,18 @@ const CourseEditor = () => {
 
     const handleSaveInfo = async () => {
         if (!courseId) return;
-        // Mock save for minApplicants since it's not in DB yet
         await updateCourse(courseId, {
             title: courseInfo.title,
             description: courseInfo.description,
             category: courseInfo.category,
-            level: courseInfo.level,
-            start_date: courseInfo.startDate,
-            end_date: courseInfo.endDate,
-            attachment_url: courseInfo.attachmentUrl
+            level: courseInfo.level as any,
+            // duration_hours: courseInfo.duration_hours, // Added if needed
         });
+    };
+
+    const handleSaveCurriculum = async () => {
+        if (!courseId) return;
+        await saveCurriculum(courseId, chapters);
     };
 
     return (
@@ -96,12 +130,15 @@ const CourseEditor = () => {
                 sidebarCollapsed ? "ml-20" : "ml-64"
             )}>
                 <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" onClick={() => navigate("/instructor/courses")}>
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back
-                        </Button>
-                        <h1 className="text-2xl font-bold">Edit Course</h1>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={() => navigate("/instructor/courses")}>
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back
+                            </Button>
+                            <h1 className="text-2xl font-bold">Edit Course</h1>
+                        </div>
+                        {loadingCourse && <Loader2 className="w-6 h-6 animate-spin text-primary" />}
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -248,8 +285,15 @@ const CourseEditor = () => {
                                         onUploadMedia={uploadMedia}
                                     />
                                     <div className="flex justify-end pt-4 border-t">
-                                        <Button onClick={() => console.log("Saving curriculum:", chapters)}>
-                                            <Save className="w-4 h-4 mr-2" />
+                                        <Button
+                                            onClick={handleSaveCurriculum}
+                                            disabled={savingCurriculum}
+                                        >
+                                            {savingCurriculum ? (
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            ) : (
+                                                <Save className="w-4 h-4 mr-2" />
+                                            )}
                                             Save Curriculum
                                         </Button>
                                     </div>

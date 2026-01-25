@@ -99,11 +99,131 @@ export const useCourseEditor = (courseId?: string) => {
         }
     };
 
+    const saveCurriculum = async (courseId: string, chapters: Chapter[]) => {
+        setLoading(true);
+        try {
+            // 1. Delete existing chapters and lessons for this course to replace them
+            // In a real app, you might want a more sophisticated sync, but this is a common "full save" pattern
+            const { data: existingChapters } = await supabase
+                .from('chapters')
+                .select('id')
+                .eq('course_id', courseId);
+
+            if (existingChapters && existingChapters.length > 0) {
+                const chapterIds = existingChapters.map(c => c.id);
+                // Delete lessons first (foreign key)
+                await supabase.from('lessons').delete().in('chapter_id', chapterIds);
+                // Delete chapters
+                await supabase.from('chapters').delete().eq('course_id', courseId);
+            }
+
+            // 2. Insert new chapters and lessons
+            for (let i = 0; i < chapters.length; i++) {
+                const chapter = chapters[i];
+                const { data: newChapter, error: chapterError } = await supabase
+                    .from('chapters')
+                    .insert({
+                        course_id: courseId,
+                        title: chapter.title,
+                        order_index: i
+                    })
+                    .select()
+                    .single();
+
+                if (chapterError) throw chapterError;
+
+                if (chapter.lessons.length > 0) {
+                    const lessonsToInsert = chapter.lessons.map((lesson, j) => ({
+                        chapter_id: newChapter.id,
+                        title: lesson.title,
+                        lesson_type: (lesson.type === 'video' ? 'video' : (lesson.type === 'text' ? 'reading' : 'quiz')) as any,
+                        content: lesson.content,
+                        video_url: lesson.videoUrl,
+                        order_index: j
+                    }));
+
+                    const { error: lessonsError } = await supabase
+                        .from('lessons')
+                        .insert(lessonsToInsert);
+
+                    if (lessonsError) throw lessonsError;
+                }
+            }
+
+            toast({
+                title: "Curriculum Saved",
+                description: "Your course structure has been updated successfully.",
+            });
+            return true;
+        } catch (error) {
+            console.error('Save curriculum error:', error);
+            toast({
+                title: "Save Failed",
+                description: (error as Error).message,
+                variant: "destructive"
+            });
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchCurriculum = async (courseId: string) => {
+        setLoading(true);
+        try {
+            const { data: chaptersData, error: chaptersError } = await supabase
+                .from('chapters')
+                .select('*')
+                .eq('course_id', courseId)
+                .order('order_index');
+
+            if (chaptersError) throw chaptersError;
+
+            const chaptersWithLessons = await Promise.all(
+                (chaptersData || []).map(async (chapter) => {
+                    const { data: lessonsData, error: lessonsError } = await supabase
+                        .from('lessons')
+                        .select('*')
+                        .eq('chapter_id', chapter.id)
+                        .order('order_index');
+
+                    if (lessonsError) throw lessonsError;
+
+                    return {
+                        id: chapter.id,
+                        title: chapter.title,
+                        lessons: (lessonsData || []).map(l => ({
+                            id: l.id,
+                            title: l.title,
+                            type: (l.lesson_type === 'reading' ? 'text' : (l.lesson_type === 'video' ? 'video' : 'quiz')) as any,
+                            content: l.content || "",
+                            videoUrl: l.video_url || ""
+                        }))
+                    };
+                })
+            );
+
+            return chaptersWithLessons;
+        } catch (error) {
+            console.error('Fetch curriculum error:', error);
+            toast({
+                title: "Fetch Failed",
+                description: "Could not load course curriculum.",
+                variant: "destructive"
+            });
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         loading,
         analyzing,
         uploading,
         analyzeSyllabus,
-        uploadMedia
+        uploadMedia,
+        saveCurriculum,
+        fetchCurriculum
     };
 };

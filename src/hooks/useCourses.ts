@@ -295,6 +295,31 @@ export const useCourses = () => {
     }
   };
 
+  const getCourseById = async (courseId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
+
+      if (error) throw error;
+
+      const { count } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', courseId);
+
+      return { course: { ...data, enrollmentCount: count || 0 }, error: null };
+    } catch (error) {
+      console.error('Error fetching course:', error);
+      return { course: null, error: error as Error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     courses,
     loading,
@@ -307,5 +332,6 @@ export const useCourses = () => {
     publishCourse,
     archiveCourse,
     deleteCourse,
+    getCourseById,
   };
 };
