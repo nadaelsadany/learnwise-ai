@@ -96,17 +96,22 @@ export function FlashcardStudy({ cards, deckName, onComplete, onExit }: Flashcar
             </div>
 
             {/* Flashcard Area */}
-            <div className="flex-1 w-full max-w-3xl flex items-center justify-center relative perspective-1000">
+            <div className="flex-1 w-full max-w-3xl flex items-center justify-center relative" style={{ perspective: "1000px" }}>
                 <div
                     className={cn(
-                        "relative w-full aspect-[1.6/1] cursor-pointer transition-all duration-700 transform-gpu preserve-3d group",
-                        isFlipped ? "[transform:rotateY(180deg)]" : ""
+                        "relative w-full aspect-[1.6/1] cursor-pointer transition-all duration-700 transform-gpu group",
                     )}
                     onClick={handleFlip}
-                    style={{ transformStyle: "preserve-3d" }}
+                    style={{
+                        transformStyle: "preserve-3d",
+                        transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)"
+                    }}
                 >
                     {/* Front Face */}
-                    <div className="absolute inset-0 backface-hidden">
+                    <div
+                        className="absolute inset-0"
+                        style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+                    >
                         <div className={cn(
                             "w-full h-full rounded-[2rem] bg-card border border-border shadow-xl p-12 flex flex-col items-center justify-center text-center",
                             "hover:shadow-2xl hover:border-primary/20 transition-all duration-300",
@@ -153,7 +158,14 @@ export function FlashcardStudy({ cards, deckName, onComplete, onExit }: Flashcar
                     </div>
 
                     {/* Back Face */}
-                    <div className="absolute inset-0 backface-hidden [transform:rotateY(180deg)]">
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden",
+                            transform: "rotateY(180deg)"
+                        }}
+                    >
                         <div className={cn(
                             "w-full h-full rounded-[2rem] bg-card border border-primary/20 shadow-xl p-12 flex flex-col items-center justify-center text-center",
                             "bg-gradient-to-br from-primary/5 via-card to-accent/5",

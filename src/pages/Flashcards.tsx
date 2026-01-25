@@ -6,13 +6,19 @@ import {
     FlashcardDeckCard,
     FlashcardStudy,
     mockDecks,
-    getFlashcardsForDeck
+    getFlashcardsForDeck,
+    FlashcardDeck
 } from "@/components/flashcards";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Layers,
     Brain,
@@ -25,11 +31,17 @@ import {
 
 const Flashcards = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [decks, setDecks] = useState<FlashcardDeck[]>(mockDecks);
     const [studyingDeckId, setStudyingDeckId] = useState<string | null>(null);
     const [showResults, setShowResults] = useState<{ correct: number; total: number } | null>(null);
 
+    // Create Deck State
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [newDeckName, setNewDeckName] = useState("");
+    const [newDeckTopic, setNewDeckTopic] = useState("");
+
     const studyingDeck = studyingDeckId
-        ? mockDecks.find(d => d.id === studyingDeckId)
+        ? decks.find(d => d.id === studyingDeckId)
         : null;
     const studyCards = studyingDeckId
         ? getFlashcardsForDeck(studyingDeckId)
@@ -37,10 +49,10 @@ const Flashcards = () => {
 
     // Stats
     const stats = {
-        totalCards: mockDecks.reduce((sum, d) => sum + d.cardCount, 0),
-        masteredCards: mockDecks.reduce((sum, d) => sum + d.masteredCount, 0),
-        dueCards: mockDecks.reduce((sum, d) => sum + d.dueCount, 0),
-        decksStudied: mockDecks.filter(d => d.lastStudied).length,
+        totalCards: decks.reduce((sum, d) => sum + d.cardCount, 0),
+        masteredCards: decks.reduce((sum, d) => sum + d.masteredCount, 0),
+        dueCards: decks.reduce((sum, d) => sum + d.dueCount, 0),
+        decksStudied: decks.filter(d => d.lastStudied).length,
     };
 
     const handleStartStudy = (deckId: string) => {
@@ -55,6 +67,25 @@ const Flashcards = () => {
     const handleExitStudy = () => {
         setStudyingDeckId(null);
         setShowResults(null);
+    };
+
+    const handleCreateDeck = () => {
+        if (!newDeckName.trim() || !newDeckTopic.trim()) return;
+
+        const newDeck: FlashcardDeck = {
+            id: crypto.randomUUID(),
+            name: newDeckName,
+            description: newDeckTopic,
+            cardCount: 0,
+            masteredCount: 0,
+            dueCount: 0,
+            lastStudied: null
+        };
+
+        setDecks(prev => [newDeck, ...prev]);
+        setIsCreateOpen(false);
+        setNewDeckName("");
+        setNewDeckTopic("");
     };
 
     return (
@@ -83,7 +114,7 @@ const Flashcards = () => {
                                     Master concepts with spaced repetition learning
                                 </p>
                             </div>
-                            <Button className="gap-2">
+                            <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>
                                 <Plus className="w-4 h-4" />
                                 Create Deck
                             </Button>
@@ -152,13 +183,13 @@ const Flashcards = () => {
                                     <div>
                                         <h2 className="text-lg font-semibold mb-1">Cards Due for Review</h2>
                                         <p className="text-sm text-muted-foreground">
-                                            You have {stats.dueCards} cards across {mockDecks.filter(d => d.dueCount > 0).length} decks ready for review
+                                            You have {stats.dueCards} cards across {decks.filter(d => d.dueCount > 0).length} decks ready for review
                                         </p>
                                     </div>
                                     <Button
                                         className="gap-2"
                                         onClick={() => {
-                                            const deckWithDue = mockDecks.find(d => d.dueCount > 0);
+                                            const deckWithDue = decks.find(d => d.dueCount > 0);
                                             if (deckWithDue) handleStartStudy(deckWithDue.id);
                                         }}
                                     >
@@ -174,7 +205,7 @@ const Flashcards = () => {
                     <section className="animate-slide-up" style={{ animationDelay: "200ms" }}>
                         <h2 className="text-lg font-semibold mb-4">Your Decks</h2>
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {mockDecks.map((deck) => (
+                            {decks.map((deck) => (
                                 <FlashcardDeckCard
                                     key={deck.id}
                                     deck={deck}
@@ -185,6 +216,39 @@ const Flashcards = () => {
                     </section>
                 </div>
             </main>
+
+            {/* Create Deck Dialog */}
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create New Deck</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Deck Name</Label>
+                            <Input
+                                id="name"
+                                placeholder="e.g., JavaScript Basics"
+                                value={newDeckName}
+                                onChange={(e) => setNewDeckName(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="topic">Topic / Description</Label>
+                            <Input
+                                id="topic"
+                                placeholder="e.g., Core language concepts"
+                                value={newDeckTopic}
+                                onChange={(e) => setNewDeckTopic(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                        <Button onClick={handleCreateDeck} disabled={!newDeckName || !newDeckTopic}>Create Deck</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Study Modal */}
             <Dialog open={!!studyingDeckId} onOpenChange={(open) => !open && handleExitStudy()}>
@@ -199,7 +263,7 @@ const Flashcards = () => {
                                 You got {showResults.correct} out of {showResults.total} cards correct
                             </p>
                             <div className="text-5xl font-bold text-primary mb-8">
-                                {Math.round((showResults.correct / showResults.total) * 100)}%
+                                {Number.isNaN((showResults.correct / showResults.total)) ? 0 : Math.round((showResults.correct / showResults.total) * 100)}%
                             </div>
                             <div className="flex gap-4">
                                 <Button variant="outline" onClick={handleExitStudy}>
@@ -211,21 +275,23 @@ const Flashcards = () => {
                                 </Button>
                             </div>
                         </div>
-                    ) : studyingDeck && studyCards.length > 0 ? (
-                        <FlashcardStudy
-                            cards={studyCards}
-                            deckName={studyingDeck.name}
-                            onComplete={handleCompleteStudy}
-                            onExit={handleExitStudy}
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full">
-                            <p className="text-muted-foreground">No cards in this deck</p>
-                            <Button variant="outline" className="mt-4" onClick={handleExitStudy}>
-                                Go Back
-                            </Button>
-                        </div>
-                    )}
+                    ) : studyingDeck ? (
+                        studyCards.length > 0 ? (
+                            <FlashcardStudy
+                                cards={studyCards}
+                                deckName={studyingDeck.name}
+                                onComplete={handleCompleteStudy}
+                                onExit={handleExitStudy}
+                            />
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full">
+                                <p className="text-muted-foreground">No cards in this deck yet.</p>
+                                <Button variant="outline" className="mt-4" onClick={handleExitStudy}>
+                                    Go Back
+                                </Button>
+                            </div>
+                        )
+                    ) : null}
                 </DialogContent>
             </Dialog>
         </div>
