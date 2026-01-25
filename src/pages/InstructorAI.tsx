@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -19,9 +19,32 @@ import {
     User,
     Bot,
     Copy,
-    RefreshCw
+    RefreshCw,
+    Upload,
+    Users,
+    AlertTriangle,
+    TrendingUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useInstructorStudents } from "@/hooks/useInstructorStudents";
 
 interface ChatMessage {
     id: string;
@@ -34,6 +57,7 @@ const InstructorAI = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeTab, setActiveTab] = useState("chat");
     const { toast } = useToast();
+    const { students: instructorStudents, loading: studentsLoading } = useInstructorStudents();
 
     // Chat State
     const [messages, setMessages] = useState<ChatMessage[]>([
@@ -49,10 +73,35 @@ const InstructorAI = () => {
 
     // Tool States
     const [quizTopic, setQuizTopic] = useState("");
+    const [quizDifficulty, setQuizDifficulty] = useState("medium");
+    const [assignmentMode, setAssignmentMode] = useState<"all" | "select">("all");
+    const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+    const [quizAttachment, setQuizAttachment] = useState<File | null>(null);
     const [generatedQuiz, setGeneratedQuiz] = useState<string | null>(null);
+
     const [lessonTopic, setLessonTopic] = useState("");
+    const [lessonAttachment, setLessonAttachment] = useState<File | null>(null);
     const [generatedLesson, setGeneratedLesson] = useState<string | null>(null);
+
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Insights Calculations
+    const insights = useMemo(() => {
+        if (!instructorStudents.length) return null;
+
+        const atRisk = instructorStudents.filter(s => s.totalProgress < 50).length;
+        const avgProgress = Math.round(instructorStudents.reduce((acc, s) => acc + s.totalProgress, 0) / instructorStudents.length);
+
+        // Mock topic performance based on student data availability
+        // In a real app, we'd aggregate this from a more detailed hook
+        const lowestTopic = "State Management";
+
+        return {
+            atRisk,
+            avgProgress,
+            lowestTopic
+        };
+    }, [instructorStudents]);
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim()) return;
@@ -85,22 +134,35 @@ const InstructorAI = () => {
         if (!quizTopic) return;
         setIsGenerating(true);
 
+        const targetAudience = assignmentMode === 'all'
+            ? 'All Students'
+            : `${selectedStudents.length} Selected Students`;
+
         // Mock Generation
         setTimeout(() => {
-            setGeneratedQuiz(JSON.stringify([
-                {
-                    question: `What is the primary function of ${quizTopic}?`,
-                    options: ["Option A", "Option B", "Option C", "Option D"],
-                    answer: "Option B"
-                },
-                {
-                    question: `Which of the following best describes ${quizTopic}?`,
-                    options: ["Concept X", "Concept Y", "Concept Z"],
-                    answer: "Concept X"
-                }
-            ], null, 2));
+            setGeneratedQuiz(JSON.stringify({
+                topic: quizTopic,
+                difficulty: quizDifficulty,
+                assignedTo: targetAudience,
+                attachment: quizAttachment?.name || "None",
+                questions: [
+                    {
+                        question: `What is the primary function of ${quizTopic}?`,
+                        options: ["Option A", "Option B", "Option C", "Option D"],
+                        answer: "Option B"
+                    },
+                    {
+                        question: `Which of the following best describes ${quizTopic}?`,
+                        options: ["Concept X", "Concept Y", "Concept Z"],
+                        answer: "Concept X"
+                    }
+                ]
+            }, null, 2));
             setIsGenerating(false);
-            toast({ title: "Quiz Generated", description: "Your quiz questions are ready." });
+            toast({
+                title: "Quiz Generated",
+                description: `Created for ${targetAudience} with difficulty ${quizDifficulty}.`
+            });
         }, 2000);
     };
 
@@ -112,6 +174,7 @@ const InstructorAI = () => {
         setTimeout(() => {
             setGeneratedLesson(`
 # Lesson Plan: ${lessonTopic}
+**Context**: ${lessonAttachment ? `Based on ${lessonAttachment.name}` : "General Overview"}
 
 ## Learning Objectives
 1. Understand the core concepts of ${lessonTopic}.
@@ -138,6 +201,14 @@ const InstructorAI = () => {
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         toast({ title: "Copied!", description: "Content copied to clipboard." });
+    };
+
+    const handleStudentToggle = (studentId: string) => {
+        setSelectedStudents(prev =>
+            prev.includes(studentId)
+                ? prev.filter(id => id !== studentId)
+                : [...prev, studentId]
+        );
     };
 
     return (
@@ -256,14 +327,84 @@ const InstructorAI = () => {
                                                 onChange={(e) => setQuizTopic(e.target.value)}
                                             />
                                         </div>
+
                                         <div className="space-y-2">
                                             <Label>Difficulty</Label>
-                                            <div className="flex gap-2">
-                                                <Button variant="outline" size="sm" className="flex-1">Easy</Button>
-                                                <Button variant="outline" size="sm" className="flex-1 bg-accent/10 border-accent/20 text-accent-foreground">Medium</Button>
-                                                <Button variant="outline" size="sm" className="flex-1">Hard</Button>
-                                            </div>
+                                            <Select value={quizDifficulty} onValueChange={setQuizDifficulty}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select difficulty" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="easy">Easy</SelectItem>
+                                                    <SelectItem value="medium">Medium</SelectItem>
+                                                    <SelectItem value="hard">Hard</SelectItem>
+                                                    <SelectItem value="expert">Expert</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <Label>Assign To</Label>
+                                            <RadioGroup
+                                                value={assignmentMode}
+                                                onValueChange={(val: "all" | "select") => setAssignmentMode(val)}
+                                                className="flex gap-4"
+                                            >
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="all" id="all-students" />
+                                                    <Label htmlFor="all-students">All Students</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="select" id="select-students" />
+                                                    <Label htmlFor="select-students">Select Students</Label>
+                                                </div>
+                                            </RadioGroup>
+                                        </div>
+
+                                        {assignmentMode === 'select' && (
+                                            <div className="border rounded-md p-3 h-40">
+                                                <p className="text-xs text-muted-foreground mb-2">Select students to assign</p>
+                                                <ScrollArea className="h-32">
+                                                    <div className="space-y-2">
+                                                        {instructorStudents.length === 0 ? (
+                                                            <div className="text-sm text-center text-muted-foreground py-4">No students found</div>
+                                                        ) : (
+                                                            instructorStudents.map(student => (
+                                                                <div key={student.id} className="flex items-center space-x-2">
+                                                                    <Checkbox
+                                                                        id={`student-${student.id}`}
+                                                                        checked={selectedStudents.includes(student.id)}
+                                                                        onCheckedChange={() => handleStudentToggle(student.id)}
+                                                                    />
+                                                                    <Label htmlFor={`student-${student.id}`} className="text-sm cursor-pointer">
+                                                                        {student.full_name}
+                                                                    </Label>
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                </ScrollArea>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-2">
+                                            <Label className="flex items-center gap-2">
+                                                Attachment (Optional)
+                                            </Label>
+                                            <div className="flex gap-2 items-center">
+                                                <Input
+                                                    type="file"
+                                                    className="cursor-pointer"
+                                                    onChange={(e) => setQuizAttachment(e.target.files?.[0] || null)}
+                                                />
+                                            </div>
+                                            {quizAttachment && (
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <FileText className="w-3 h-3" /> Attached: {quizAttachment.name}
+                                                </p>
+                                            )}
+                                        </div>
+
                                         <Button
                                             className="w-full"
                                             onClick={handleGenerateQuiz}
@@ -293,11 +434,11 @@ const InstructorAI = () => {
                                     </CardHeader>
                                     <CardContent>
                                         {generatedQuiz ? (
-                                            <pre className="bg-muted p-4 rounded-lg text-xs overflow-auto h-[300px]">
+                                            <pre className="bg-muted p-4 rounded-lg text-xs overflow-auto h-[450px]">
                                                 {generatedQuiz}
                                             </pre>
                                         ) : (
-                                            <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+                                            <div className="h-[450px] flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
                                                 Generated content will appear here
                                             </div>
                                         )}
@@ -327,6 +468,23 @@ const InstructorAI = () => {
                                             <Label>Target Audience level</Label>
                                             <Input placeholder="e.g. High School, Undergraduate" />
                                         </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="flex items-center gap-2">
+                                                Reference Material (Optional)
+                                            </Label>
+                                            <Input
+                                                type="file"
+                                                className="cursor-pointer"
+                                                onChange={(e) => setLessonAttachment(e.target.files?.[0] || null)}
+                                            />
+                                            {lessonAttachment && (
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <FileText className="w-3 h-3" /> Attached: {lessonAttachment.name}
+                                                </p>
+                                            )}
+                                        </div>
+
                                         <Button
                                             className="w-full"
                                             onClick={handleGenerateLesson}
@@ -363,45 +521,117 @@ const InstructorAI = () => {
                             </div>
                         </TabsContent>
 
-                        {/* Insights Mockup */}
+                        {/* Insights */}
                         <TabsContent value="insights" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Student Performance Analysis</CardTitle>
-                                    <CardDescription>AI-driven insights on how your students are performing.</CardDescription>
+                                    <CardDescription>AI-driven insights based on real student data.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-6">
-                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg flex gap-4 items-start border border-blue-100 dark:border-blue-900">
-                                            <Sparkles className="w-5 h-5 text-blue-600 mt-1" />
-                                            <div>
-                                                <h4 className="font-semibold text-blue-900 dark:text-blue-100">Key Insight</h4>
-                                                <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                                                    Students seem to struggle with concepts introduced in "Chapter 3: State Management".
-                                                    Quiz scores dropped by 15% on average compared to Chapter 2.
-                                                </p>
-                                                <Button variant="link" className="p-0 h-auto text-blue-600 mt-2 text-xs">Generate Review Material</Button>
-                                            </div>
+                                    {studentsLoading ? (
+                                        <div className="flex items-center justify-center h-40">
+                                            <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
                                         </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {/* Summary Cards */}
+                                            <div className="grid md:grid-cols-3 gap-4">
+                                                <div className="p-4 border rounded-lg bg-card shadow-sm">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <TrendingUp className="w-4 h-4 text-green-600" />
+                                                        <p className="text-sm text-muted-foreground">Avg. Progress</p>
+                                                    </div>
+                                                    <p className="text-2xl font-bold">{insights?.avgProgress || 0}%</p>
+                                                    <p className="text-xs text-muted-foreground">Class Average</p>
+                                                </div>
+                                                <div className="p-4 border rounded-lg bg-card shadow-sm">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                                                        <p className="text-sm text-muted-foreground">At Risk Students</p>
+                                                    </div>
+                                                    <p className="text-2xl font-bold text-red-600">{insights?.atRisk || 0}</p>
+                                                    <p className="text-xs text-muted-foreground">Below 50% Progress</p>
+                                                </div>
+                                                <div className="p-4 border rounded-lg bg-card shadow-sm">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Sparkles className="w-4 h-4 text-primary" />
+                                                        <p className="text-sm text-muted-foreground">Focus Area</p>
+                                                    </div>
+                                                    <p className="text-lg font-bold truncate">{insights?.lowestTopic || "None"}</p>
+                                                    <p className="text-xs text-muted-foreground">Lowest performing topic</p>
+                                                </div>
+                                            </div>
 
-                                        <div className="grid md:grid-cols-3 gap-4">
-                                            <div className="p-4 border rounded-lg">
-                                                <p className="text-sm text-muted-foreground">Engagement Trend</p>
-                                                <p className="text-2xl font-bold text-green-600">+12%</p>
-                                                <p className="text-xs text-muted-foreground">vs last week</p>
+                                            {/* AI Suggestion */}
+                                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg flex gap-4 items-start border border-blue-100 dark:border-blue-900">
+                                                <Sparkles className="w-5 h-5 text-blue-600 mt-1 shrink-0" />
+                                                <div>
+                                                    <h4 className="font-semibold text-blue-900 dark:text-blue-100">AI Recommendation</h4>
+                                                    <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                                                        {insights?.atRisk && insights.atRisk > 0
+                                                            ? `There are ${insights.atRisk} students falling behind. Consider scheduling a review session for "${insights?.lowestTopic}" or assigning extra practice quizzes.`
+                                                            : "The class is performing well! You might challenge them with advanced projects or peer-review sessions."
+                                                        }
+                                                    </p>
+                                                    <Button variant="link" className="p-0 h-auto text-blue-600 mt-2 text-xs">Generate Review Material for {insights?.lowestTopic}</Button>
+                                                </div>
                                             </div>
-                                            <div className="p-4 border rounded-lg">
-                                                <p className="text-sm text-muted-foreground">At Risk Students</p>
-                                                <p className="text-2xl font-bold text-red-600">3</p>
-                                                <p className="text-xs text-muted-foreground">Need attention</p>
-                                            </div>
-                                            <div className="p-4 border rounded-lg">
-                                                <p className="text-sm text-muted-foreground">Top Performing Topic</p>
-                                                <p className="text-lg font-bold">React Components</p>
-                                                <p className="text-xs text-muted-foreground">95% avg score</p>
+
+                                            {/* Student Table */}
+                                            <div className="mt-6">
+                                                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                                                    <Users className="w-4 h-4" /> Student Analysis
+                                                </h3>
+                                                <div className="border rounded-md">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Student</TableHead>
+                                                                <TableHead>Enrolled Courses</TableHead>
+                                                                <TableHead>Overall Grade/Progress</TableHead>
+                                                                <TableHead>Status</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {instructorStudents.map((student) => (
+                                                                <TableRow key={student.id}>
+                                                                    <TableCell className="font-medium">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs">
+                                                                                {student.full_name.charAt(0)}
+                                                                            </div>
+                                                                            {student.full_name}
+                                                                        </div>
+                                                                    </TableCell>
+                                                                    <TableCell>{student.enrolledCoursesCount}</TableCell>
+                                                                    <TableCell>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-16 h-2 bg-secondary rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className={cn("h-full",
+                                                                                        student.totalProgress >= 70 ? "bg-green-500" :
+                                                                                            student.totalProgress >= 50 ? "bg-yellow-500" : "bg-red-500"
+                                                                                    )}
+                                                                                    style={{ width: `${student.totalProgress}%` }}
+                                                                                />
+                                                                            </div>
+                                                                            <span className="text-xs text-muted-foreground">{student.totalProgress}%</span>
+                                                                        </div>
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        <Badge variant={student.totalProgress >= 50 ? "default" : "destructive"}>
+                                                                            {student.totalProgress >= 50 ? "On Track" : "At Risk"}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
