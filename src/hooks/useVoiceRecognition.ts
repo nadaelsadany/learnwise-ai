@@ -83,26 +83,29 @@ export const useVoiceRecognition = () => {
         };
 
         recognition.onresult = (event: any) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
+            let interimText = '';
+            let finalText = '';
 
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                const transcriptPart = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
-                    finalTranscript += transcriptPart;
+                    finalText += event.results[i][0].transcript;
                 } else {
-                    interimTranscript += transcriptPart;
+                    interimText += event.results[i][0].transcript;
                 }
             }
 
-            const currentTranscript = finalTranscript || interimTranscript;
-            if (currentTranscript) {
-                setTranscript(currentTranscript);
-                if (finalTranscript) {
-                    transcriptRef.current = finalTranscript;
-                    console.log("Final transcript captured:", finalTranscript);
-                }
+            const bestTranscript = finalText || interimText;
+            if (bestTranscript) {
+                setTranscript(bestTranscript);
+                // ALWAYS update the ref with the best we have, not just the "final" one
+                // This ensures that if the recognition ends abruptly, we send what we heard
+                transcriptRef.current = finalText || interimText;
+                console.log("Voice update:", { best: bestTranscript, isFinal: !!finalText });
             }
+        };
+
+        recognition.onnomatch = () => {
+            console.log("Voice recognition: No match found.");
         };
 
         recognition.onerror = (event: any) => {
@@ -115,12 +118,14 @@ export const useVoiceRecognition = () => {
                     description: "Please enable microphone permissions.",
                     variant: "destructive"
                 });
+            } else if (event.error === 'no-speech') {
+                console.log("No speech detected.");
             }
         };
 
         recognition.onend = () => {
-            console.log("Voice recognition onend. Result:", transcriptRef.current);
             const final = transcriptRef.current.trim();
+            console.log("Voice recognition onend. Finalizing with:", final);
             if (final && onResult) {
                 onResult(final);
             }
