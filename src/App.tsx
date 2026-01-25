@@ -15,6 +15,10 @@ import CourseStudents from "./pages/CourseStudents";
 import AllStudents from "./pages/AllStudents";
 import StudentProgress from "./pages/StudentProgress";
 import InstructorAI from "./pages/InstructorAI";
+import InstructorAnalytics from "./pages/InstructorAnalytics";
+import InstructorSettings from "./pages/InstructorSettings";
+import InstructorContent from "./pages/InstructorContent";
+import InstructorNotifications from "./pages/InstructorNotifications";
 import CourseCatalog from "./pages/CourseCatalog";
 import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
@@ -167,6 +171,38 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
             <SyllabusUpload />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/analytics"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorAnalytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/settings"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/content"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorContent />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/notifications"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorNotifications />
           </ProtectedRoute>
         }
       />
