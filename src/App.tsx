@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { StudySessionProvider } from "@/components/learning/StudySessionProvider";
 import Auth from "./pages/Auth";
 import ApplicantDashboard from "./pages/ApplicantDashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
@@ -18,6 +19,7 @@ import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
+import LessonPlayer from "./pages/LessonPlayer";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -82,6 +84,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <CourseDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/courses/:courseId/lessons/:lessonId"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <LessonPlayer />
           </ProtectedRoute>
         }
       />
@@ -189,7 +199,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <StudySessionProvider>
+            <AppRoutes />
+          </StudySessionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

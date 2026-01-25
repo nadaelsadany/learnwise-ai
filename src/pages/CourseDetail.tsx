@@ -184,8 +184,7 @@ const CourseDetail = () => {
                                         size="lg"
                                         className="gap-2"
                                         onClick={() => {
-                                            setOpenChapterId(nextLesson.chapter.id);
-                                            handleLessonClick(nextLesson.lesson.id);
+                                            navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
                                         }}
                                     >
                                         <Play className="w-5 h-5" />
