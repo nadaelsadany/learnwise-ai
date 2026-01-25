@@ -161,7 +161,14 @@ const CourseCatalog = () => {
             )}
 
             {isEnrolled && (
-              <Button size="sm" variant="outline">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/courses/${course.id}`);
+                }}
+              >
                 Continue
               </Button>
             )}

@@ -114,6 +114,7 @@ export const ApplicantSidebar = ({ onCollapse }: SidebarProps) => {
       {/* Footer */}
       <div className="p-3 border-t border-border/50 space-y-1">
         <button
+          onClick={() => navigate("/settings")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted text-muted-foreground hover:text-foreground"
         >
           <Settings className="w-5 h-5 flex-shrink-0" />
