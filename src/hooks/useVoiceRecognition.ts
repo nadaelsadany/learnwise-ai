@@ -5,6 +5,7 @@ export const useVoiceRecognition = () => {
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [volume, setVolume] = useState(0);
+    const [error, setError] = useState<string | null>(null);
     const recognitionRef = useRef<any>(null);
     const transcriptRef = useRef('');
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -15,25 +16,33 @@ export const useVoiceRecognition = () => {
     const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const stopListening = useCallback(() => {
+        console.log("Stopping voice recognition...");
         if (recognitionRef.current) {
-            recognitionRef.current.stop();
+            try {
+                recognitionRef.current.stop();
+            } catch (e) {
+                console.error("Error stopping recognition:", e);
+            }
             recognitionRef.current = null;
         }
+
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
         }
+
         if (audioContextRef.current) {
             audioContextRef.current.close().catch(() => { });
             audioContextRef.current = null;
         }
+
         if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = null;
         }
+
         setIsListening(false);
         setVolume(0);
-        console.log("Voice recognition fully stopped.");
     }, []);
 
     const startListening = useCallback((onResult?: (text: string) => void) => {
@@ -42,13 +51,14 @@ export const useVoiceRecognition = () => {
         if (!SpeechRecognition) {
             toast({
                 title: "Not Supported",
-                description: "Voice recognition is not supported in this browser.",
+                description: "Your browser does not support voice recognition. Please use Chrome or Edge.",
                 variant: "destructive"
             });
             return;
         }
 
-        stopListening(); // Ensure clean state
+        setError(null);
+        stopListening();
 
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
@@ -58,110 +68,101 @@ export const useVoiceRecognition = () => {
         const resetSilenceTimer = () => {
             if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = setTimeout(() => {
-                console.log("Silence detected, stopping...");
+                console.log("Silence timeout reached");
                 recognition.stop();
             }, 3000);
         };
 
         recognition.onstart = () => {
-            console.log("Voice recognition started");
+            console.log("Voice recognition onstart");
             setIsListening(true);
             setTranscript('');
             transcriptRef.current = '';
             resetSilenceTimer();
-
-            try {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                    const audioContext = new AudioContext();
-                    const analyser = audioContext.createAnalyser();
-                    const source = audioContext.createMediaStreamSource(stream);
-                    source.connect(analyser);
-                    analyser.fftSize = 256;
-
-                    const bufferLength = analyser.frequencyBinCount;
-                    const dataArray = new Uint8Array(bufferLength);
-
-                    const updateVolume = () => {
-                        if (!analyser) return;
-                        analyser.getByteFrequencyData(dataArray);
-                        let sum = 0;
-                        for (let i = 0; i < bufferLength; i++) {
-                            sum += dataArray[i];
-                        }
-                        const average = sum / bufferLength;
-                        setVolume(average);
-
-                        if (average > 5) {
-                            resetSilenceTimer();
-                        }
-
-                        animationFrameRef.current = requestAnimationFrame(updateVolume);
-                    };
-
-                    audioContextRef.current = audioContext;
-                    analyserRef.current = analyser;
-                    updateVolume();
-                }).catch(err => console.error("Volume analysis failed:", err));
-            } catch (err) {
-                console.error("Audio Context initialization failed:", err);
-            }
         };
+
+        // Separate volume analysis to not block recognition start
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                const audioContext = new AudioContext();
+                const analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 256;
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                const updateVolume = () => {
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    const average = sum / dataArray.length;
+                    setVolume(average);
+                    if (average > 10) resetSilenceTimer(); // Lowered threshold for speech detection
+                    animationFrameRef.current = requestAnimationFrame(updateVolume);
+                };
+                audioContextRef.current = audioContext;
+                updateVolume();
+            })
+            .catch(err => {
+                console.warn("Visual volume pulse disabled (Microphone likely used by Speech Engine only)", err);
+            });
 
         recognition.onresult = (event: any) => {
             resetSilenceTimer();
             let fullTranscript = '';
-
             for (let i = 0; i < event.results.length; ++i) {
                 fullTranscript += event.results[i][0].transcript;
             }
-
             if (fullTranscript) {
                 setTranscript(fullTranscript);
                 transcriptRef.current = fullTranscript;
-                console.log("Voice update:", fullTranscript);
+                console.log("Transcript updated:", fullTranscript);
             }
         };
 
         recognition.onerror = (event: any) => {
-            console.error("Speech recognition error:", event.error);
+            console.error("Speech Recognition Error Event:", event.error, event);
+            setError(event.error);
             setIsListening(false);
 
-            let errorMsg = "An error occurred with voice recognition.";
-            if (event.error === 'not-allowed') {
-                errorMsg = "Microphone access denied. Please enable it in browser settings.";
-            } else if (event.error === 'no-speech') {
-                errorMsg = "No speech was detected. Try speaking closer to the mic.";
-            } else if (event.error === 'network') {
-                errorMsg = "Network error. Voice recognition requires an internet connection.";
-            }
+            let description = "Please try again or check your mic settings.";
+            if (event.error === 'not-allowed') description = "Microphone access denied. Click the lock icon in the URL bar to enable it.";
+            else if (event.error === 'no-speech') description = "No speech detected. Mic might be too quiet or busy.";
+            else if (event.error === 'network') description = "Network issue. Voice recognition needs an internet connection.";
+            else if (event.error === 'aborted') description = "Recognition was interrupted. Please try again.";
 
             toast({
-                title: "Voice Error",
-                description: errorMsg,
+                title: `Voice Error: ${event.error}`,
+                description: description,
                 variant: "destructive"
             });
-
             stopListening();
         };
 
         recognition.onend = () => {
-            console.log("Voice recognition onend triggered.");
+            console.log("Voice recognition onend");
             const final = transcriptRef.current.trim();
             if (final && onResult) {
-                console.log("Dispatching result to callback:", final);
+                console.log("Executing onResult callback with:", final);
                 onResult(final);
             }
             stopListening();
         };
 
-        recognition.start();
-        recognitionRef.current = recognition;
+        try {
+            recognition.start();
+            recognitionRef.current = recognition;
+        } catch (e) {
+            console.error("Critical error starting recognition:", e);
+            stopListening();
+        }
     }, [toast, stopListening]);
 
     return {
         isListening,
         transcript,
         volume,
+        error,
         startListening,
         stopListening,
         setTranscript
