@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -6,61 +7,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Send, Bot, User, BookOpen, Brain, Zap } from "lucide-react";
+import { Sparkles, Send, Bot, User, BookOpen, Brain, Zap, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-
-interface ChatMessage {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
-}
+import { useAIChat } from "@/hooks/useAIChat";
 
 const StudentAITutor = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const { toast } = useToast();
-    const [messages, setMessages] = useState<ChatMessage[]>([
-        {
-            id: '1',
-            role: 'assistant',
-            content: 'Hi! I am your AI Tutor. I can help you understand complex topics, create study plans, or quiz you on your courses. What shall we learn today?',
-            timestamp: new Date()
-        }
-    ]);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { messages, isLoading, sendMessage, clearHistory } = useAIChat();
     const [inputMessage, setInputMessage] = useState("");
-    const [isTyping, setIsTyping] = useState(false);
     const [activeTab, setActiveTab] = useState("chat");
 
+    useEffect(() => {
+        const query = searchParams.get("q");
+        if (query) {
+            sendMessage(query);
+            setSearchParams({}); // Clear the param after sending
+        }
+    }, [searchParams]);
+
     const handleSendMessage = async () => {
-        if (!inputMessage.trim()) return;
-
-        const newMessage: ChatMessage = {
-            id: crypto.randomUUID(),
-            role: 'user',
-            content: inputMessage,
-            timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, newMessage]);
+        if (!inputMessage.trim() || isLoading) return;
+        sendMessage(inputMessage, activeTab);
         setInputMessage("");
-        setIsTyping(true);
-
-        // Simulate AI response
-        setTimeout(() => {
-            const responseContent = activeTab === 'quiz'
-                ? "Here's a practice question based on your recent activity: 'What is the difference between specific and implied warranties?'"
-                : `I can explain "${newMessage.content}" in simple terms. Would you like a summary or a detailed breakdown?`;
-
-            const response: ChatMessage = {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: responseContent,
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, response]);
-            setIsTyping(false);
-        }, 1500);
     };
 
     const suggestedPrompts = [
@@ -100,13 +69,19 @@ const StudentAITutor = () => {
                         <div className="grid lg:grid-cols-4 gap-6">
                             {/* Chat Area */}
                             <Card className="lg:col-span-3 h-[600px] flex flex-col">
-                                <CardHeader>
-                                    <CardTitle>Conversation</CardTitle>
-                                    <CardDescription>
-                                        {activeTab === 'chat' && "Ask anything. I can explain concepts, debug code, or translate text."}
-                                        {activeTab === 'study' && "Let's build a personalized study schedule based on your goals."}
-                                        {activeTab === 'quiz' && "Test your knowledge with adaptive quizzes."}
-                                    </CardDescription>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <div>
+                                        <CardTitle>Conversation</CardTitle>
+                                        <CardDescription>
+                                            {activeTab === 'chat' && "Ask anything. I can explain concepts, debug code, or translate text."}
+                                            {activeTab === 'study' && "Let's build a personalized study schedule based on your goals."}
+                                            {activeTab === 'quiz' && "Test your knowledge with adaptive quizzes."}
+                                        </CardDescription>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={clearHistory} className="text-muted-foreground">
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Clear
+                                    </Button>
                                 </CardHeader>
                                 <CardContent className="flex-1 overflow-hidden p-0">
                                     <ScrollArea className="h-full p-4">
@@ -132,7 +107,7 @@ const StudentAITutor = () => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {isTyping && (
+                                            {isLoading && (
                                                 <div className="flex gap-3 mr-auto max-w-[80%]">
                                                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                                                         <Bot className="w-4 h-4" />
@@ -156,9 +131,9 @@ const StudentAITutor = () => {
                                             placeholder={activeTab === 'quiz' ? "Answer here..." : "Type your question..."}
                                             value={inputMessage}
                                             onChange={(e) => setInputMessage(e.target.value)}
-                                            disabled={isTyping}
+                                            disabled={isLoading}
                                         />
-                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isTyping}>
+                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading}>
                                             <Send className="w-4 h-4" />
                                         </Button>
                                     </form>
@@ -178,8 +153,7 @@ const StudentAITutor = () => {
                                                 variant="outline"
                                                 className="w-full justify-start h-auto py-2 px-3 text-xs text-left whitespace-normal leading-snug"
                                                 onClick={() => {
-                                                    setInputMessage(prompt);
-                                                    // Optional: auto-send
+                                                    sendMessage(prompt, activeTab);
                                                 }}
                                             >
                                                 <Zap className="w-3 h-3 mr-2 shrink-0 text-yellow-500" />

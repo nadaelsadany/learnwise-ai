@@ -29,14 +29,14 @@ const ApplicantDashboard = () => {
   // Calculate readiness based on progress data
   const readinessPercentage = stats
     ? Math.min(
-        100,
-        Math.round(
-          (stats.totalLessonsCompleted * 5 +
-            stats.totalQuizzesTaken * 10 +
-            stats.averageQuizScore * 0.5) /
-            2
-        )
+      100,
+      Math.round(
+        (stats.totalLessonsCompleted * 5 +
+          stats.totalQuizzesTaken * 10 +
+          stats.averageQuizScore * 0.5) /
+        2
       )
+    )
     : 0;
 
   return (
@@ -210,7 +210,7 @@ const ApplicantDashboard = () => {
         </div>
       </main>
 
-      <AIChatBar />
+      <AIChatBar onSend={(msg) => navigate(`/ai-tutor?q=${encodeURIComponent(msg)}`)} />
     </div>
   );
 };
