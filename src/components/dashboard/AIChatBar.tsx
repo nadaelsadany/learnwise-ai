@@ -19,11 +19,21 @@ export const AIChatBar = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
 
+  // 1. Sync transcript to message while listening
   useEffect(() => {
-    if (transcript) {
+    if (isListening && transcript) {
       setMessage(transcript);
     }
-  }, [transcript]);
+  }, [isListening, transcript]);
+
+  // 2. Auto-send when recording stops
+  useEffect(() => {
+    if (!isListening && transcript.trim()) {
+      onSend?.(transcript.trim());
+      setMessage("");
+      setTranscript("");
+    }
+  }, [isListening]);
 
   const handleSend = () => {
     if (message.trim() && !isLoading) {

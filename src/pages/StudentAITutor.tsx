@@ -33,7 +33,7 @@ const StudentAITutor = () => {
     const [activeTab, setActiveTab] = useState("chat");
     const [speakingId, setSpeakingId] = useState<string | null>(null);
 
-    const { isListening, transcript, startListening, stopListening } = useVoiceRecognition();
+    const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
 
     const speakMessage = (text: string, id: string) => {
         if (speakingId === id) {
@@ -53,11 +53,32 @@ const StudentAITutor = () => {
         return () => window.speechSynthesis.cancel();
     }, []);
 
+    // 1. Auto-send when recording stops
     useEffect(() => {
-        if (transcript) {
+        if (!isListening && transcript.trim()) {
+            sendMessage(transcript, activeTab);
+            setInputMessage("");
+            setTranscript("");
+        }
+    }, [isListening, transcript, activeTab, sendMessage, setInputMessage, setTranscript]);
+
+    // 2. Sync transcript to input while listening (visual feedback)
+    useEffect(() => {
+        if (isListening && transcript) {
             setInputMessage(transcript);
         }
-    }, [transcript]);
+    }, [isListening, transcript, setInputMessage]);
+
+    // 3. Auto-speak new AI messages
+    useEffect(() => {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id !== '1') {
+            // Wait a brief moment for the message to be fully rendered
+            setTimeout(() => {
+                speakMessage(lastMessage.content, lastMessage.id);
+            }, 100);
+        }
+    }, [messages, speakMessage]);
 
     useEffect(() => {
         const query = searchParams.get("q");
