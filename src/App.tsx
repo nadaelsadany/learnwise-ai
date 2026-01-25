@@ -11,6 +11,7 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import InstructorCourses from "./pages/InstructorCourses";
 import CourseEditor from "./pages/CourseEditor";
 import CourseStudents from "./pages/CourseStudents";
+import AllStudents from "./pages/AllStudents";
 import CourseCatalog from "./pages/CourseCatalog";
 import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
@@ -146,6 +147,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
             <InstructorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/students"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <AllStudents />
           </ProtectedRoute>
         }
       />
