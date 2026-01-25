@@ -34,7 +34,7 @@ const StudentAITutor = () => {
     const [activeTab, setActiveTab] = useState("chat");
     const [speakingId, setSpeakingId] = useState<string | null>(null);
 
-    const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
+    const { isListening, transcript, volume, startListening, stopListening, setTranscript } = useVoiceRecognition();
     const { toast } = useToast();
 
     const handleToggleVoice = () => {
@@ -43,7 +43,10 @@ const StudentAITutor = () => {
         } else {
             setTranscript("");
             setInputMessage("");
-            startListening();
+            startListening((text) => {
+                console.log("Voice callback triggered with text:", text);
+                sendMessage(text, activeTab);
+            });
             toast({
                 title: "Listening...",
                 description: "Speak your question now.",
@@ -69,20 +72,12 @@ const StudentAITutor = () => {
         return () => window.speechSynthesis.cancel();
     }, []);
 
-    // 1. Synchronize voice state with UI and handle auto-send
+    // 1. Synchronize voice state with UI while listening
     useEffect(() => {
-        if (isListening) {
-            if (transcript) setInputMessage(transcript);
-        } else {
-            // Processing after recording stops
-            if (transcript.trim()) {
-                console.log("Auto-sending transcript:", transcript);
-                sendMessage(transcript, activeTab);
-                setInputMessage("");
-                setTranscript("");
-            }
+        if (isListening && transcript) {
+            setInputMessage(transcript);
         }
-    }, [isListening, transcript, activeTab, sendMessage]);
+    }, [isListening, transcript]);
 
     // 3. Auto-speak new AI messages
     useEffect(() => {
@@ -228,9 +223,10 @@ const StudentAITutor = () => {
                                             variant="ghost"
                                             size="icon"
                                             className={cn(
-                                                "rounded-xl transition-all",
-                                                isListening && "bg-destructive/10 text-destructive animate-pulse"
+                                                "rounded-xl transition-all duration-75",
+                                                isListening && "bg-destructive/10 text-destructive"
                                             )}
+                                            style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
                                             onClick={handleToggleVoice}
                                             disabled={isLoading}
                                         >

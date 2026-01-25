@@ -18,22 +18,15 @@ export const AIChatBar = ({
 }: AIChatBarProps) => {
   const [message, setMessage] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
-  const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
+  const { isListening, transcript, volume, startListening, stopListening, setTranscript } = useVoiceRecognition();
   const { toast } = useToast();
 
-  // Handle voice state synchronization and auto-send
+  // 1. Sync transcript to message while listening
   useEffect(() => {
-    if (isListening) {
-      if (transcript) setMessage(transcript);
-    } else {
-      if (transcript.trim()) {
-        console.log("AIChatBar auto-sending:", transcript);
-        onSend?.(transcript.trim());
-        setMessage("");
-        setTranscript("");
-      }
+    if (isListening && transcript) {
+      setMessage(transcript);
     }
-  }, [isListening, transcript, onSend]);
+  }, [isListening, transcript]);
 
   const handleSend = () => {
     if (message.trim() && !isLoading) {
@@ -56,7 +49,9 @@ export const AIChatBar = ({
     } else {
       setTranscript("");
       setMessage("");
-      startListening();
+      startListening((text) => {
+        onSend?.(text);
+      });
       toast({
         title: "Listening...",
         description: "Speak your question now.",
@@ -103,9 +98,10 @@ export const AIChatBar = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "rounded-xl transition-all",
-                  isListening && "bg-destructive/10 text-destructive animate-pulse"
+                  "p-2 rounded-xl transition-all duration-75",
+                  isListening ? "bg-destructive/10 text-destructive" : "hover:bg-accent/10 text-accent group-hover:scale-110"
                 )}
+                style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
                 onClick={toggleVoice}
               >
                 {isListening ? (
