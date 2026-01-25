@@ -51,7 +51,7 @@ const InstructorDashboard = () => {
                   <BookOpen className="w-4 h-4 mr-2" />
                   My Courses
                 </Button>
-                <Button variant="gradient" onClick={() => navigate("/syllabus-upload")}>
+                <Button variant="default" className="gradient-accent text-white" onClick={() => navigate("/syllabus-upload")}>
                   Create Course
                 </Button>
               </div>

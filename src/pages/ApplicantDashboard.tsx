@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -9,10 +10,34 @@ import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
 import { TodaysPlan } from "@/components/dashboard/TodaysPlan";
 import { WeaknessAnalysis } from "@/components/dashboard/WeaknessAnalysis";
 import { AIChatBar } from "@/components/dashboard/AIChatBar";
-import { Flame, Target, Clock, Trophy } from "lucide-react";
+import { useCourses } from "@/hooks/useCourses";
+import { useProgress } from "@/hooks/useProgress";
+import { Flame, Target, Clock, Trophy, Loader2 } from "lucide-react";
 
 const ApplicantDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const { courses, loading: coursesLoading, fetchEnrolledCourses } = useCourses();
+  const { stats, loading: progressLoading } = useProgress();
+
+  useEffect(() => {
+    fetchEnrolledCourses();
+  }, []);
+
+  const loading = coursesLoading || progressLoading;
+
+  // Calculate readiness based on progress data
+  const readinessPercentage = stats
+    ? Math.min(
+        100,
+        Math.round(
+          (stats.totalLessonsCompleted * 5 +
+            stats.totalQuizzesTaken * 10 +
+            stats.averageQuizScore * 0.5) /
+            2
+        )
+      )
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,29 +69,29 @@ const ApplicantDashboard = () => {
             <StatsCard
               icon={Flame}
               title="Study Streak"
-              value="7 days"
-              trend={{ value: 2, positive: true }}
+              value={`${stats?.currentStreak || 0} days`}
+              trend={stats?.currentStreak ? { value: stats.currentStreak, positive: true } : undefined}
               variant="warning"
             />
             <StatsCard
               icon={Target}
               title="Questions Solved"
-              value="234"
+              value={stats?.totalQuizzesTaken ? `${stats.totalQuizzesTaken * 10}` : "0"}
               trend={{ value: 12, positive: true }}
               variant="success"
             />
             <StatsCard
               icon={Clock}
               title="Time Studied"
-              value="48h"
-              subtitle="This week"
+              value={`${stats?.totalStudyTimeMinutes || 0}m`}
+              subtitle="Total"
               variant="primary"
             />
             <StatsCard
               icon={Trophy}
-              title="Achievements"
-              value="12"
-              subtitle="3 new"
+              title="Lessons Done"
+              value={`${stats?.totalLessonsCompleted || 0}`}
+              subtitle="Completed"
               variant="accent"
             />
           </section>
@@ -81,8 +106,8 @@ const ApplicantDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="rounded-2xl bg-card border border-border/50 shadow-card p-6 flex flex-col items-center justify-center">
                   <p className="text-sm text-muted-foreground mb-2">Exam Readiness</p>
-                  <ReadinessGauge percentage={72} />
-                  <p className="text-sm text-muted-foreground mt-2">ISTQB Foundation</p>
+                  <ReadinessGauge percentage={readinessPercentage} />
+                  <p className="text-sm text-muted-foreground mt-2">Overall Progress</p>
                 </div>
                 <ExamCountdown
                   examName="ISTQB Foundation Level"
@@ -92,23 +117,46 @@ const ApplicantDashboard = () => {
 
               {/* Enrolled Courses */}
               <div>
-                <h2 className="text-lg font-semibold mb-4">My Courses</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CourseCard
-                    title="ISTQB Foundation Level"
-                    description="Software Testing Fundamentals"
-                    progress={72}
-                    lessons={24}
-                    duration="12 hours"
-                  />
-                  <CourseCard
-                    title="Agile Testing"
-                    description="Testing in Agile Projects"
-                    progress={45}
-                    lessons={18}
-                    duration="8 hours"
-                  />
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">My Courses</h2>
+                  <button
+                    onClick={() => navigate("/catalog")}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Browse All
+                  </button>
                 </div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : courses.length === 0 ? (
+                  <div className="rounded-2xl bg-card border border-border/50 shadow-card p-8 text-center">
+                    <p className="text-muted-foreground mb-4">
+                      You haven't enrolled in any courses yet
+                    </p>
+                    <button
+                      onClick={() => navigate("/catalog")}
+                      className="text-primary font-medium hover:underline"
+                    >
+                      Browse Course Catalog →
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {courses.slice(0, 4).map((course) => (
+                      <CourseCard
+                        key={course.id}
+                        title={course.title}
+                        description={course.description || ""}
+                        progress={course.enrollment?.progress_percentage || 0}
+                        lessons={0}
+                        duration={`${course.duration_hours || 0}h`}
+                        onClick={() => navigate(`/courses/${course.id}`)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

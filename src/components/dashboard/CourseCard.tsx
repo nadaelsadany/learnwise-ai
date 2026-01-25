@@ -10,6 +10,7 @@ interface CourseCardProps {
   lessons: number;
   image?: string;
   variant?: "default" | "featured";
+  onClick?: () => void;
 }
 
 export const CourseCard = ({
@@ -20,12 +21,15 @@ export const CourseCard = ({
   lessons,
   image,
   variant = "default",
+  onClick,
 }: CourseCardProps) => {
   return (
     <div
+      onClick={onClick}
       className={cn(
         "group relative overflow-hidden rounded-2xl bg-card border border-border/50 shadow-card transition-all duration-300 hover:shadow-elevated hover:-translate-y-1",
-        variant === "featured" && "md:col-span-2"
+        variant === "featured" && "md:col-span-2",
+        onClick && "cursor-pointer"
       )}
     >
       {/* Image/Gradient Header */}

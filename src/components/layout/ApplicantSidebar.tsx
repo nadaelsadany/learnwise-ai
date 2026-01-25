@@ -25,7 +25,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: BookOpen, label: "My Courses", href: "/courses", badge: "3" },
+  { icon: BookOpen, label: "Browse Courses", href: "/catalog" },
+  { icon: GraduationCap, label: "My Courses", href: "/courses" },
   { icon: Brain, label: "Flashcards", href: "/flashcards" },
   { icon: FileQuestion, label: "Mock Exams", href: "/mock-exam" },
   { icon: BarChart3, label: "My Progress", href: "/progress" },
