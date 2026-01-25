@@ -3,6 +3,7 @@ import { Mic, Send, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { useToast } from "@/hooks/use-toast";
 
 interface AIChatBarProps {
   onSend?: (message: string) => void;
@@ -18,6 +19,7 @@ export const AIChatBar = ({
   const [message, setMessage] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
+  const { toast } = useToast();
 
   // 1. Sync transcript to message while listening
   useEffect(() => {
@@ -33,7 +35,7 @@ export const AIChatBar = ({
       setMessage("");
       setTranscript("");
     }
-  }, [isListening]);
+  }, [isListening, transcript, onSend, setTranscript]);
 
   const handleSend = () => {
     if (message.trim() && !isLoading) {
@@ -54,7 +56,13 @@ export const AIChatBar = ({
     if (isListening) {
       stopListening();
     } else {
+      setTranscript("");
+      setMessage("");
       startListening();
+      toast({
+        title: "Listening...",
+        description: "Speak your question now.",
+      });
     }
   };
 

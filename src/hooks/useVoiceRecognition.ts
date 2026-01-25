@@ -1,21 +1,27 @@
 import { useState, useCallback, useRef } from 'react';
+import { useToast } from './use-toast';
 
 export const useVoiceRecognition = () => {
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const recognitionRef = useRef<any>(null);
+    const { toast } = useToast();
 
     const startListening = useCallback(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            console.error("Speech Recognition not supported in this browser.");
+            toast({
+                title: "Not Supported",
+                description: "Voice recognition is not supported in this browser. Try Chrome or Edge.",
+                variant: "destructive"
+            });
             return;
         }
 
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.interimResults = true;
         recognition.lang = 'en-US';
 
         recognition.onstart = () => {
@@ -24,14 +30,34 @@ export const useVoiceRecognition = () => {
         };
 
         recognition.onresult = (event: any) => {
-            const current = event.resultIndex;
-            const result = event.results[current][0].transcript;
-            setTranscript(result);
+            let interimTranscript = '';
+            let finalTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+
+            const currentTranscript = finalTranscript || interimTranscript;
+            if (currentTranscript) {
+                setTranscript(currentTranscript);
+            }
         };
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error:", event.error);
             setIsListening(false);
+
+            if (event.error === 'not-allowed') {
+                toast({
+                    title: "Microphone Access Denied",
+                    description: "Please enable microphone permissions in your browser settings.",
+                    variant: "destructive"
+                });
+            }
         };
 
         recognition.onend = () => {
@@ -40,7 +66,7 @@ export const useVoiceRecognition = () => {
 
         recognition.start();
         recognitionRef.current = recognition;
-    }, []);
+    }, [toast]);
 
     const stopListening = useCallback(() => {
         if (recognitionRef.current) {

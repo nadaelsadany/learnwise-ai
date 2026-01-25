@@ -24,6 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAIChat } from "@/hooks/useAIChat";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
+import { useToast } from "@/hooks/use-toast";
 
 const StudentAITutor = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -34,6 +35,21 @@ const StudentAITutor = () => {
     const [speakingId, setSpeakingId] = useState<string | null>(null);
 
     const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
+    const { toast } = useToast();
+
+    const handleToggleVoice = () => {
+        if (isListening) {
+            stopListening();
+        } else {
+            setTranscript("");
+            setInputMessage("");
+            startListening();
+            toast({
+                title: "Listening...",
+                description: "Speak your question now.",
+            });
+        }
+    };
 
     const speakMessage = (text: string, id: string) => {
         if (speakingId === id) {
@@ -216,7 +232,7 @@ const StudentAITutor = () => {
                                                 "rounded-xl transition-all",
                                                 isListening && "bg-destructive/10 text-destructive animate-pulse"
                                             )}
-                                            onClick={isListening ? stopListening : startListening}
+                                            onClick={handleToggleVoice}
                                             disabled={isLoading}
                                         >
                                             {isListening ? (
