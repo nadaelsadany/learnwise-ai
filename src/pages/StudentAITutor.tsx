@@ -7,9 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Send, Bot, User, BookOpen, Brain, Zap, Trash2 } from "lucide-react";
+import {
+    Sparkles,
+    Send,
+    Bot,
+    User,
+    BookOpen,
+    Brain,
+    Zap,
+    Trash2,
+    Mic,
+    MicOff,
+    Volume2,
+    StopCircle
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAIChat } from "@/hooks/useAIChat";
+import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 
 const StudentAITutor = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -17,6 +31,33 @@ const StudentAITutor = () => {
     const { messages, isLoading, sendMessage, clearHistory } = useAIChat();
     const [inputMessage, setInputMessage] = useState("");
     const [activeTab, setActiveTab] = useState("chat");
+    const [speakingId, setSpeakingId] = useState<string | null>(null);
+
+    const { isListening, transcript, startListening, stopListening } = useVoiceRecognition();
+
+    const speakMessage = (text: string, id: string) => {
+        if (speakingId === id) {
+            window.speechSynthesis.cancel();
+            setSpeakingId(null);
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onend = () => setSpeakingId(null);
+        setSpeakingId(id);
+        window.speechSynthesis.speak(utterance);
+    };
+
+    useEffect(() => {
+        return () => window.speechSynthesis.cancel();
+    }, []);
+
+    useEffect(() => {
+        if (transcript) {
+            setInputMessage(transcript);
+        }
+    }, [transcript]);
 
     useEffect(() => {
         const query = searchParams.get("q");
@@ -98,12 +139,25 @@ const StudentAITutor = () => {
                                                         {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                                     </div>
                                                     <div className={cn(
-                                                        "rounded-2xl px-4 py-2 text-sm",
+                                                        "rounded-2xl px-4 py-2 text-sm relative group/msg",
                                                         msg.role === 'user'
                                                             ? "bg-primary text-primary-foreground rounded-tr-none"
                                                             : "bg-muted rounded-tl-none"
                                                     )}>
                                                         {msg.content}
+
+                                                        {msg.role === 'assistant' && (
+                                                            <button
+                                                                onClick={() => speakMessage(msg.content, msg.id)}
+                                                                className="absolute -right-8 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground opacity-0 group-hover/msg:opacity-100 transition-opacity"
+                                                            >
+                                                                {speakingId === msg.id ? (
+                                                                    <StopCircle className="w-4 h-4 text-destructive" />
+                                                                ) : (
+                                                                    <Volume2 className="w-4 h-4" />
+                                                                )}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
@@ -133,6 +187,23 @@ const StudentAITutor = () => {
                                             onChange={(e) => setInputMessage(e.target.value)}
                                             disabled={isLoading}
                                         />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className={cn(
+                                                "rounded-xl transition-all",
+                                                isListening && "bg-destructive/10 text-destructive animate-pulse"
+                                            )}
+                                            onClick={isListening ? stopListening : startListening}
+                                            disabled={isLoading}
+                                        >
+                                            {isListening ? (
+                                                <MicOff className="w-4 h-4" />
+                                            ) : (
+                                                <Mic className="w-4 h-4" />
+                                            )}
+                                        </Button>
                                         <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading}>
                                             <Send className="w-4 h-4" />
                                         </Button>

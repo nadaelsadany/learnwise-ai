@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mic, Send, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 
 interface AIChatBarProps {
   onSend?: (message: string) => void;
@@ -9,19 +10,26 @@ interface AIChatBarProps {
   placeholder?: string;
 }
 
-export const AIChatBar = ({ 
-  onSend, 
+export const AIChatBar = ({
+  onSend,
   isLoading = false,
-  placeholder = "Ask AI anything about your studies..." 
+  placeholder = "Ask AI anything about your studies..."
 }: AIChatBarProps) => {
   const [message, setMessage] = useState("");
-  const [isListening, setIsListening] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isListening, transcript, startListening, stopListening, setTranscript } = useVoiceRecognition();
+
+  useEffect(() => {
+    if (transcript) {
+      setMessage(transcript);
+    }
+  }, [transcript]);
 
   const handleSend = () => {
     if (message.trim() && !isLoading) {
       onSend?.(message.trim());
       setMessage("");
+      setTranscript("");
     }
   };
 
@@ -33,8 +41,11 @@ export const AIChatBar = ({
   };
 
   const toggleVoice = () => {
-    setIsListening(!isListening);
-    // Voice recognition logic would go here
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
   };
 
   return (
@@ -46,7 +57,7 @@ export const AIChatBar = ({
         )}>
           {/* AI Glow Effect */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 blur-xl opacity-50 -z-10 animate-pulse-glow" />
-          
+
           {/* Input Area */}
           <div className="flex items-center gap-2 p-3">
             {/* AI Icon */}
