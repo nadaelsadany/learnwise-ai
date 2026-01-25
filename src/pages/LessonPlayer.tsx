@@ -2,11 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudySession } from '@/components/learning/StudySessionProvider';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Pause, Play, CheckCircle, Volume2, StopCircle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft, Pause, Play, CheckCircle, Volume2, StopCircle, Sparkles, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { mockCourses } from '@/components/courses';
 import { getCourseWithChapters } from '@/components/courses/courseChapters';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 
 const LessonPlayer = () => {
     const { courseId, lessonId } = useParams();
@@ -25,12 +27,17 @@ const LessonPlayer = () => {
     const [lessonContent, setLessonContent] = useState<string>("");
     const [lessonTitle, setLessonTitle] = useState("");
     const videoRef = useRef<HTMLVideoElement>(null);
+    const textRef = useRef<HTMLDivElement>(null);
+
+    // Selection & Explanation State
+    const [selection, setSelection] = useState<{ x: number, y: number, text: string } | null>(null);
+    const [showExplanation, setShowExplanation] = useState(false);
+    const [explanationLoading, setExplanationLoading] = useState(false);
+    const [explanationText, setExplanationText] = useState("");
 
     useEffect(() => {
         if (courseId && lessonId) {
             startSession(courseId, lessonId);
-
-            // Fetch mock lesson data
             const course = getCourseWithChapters(courseId, mockCourses);
             if (course) {
                 let foundLesson = null;
@@ -41,7 +48,6 @@ const LessonPlayer = () => {
                         break;
                     }
                 }
-
                 if (foundLesson) {
                     setLessonTitle(foundLesson.title);
                     setLessonContent(`
@@ -57,7 +63,7 @@ const LessonPlayer = () => {
                         - Principle 3: Always test your assumptions.
                         
                         3. Practical Application
-                        Let's look at a real-world example. Imagine you are building a system that needs to scale. You would apply these principles by ensuring your architecture is modular...
+                        Let's look at a real-world example. Imagine you are building a system that needs to scale. You would apply these principles by ensuring your architecture is modular to handle increased load without breaking.
                         
                         4. Conclusion
                         To wrap up, remember that mastery comes with practice. Review the materials and try the exercises.
@@ -69,6 +75,40 @@ const LessonPlayer = () => {
             window.speechSynthesis.cancel();
         };
     }, [courseId, lessonId]);
+
+    useEffect(() => {
+        const handleSelection = () => {
+            const selectionObj = window.getSelection();
+            if (!selectionObj || selectionObj.isCollapsed) {
+                setSelection(null);
+                return;
+            }
+
+            const text = selectionObj.toString().trim();
+            if (text.length < 5) {
+                setSelection(null);
+                return;
+            }
+
+            // Ensure selection is within our content area
+            if (textRef.current && textRef.current.contains(selectionObj.anchorNode)) {
+                const range = selectionObj.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+
+                // Show popup near selection
+                setSelection({
+                    x: rect.left + (rect.width / 2),
+                    y: rect.top - 10,
+                    text: text
+                });
+            } else {
+                setSelection(null);
+            }
+        };
+
+        document.addEventListener('selectionchange', handleSelection);
+        return () => document.removeEventListener('selectionchange', handleSelection);
+    }, []);
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
@@ -96,6 +136,19 @@ const LessonPlayer = () => {
         }
     };
 
+    const handleExplain = () => {
+        if (!selection) return;
+
+        setShowExplanation(true);
+        setExplanationLoading(true);
+
+        // Emulate AI delay
+        setTimeout(() => {
+            setExplanationText(`Here is a simplified explanation for: "${selection.text}"\n\nThis concept refers to a core best practice in the field. When we talk about "${selection.text.substring(0, 15)}...", we essentially mean that you should rely on proven structures rather than reinventing the wheel. This ensures better reliability and maintainability in your projects.`);
+            setExplanationLoading(false);
+        }, 1500);
+    };
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <header className="border-b px-6 py-4 flex items-center justify-between bg-card">
@@ -114,7 +167,7 @@ const LessonPlayer = () => {
                 </div>
             </header>
 
-            <main className="flex-1 p-6 max-w-7xl mx-auto w-full grid lg:grid-cols-3 gap-6">
+            <main className="flex-1 p-6 max-w-7xl mx-auto w-full grid lg:grid-cols-3 gap-6 relative">
                 {/* Video Player Section */}
                 <div className="lg:col-span-2 space-y-4">
                     <Card className="overflow-hidden bg-black aspect-video relative group">
@@ -170,8 +223,8 @@ const LessonPlayer = () => {
                                     )}
                                 </Button>
                             </div>
-                            <ScrollArea className="flex-1 p-4">
-                                <article className="prose prose-sm dark:prose-invert max-w-none">
+                            <ScrollArea className="flex-1 p-4 relative" >
+                                <article ref={textRef} className="prose prose-sm dark:prose-invert max-w-none">
                                     {lessonContent.split('\n').map((paragraph, idx) => (
                                         <p key={idx} className="mb-4 leading-relaxed text-muted-foreground">
                                             {paragraph}
@@ -182,7 +235,62 @@ const LessonPlayer = () => {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Explain Popup Logic */}
+                {selection && (
+                    <div
+                        className="fixed z-50 transform -translate-x-1/2 -translate-y-full"
+                        style={{ top: selection.y, left: selection.x }}
+                    >
+                        <Button
+                            size="sm"
+                            className="shadow-xl bg-primary text-primary-foreground animate-in fade-in zoom-in duration-200"
+                            onClick={handleExplain}
+                        >
+                            <Sparkles className="w-3 h-3 mr-2" />
+                            Explain Clip?
+                        </Button>
+                    </div>
+                )}
             </main>
+
+            {/* Explanation Dialog */}
+            <Dialog open={showExplanation} onOpenChange={setShowExplanation}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            AI Explanation
+                        </DialogTitle>
+                        <DialogDescription>
+                            Breaking down the concept for you.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <div className="bg-muted/50 p-3 rounded-md mb-4 text-xs text-muted-foreground border-l-2 border-primary italic">
+                            "{selection?.text}"
+                        </div>
+
+                        {explanationLoading ? (
+                            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                <p className="text-sm text-foreground/80">Analyzing context...</p>
+                            </div>
+                        ) : (
+                            <div className="text-sm leading-relaxed">
+                                {explanationText.split('\n\n').map((text, i) => (
+                                    <p key={i} className="mb-2">{text}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button onClick={() => setShowExplanation(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
