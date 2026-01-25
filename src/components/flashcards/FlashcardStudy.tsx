@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Flashcard, StudyRating } from "./types";
 import { Button } from "@/components/ui/button";
+import useEmblaCarousel from 'embla-carousel-react';
 import {
     RotateCcw,
     Lightbulb,
@@ -40,11 +41,30 @@ export function FlashcardStudy({
     const [showHint, setShowHint] = useState(false);
     const [results, setResults] = useState<Record<string, StudyRating>>({});
 
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: false,
+        duration: 30,
+        watchDrag: true
+    });
+
+    const onSelect = useCallback(() => {
+        if (!emblaApi) return;
+        const index = emblaApi.selectedScrollSnap();
+        setCurrentIndex(index);
+        setIsFlipped(false);
+        setShowHint(false);
+    }, [emblaApi]);
+
+    useEffect(() => {
+        if (!emblaApi) return;
+        emblaApi.on('select', onSelect);
+        return () => {
+            emblaApi.off('select', onSelect);
+        };
+    }, [emblaApi, onSelect]);
+
     // Add audio for flip effect
     const flipSound = useRef<HTMLAudioElement | null>(null);
-
-    const currentCard = cards[currentIndex];
-    const progress = ((currentIndex + 1) / cards.length) * 100;
 
     const handleFlip = () => {
         setIsFlipped(!isFlipped);
@@ -52,14 +72,11 @@ export function FlashcardStudy({
     };
 
     const handleRating = (rating: StudyRating) => {
+        const currentCard = cards[currentIndex];
         setResults(prev => ({ ...prev, [currentCard.id]: rating }));
 
         if (currentIndex < cards.length - 1) {
-            setTimeout(() => {
-                setCurrentIndex(prev => prev + 1);
-                setIsFlipped(false);
-                setShowHint(false);
-            }, 300); // Small delay for better UX
+            emblaApi?.scrollNext();
         } else {
             // Calculate results
             const correct = Object.values({ ...results, [currentCard.id]: rating })
@@ -69,23 +86,17 @@ export function FlashcardStudy({
     };
 
     const handlePrevious = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(prev => prev - 1);
-            setIsFlipped(false);
-            setShowHint(false);
-        }
+        emblaApi?.scrollPrev();
     };
 
     const handleNext = () => {
-        if (currentIndex < cards.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-            setIsFlipped(false);
-            setShowHint(false);
-        }
+        emblaApi?.scrollNext();
     };
 
+    const progress = ((currentIndex + 1) / cards.length) * 100;
+
     return (
-        <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center">
+        <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center select-none">
             {/* Header */}
             <div className="w-full flex items-center justify-between mb-8 max-w-3xl">
                 <div className="flex items-center gap-4">
@@ -130,102 +141,110 @@ export function FlashcardStudy({
                 />
             </div>
 
-            {/* Flashcard Area */}
-            <div className="flex-1 w-full max-w-3xl flex items-center justify-center relative" style={{ perspective: "1000px" }}>
-                <div
-                    className={cn(
-                        "relative w-full aspect-[1.6/1] cursor-pointer transition-all duration-700 transform-gpu group",
-                    )}
-                    onClick={handleFlip}
-                    style={{
-                        transformStyle: "preserve-3d",
-                        transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)"
-                    }}
-                >
-                    {/* Front Face */}
-                    <div
-                        className="absolute inset-0"
-                        style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
-                    >
-                        <div className={cn(
-                            "w-full h-full rounded-[2rem] bg-card border border-border shadow-xl p-12 flex flex-col items-center justify-center text-center",
-                            "hover:shadow-2xl hover:border-primary/20 transition-all duration-300",
-                            "bg-gradient-to-br from-card to-secondary/10"
-                        )}>
-                            <div className="absolute top-8 left-8">
-                                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium tracking-wider uppercase">
-                                    Question
-                                </span>
-                            </div>
-
-                            <h3 className="text-3xl font-medium leading-tight text-foreground/90">
-                                {currentCard.front}
-                            </h3>
-
-                            {currentCard.hint && !showHint && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute bottom-8 right-8 text-muted-foreground hover:text-primary"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowHint(true);
+            {/* Flashcard Area (Carousel) */}
+            <div className="flex-1 w-full max-w-3xl overflow-hidden" ref={emblaRef}>
+                <div className="flex h-full">
+                    {cards.map((card, index) => (
+                        <div key={card.id} className="flex-[0_0_100%] min-w-0 px-4 flex items-center justify-center">
+                            <div className="w-full relative py-12" style={{ perspective: "1000px" }}>
+                                <div
+                                    className={cn(
+                                        "relative w-full aspect-[1.6/1] cursor-pointer transition-all duration-700 transform-gpu group",
+                                    )}
+                                    onClick={index === currentIndex ? handleFlip : undefined}
+                                    style={{
+                                        transformStyle: "preserve-3d",
+                                        transform: (index === currentIndex && isFlipped) ? "rotateY(180deg)" : "rotateY(0deg)"
                                     }}
                                 >
-                                    <Lightbulb className="w-4 h-4 mr-2" />
-                                    Hint
-                                </Button>
-                            )}
+                                    {/* Front Face */}
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+                                    >
+                                        <div className={cn(
+                                            "w-full h-full rounded-[2rem] bg-card border border-border shadow-xl p-12 flex flex-col items-center justify-center text-center",
+                                            "hover:shadow-2xl hover:border-primary/20 transition-all duration-300",
+                                            "bg-gradient-to-br from-card to-secondary/10"
+                                        )}>
+                                            <div className="absolute top-8 left-8">
+                                                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium tracking-wider uppercase">
+                                                    Question
+                                                </span>
+                                            </div>
 
-                            {showHint && currentCard.hint && (
-                                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-3/4 animate-in fade-in slide-in-from-bottom-2">
-                                    <div className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-4 py-2 rounded-lg text-sm border border-yellow-500/20">
-                                        💡 {currentCard.hint}
+                                            <h3 className="text-3xl font-medium leading-tight text-foreground/90">
+                                                {card.front}
+                                            </h3>
+
+                                            {card.hint && !showHint && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="absolute bottom-8 right-8 text-muted-foreground hover:text-primary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setShowHint(true);
+                                                    }}
+                                                >
+                                                    <Lightbulb className="w-4 h-4 mr-2" />
+                                                    Hint
+                                                </Button>
+                                            )}
+
+                                            {showHint && index === currentIndex && card.hint && (
+                                                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-3/4 animate-in fade-in slide-in-from-bottom-2">
+                                                    <div className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-4 py-2 rounded-lg text-sm border border-yellow-500/20">
+                                                        💡 {card.hint}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground/30 text-sm font-medium flex items-center gap-2 group-hover:text-muted-foreground/50 transition-colors">
+                                                <Repeat className="w-3 h-3" />
+                                                Click to flip
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Back Face */}
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            backfaceVisibility: "hidden",
+                                            WebkitBackfaceVisibility: "hidden",
+                                            transform: "rotateY(180deg)"
+                                        }}
+                                    >
+                                        <div className={cn(
+                                            "w-full h-full rounded-[2rem] bg-card border border-primary/20 shadow-xl p-12 flex flex-col items-center justify-center text-center",
+                                            "bg-gradient-to-br from-primary/5 via-card to-accent/5",
+                                            "relative overflow-hidden"
+                                        )}>
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+
+                                            <div className="absolute top-8 left-8">
+                                                <span className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium tracking-wider uppercase shadow-sm">
+                                                    Answer
+                                                </span>
+                                            </div>
+
+                                            <div className="prose prose-lg dark:prose-invert max-w-none">
+                                                <p className="text-2xl leading-relaxed font-medium text-foreground/90 whitespace-pre-wrap">
+                                                    {card.back}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-
-                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-muted-foreground/30 text-sm font-medium flex items-center gap-2 group-hover:text-muted-foreground/50 transition-colors">
-                                <Repeat className="w-3 h-3" />
-                                Click to flip
                             </div>
                         </div>
-                    </div>
-
-                    {/* Back Face */}
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            backfaceVisibility: "hidden",
-                            WebkitBackfaceVisibility: "hidden",
-                            transform: "rotateY(180deg)"
-                        }}
-                    >
-                        <div className={cn(
-                            "w-full h-full rounded-[2rem] bg-card border border-primary/20 shadow-xl p-12 flex flex-col items-center justify-center text-center",
-                            "bg-gradient-to-br from-primary/5 via-card to-accent/5",
-                            "relative overflow-hidden"
-                        )}>
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-
-                            <div className="absolute top-8 left-8">
-                                <span className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium tracking-wider uppercase shadow-sm">
-                                    Answer
-                                </span>
-                            </div>
-
-                            <div className="prose prose-lg dark:prose-invert max-w-none">
-                                <p className="text-2xl leading-relaxed font-medium text-foreground/90 whitespace-pre-wrap">
-                                    {currentCard.back}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
 
             {/* Controls */}
-            <div className="mt-12 w-full max-w-2xl">
+            <div className="mt-6 w-full max-w-2xl">
                 {!isFlipped ? (
                     <div className="flex items-center justify-between">
                         <Button
@@ -233,7 +252,7 @@ export function FlashcardStudy({
                             size="icon"
                             className="h-12 w-12 rounded-full border-2"
                             onClick={handlePrevious}
-                            disabled={currentIndex === 0}
+                            disabled={!emblaApi?.canScrollPrev()}
                         >
                             <ChevronLeft className="w-6 h-6" />
                         </Button>
@@ -243,7 +262,7 @@ export function FlashcardStudy({
                             onClick={handleFlip}
                             className="h-12 px-8 rounded-full shadow-lg hover:shadow-primary/25 hover:scale-105 transition-all"
                         >
-                            <RotateCcw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform" />
+                            <RotateCcw className="w-4 h-4 mr-2" />
                             Reveal Answer
                         </Button>
 
