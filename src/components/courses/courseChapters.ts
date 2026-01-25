@@ -32,6 +32,7 @@ export interface CourseWithChapters extends Course {
     objectives: string[];
     prerequisites: string[];
     syllabus?: string; // Link to uploaded syllabus
+    enrolled?: boolean;
 }
 
 export const courseChaptersData: Record<string, Chapter[]> = {

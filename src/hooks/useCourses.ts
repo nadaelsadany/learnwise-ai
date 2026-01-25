@@ -51,8 +51,7 @@ export const useCourses = () => {
 
       if (error) throw error;
 
-      // If applicant, also fetch their enrollments
-      if (role === 'applicant' && user) {
+      if (user) {
         const { data: enrollments } = await supabase
           .from('enrollments')
           .select('*')
@@ -155,29 +154,46 @@ export const useCourses = () => {
   };
 
   const enrollInCourse = async (courseId: string) => {
-    if (!user) return { error: new Error('Not authenticated') };
+    if (!user) {
+      toast({
+        title: 'Not Authenticated',
+        description: 'Please log in to enroll in courses',
+        variant: 'destructive',
+      });
+      return { error: new Error('Not authenticated') };
+    }
 
     try {
+      console.log("Enrolling user:", user.id, "in course:", courseId);
+
       const { error } = await supabase.from('enrollments').insert({
         student_id: user.id,
         course_id: courseId,
+        progress_percentage: 0,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase enrollment error:", error);
+        throw error;
+      }
 
       toast({
         title: 'Enrolled!',
         description: 'You have successfully enrolled in this course',
       });
 
-      // Refresh courses
-      await fetchPublishedCourses();
+      // Refresh both published and enrolled courses
+      await Promise.all([
+        fetchPublishedCourses(),
+        fetchEnrolledCourses()
+      ]);
 
       return { error: null };
     } catch (error) {
+      console.error('Enrollment Failed Error:', error);
       toast({
         title: 'Enrollment Failed',
-        description: (error as Error).message,
+        description: (error as Error).message || 'An unexpected error occurred during enrollment.',
         variant: 'destructive',
       });
       return { error: error as Error };
@@ -311,7 +327,18 @@ export const useCourses = () => {
         .select('*', { count: 'exact', head: true })
         .eq('course_id', courseId);
 
-      return { course: { ...data, enrollmentCount: count || 0 }, error: null };
+      let enrollment = null;
+      if (user) {
+        const { data: enrollData } = await supabase
+          .from('enrollments')
+          .select('*')
+          .eq('course_id', courseId)
+          .eq('student_id', user.id)
+          .maybeSingle();
+        enrollment = enrollData;
+      }
+
+      return { course: { ...data, enrollmentCount: count || 0, enrollment }, error: null };
     } catch (error) {
       console.error('Error fetching course:', error);
       return { course: null, error: error as Error };

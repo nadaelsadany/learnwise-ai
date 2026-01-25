@@ -42,39 +42,31 @@ const CourseCatalog = () => {
     enrollInCourse,
   } = useCourses();
 
-  const [allCourses, setAllCourses] = useState<CourseWithEnrollment[]>([]);
-  const [enrolledCourses, setEnrolledCourses] = useState<CourseWithEnrollment[]>([]);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadCourses = async () => {
-      if (activeTab === "browse") {
-        await fetchPublishedCourses();
-      } else {
-        await fetchEnrolledCourses();
-      }
-    };
-    loadCourses();
-  }, [activeTab]);
-
-  useEffect(() => {
     if (activeTab === "browse") {
-      setAllCourses(courses);
+      fetchPublishedCourses();
     } else {
-      setEnrolledCourses(courses);
+      fetchEnrolledCourses();
     }
-  }, [courses, activeTab]);
+  }, [activeTab]);
 
   const handleEnroll = async (courseId: string) => {
     setEnrollingId(courseId);
-    await enrollInCourse(courseId);
+    const { error } = await enrollInCourse(courseId);
     setEnrollingId(null);
+
+    // If successful, the hook's 'courses' state will be refreshed automatically
+    // by fetchPublishedCourses call inside enrollInCourse.
   };
 
-  const filteredCourses = (activeTab === "browse" ? allCourses : enrolledCourses).filter((course) => {
+  const currentCourses = courses;
+
+  const filteredCourses = currentCourses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      (course.description && course.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesLevel = levelFilter === "all" || course.level === levelFilter;
     return matchesSearch && matchesLevel;
   });

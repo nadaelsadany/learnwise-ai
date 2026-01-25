@@ -24,7 +24,8 @@ import {
     AlertCircle,
     Upload,
     CalendarDays,
-    Paperclip
+    Paperclip,
+    GraduationCap
 } from "lucide-react";
 
 const CourseDetail = () => {
@@ -34,8 +35,9 @@ const CourseDetail = () => {
     const [openChapterId, setOpenChapterId] = useState<string | null>(null);
     const [courseData, setCourseData] = useState<CourseWithChapters | null>(null);
     const [loading, setLoading] = useState(true);
+    const [enrolling, setEnrolling] = useState(false);
 
-    const { getCourseById } = useCourses();
+    const { getCourseById, enrollInCourse } = useCourses();
     const { fetchCurriculum } = useCourseEditor();
 
     useEffect(() => {
@@ -90,7 +92,8 @@ const CourseDetail = () => {
                     instructor: "Instructor", // Need to join with profiles
                     rating: 4.5,
                     studentsEnrolled: (course as any).enrollmentCount || 0,
-                    progress: 0,
+                    progress: (course as any).enrollment?.progress_percentage || 0,
+                    enrolled: !!(course as any).enrollment,
                     tags: [],
                     chapters: mappedChapters,
                     objectives: ["Master the course content", "Complete all practical exercises"],
@@ -165,6 +168,24 @@ const CourseDetail = () => {
     };
 
     const nextLesson = getNextLesson();
+
+    const handleEnroll = async () => {
+        if (!courseId) return;
+        setEnrolling(true);
+        const { error } = await enrollInCourse(courseId);
+        if (!error) {
+            // Refresh local state
+            const { course } = await getCourseById(courseId);
+            if (course) {
+                setCourseData(prev => prev ? {
+                    ...prev,
+                    enrolled: true,
+                    progress: (course as any).enrollment?.progress_percentage || 0
+                } : null);
+            }
+        }
+        setEnrolling(false);
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -265,24 +286,44 @@ const CourseDetail = () => {
                                 </div>
                             </div>
 
-                            {/* Continue Button */}
-                            {nextLesson && (
-                                <div className="flex items-center gap-4">
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-4">
+                                {course.enrolled ? (
+                                    nextLesson && (
+                                        <Button
+                                            size="lg"
+                                            className="gap-2"
+                                            onClick={() => {
+                                                navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
+                                            }}
+                                        >
+                                            <Play className="w-5 h-5" />
+                                            Continue: {nextLesson.lesson.title}
+                                        </Button>
+                                    )
+                                ) : (
                                     <Button
                                         size="lg"
                                         className="gap-2"
-                                        onClick={() => {
-                                            navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
-                                        }}
+                                        onClick={handleEnroll}
+                                        disabled={enrolling}
                                     >
-                                        <Play className="w-5 h-5" />
-                                        Continue: {nextLesson.lesson.title}
+                                        {enrolling ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <GraduationCap className="w-5 h-5" />
+                                        )}
+                                        Enroll Now
                                     </Button>
-                                    <span className="text-sm text-muted-foreground">
-                                        Chapter {nextLesson.chapter.number} • {nextLesson.lesson.duration}
-                                    </span>
-                                </div>
-                            )}
+                                )}
+                                <span className="text-sm text-muted-foreground">
+                                    {course.enrolled ? (
+                                        nextLesson ? `Chapter ${nextLesson.chapter.number} • ${nextLesson.lesson.duration}` : "Course completed"
+                                    ) : (
+                                        "Enroll to start learning"
+                                    )}
+                                </span>
+                            </div>
                         </div>
                     </section>
 
