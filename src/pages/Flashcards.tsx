@@ -6,6 +6,7 @@ import {
     FlashcardDeckCard,
     FlashcardStudy,
     mockDecks,
+    mockFlashcards,
     getFlashcardsForDeck,
     FlashcardDeck
 } from "@/components/flashcards";
@@ -32,6 +33,7 @@ import {
 const Flashcards = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [decks, setDecks] = useState<FlashcardDeck[]>(mockDecks);
+    const [flashcards, setFlashcards] = useState<Record<string, any>>(mockFlashcards);
     const [studyingDeckId, setStudyingDeckId] = useState<string | null>(null);
     const [showResults, setShowResults] = useState<{ correct: number; total: number } | null>(null);
 
@@ -39,12 +41,14 @@ const Flashcards = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [newDeckName, setNewDeckName] = useState("");
     const [newDeckTopic, setNewDeckTopic] = useState("");
+    const [initialCardFront, setInitialCardFront] = useState("");
+    const [initialCardBack, setInitialCardBack] = useState("");
 
     const studyingDeck = studyingDeckId
         ? decks.find(d => d.id === studyingDeckId)
         : null;
     const studyCards = studyingDeckId
-        ? getFlashcardsForDeck(studyingDeckId)
+        ? flashcards[studyingDeckId] || []
         : [];
 
     // Stats
@@ -70,22 +74,43 @@ const Flashcards = () => {
     };
 
     const handleCreateDeck = () => {
-        if (!newDeckName.trim() || !newDeckTopic.trim()) return;
+        if (!newDeckName.trim() || !newDeckTopic.trim() || !initialCardFront.trim() || !initialCardBack.trim()) return;
 
+        const deckId = crypto.randomUUID();
         const newDeck: FlashcardDeck = {
-            id: crypto.randomUUID(),
+            id: deckId,
             name: newDeckName,
             description: newDeckTopic,
-            cardCount: 0,
+            category: "General",
+            cardCount: 1,
             masteredCount: 0,
-            dueCount: 0,
+            dueCount: 1,
+            color: "from-blue-500 to-cyan-600",
+            icon: "BookOpen",
             lastStudied: null
         };
 
+        const newCard = {
+            id: crypto.randomUUID(),
+            deckId: deckId,
+            front: initialCardFront,
+            back: initialCardBack,
+            difficulty: "new" as const,
+            correctCount: 0,
+            incorrectCount: 0,
+            streak: 0,
+        };
+
+        setFlashcards(prev => ({
+            ...prev,
+            [deckId]: [newCard]
+        }));
         setDecks(prev => [newDeck, ...prev]);
         setIsCreateOpen(false);
         setNewDeckName("");
         setNewDeckTopic("");
+        setInitialCardFront("");
+        setInitialCardBack("");
     };
 
     return (
@@ -242,10 +267,34 @@ const Flashcards = () => {
                                 onChange={(e) => setNewDeckTopic(e.target.value)}
                             />
                         </div>
+
+                        <div className="pt-4 border-t space-y-4">
+                            <h4 className="text-sm font-semibold flex items-center gap-2">
+                                <Plus className="w-4 h-4" /> Add Initial Card
+                            </h4>
+                            <div className="space-y-2">
+                                <Label htmlFor="front">Question (Front)</Label>
+                                <Input
+                                    id="front"
+                                    placeholder="Enter question"
+                                    value={initialCardFront}
+                                    onChange={(e) => setInitialCardFront(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="back">Answer (Back)</Label>
+                                <Input
+                                    id="back"
+                                    placeholder="Enter answer"
+                                    value={initialCardBack}
+                                    onChange={(e) => setInitialCardBack(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateDeck} disabled={!newDeckName || !newDeckTopic}>Create Deck</Button>
+                        <Button onClick={handleCreateDeck} disabled={!newDeckName || !newDeckTopic || !initialCardFront || !initialCardBack}>Create Deck</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
