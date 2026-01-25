@@ -18,6 +18,19 @@ const InstructorSettings = () => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
+    // Profile State
+    const [profile, setProfile] = useState({
+        firstName: "Sarah",
+        lastName: "Mitchell",
+        bio: "Senior Software Engineer with 10+ years of experience in web development. Passionate about teaching modern React patterns.",
+        website: "https://sarahmitchell.dev",
+        emailNotifications: {
+            enrollments: true,
+            completions: true,
+            questions: false
+        }
+    });
+
     const handleSave = () => {
         setIsLoading(true);
         setTimeout(() => {
@@ -64,7 +77,7 @@ const InstructorSettings = () => {
                                     <div className="flex items-center gap-6">
                                         <Avatar className="w-20 h-20">
                                             <AvatarImage src="/placeholder-avatar.jpg" />
-                                            <AvatarFallback className="text-lg">JD</AvatarFallback>
+                                            <AvatarFallback className="text-lg">{profile.firstName[0]}{profile.lastName[0]}</AvatarFallback>
                                         </Avatar>
                                         <div className="space-y-2">
                                             <Button variant="outline" size="sm">Change Avatar</Button>
@@ -75,17 +88,31 @@ const InstructorSettings = () => {
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label htmlFor="firstName">First Name</Label>
-                                            <Input id="firstName" defaultValue="John" />
+                                            <Input
+                                                id="firstName"
+                                                value={profile.firstName}
+                                                onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="lastName">Last Name</Label>
-                                            <Input id="lastName" defaultValue="Doe" />
+                                            <Input
+                                                id="lastName"
+                                                value={profile.lastName}
+                                                onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                                            />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="bio">Bio</Label>
-                                        <Textarea id="bio" className="h-24" placeholder="Tell students about yourself..." />
+                                        <Textarea
+                                            id="bio"
+                                            className="h-24"
+                                            placeholder="Tell students about yourself..."
+                                            value={profile.bio}
+                                            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                                        />
                                         <p className="text-xs text-muted-foreground">Brief description for your instructor profile.</p>
                                     </div>
 
@@ -95,7 +122,13 @@ const InstructorSettings = () => {
                                             <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
                                                 <Globe className="w-4 h-4" />
                                             </span>
-                                            <Input id="website" className="rounded-l-none" placeholder="https://your-website.com" />
+                                            <Input
+                                                id="website"
+                                                className="rounded-l-none"
+                                                placeholder="https://your-website.com"
+                                                value={profile.website}
+                                                onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                                            />
                                         </div>
                                     </div>
                                 </CardContent>
@@ -122,21 +155,30 @@ const InstructorSettings = () => {
                                                 <Label>New Enrollments</Label>
                                                 <p className="text-sm text-muted-foreground">Receive an email when a student enrolls.</p>
                                             </div>
-                                            <Switch defaultChecked />
+                                            <Switch
+                                                checked={profile.emailNotifications.enrollments}
+                                                onCheckedChange={(c) => setProfile(p => ({ ...p, emailNotifications: { ...p.emailNotifications, enrollments: c } }))}
+                                            />
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-0.5">
                                                 <Label>Course Completions</Label>
                                                 <p className="text-sm text-muted-foreground">Receive an email when a student completes a course.</p>
                                             </div>
-                                            <Switch defaultChecked />
+                                            <Switch
+                                                checked={profile.emailNotifications.completions}
+                                                onCheckedChange={(c) => setProfile(p => ({ ...p, emailNotifications: { ...p.emailNotifications, completions: c } }))}
+                                            />
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-0.5">
                                                 <Label>Q&A Updates</Label>
                                                 <p className="text-sm text-muted-foreground">Receive an email when a student asks a question.</p>
                                             </div>
-                                            <Switch />
+                                            <Switch
+                                                checked={profile.emailNotifications.questions}
+                                                onCheckedChange={(c) => setProfile(p => ({ ...p, emailNotifications: { ...p.emailNotifications, questions: c } }))}
+                                            />
                                         </div>
                                     </div>
                                 </CardContent>

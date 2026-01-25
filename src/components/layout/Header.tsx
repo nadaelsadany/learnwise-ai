@@ -8,10 +8,10 @@ interface HeaderProps {
   sidebarCollapsed?: boolean;
 }
 
-export const Header = ({ 
-  userName = "Alex Johnson", 
+export const Header = ({
+  userName = "Alex Johnson",
   userRole = "Student",
-  sidebarCollapsed = false 
+  sidebarCollapsed = false
 }: HeaderProps) => {
   return (
     <header className={cn(
@@ -33,7 +33,12 @@ export const Header = ({
       {/* Right Section */}
       <div className="flex items-center gap-4">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          onClick={() => window.location.href = userRole === 'Instructor' ? '/instructor/notifications' : '/notifications'}
+        >
           <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
         </Button>

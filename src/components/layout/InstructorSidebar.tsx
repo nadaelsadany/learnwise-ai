@@ -33,7 +33,6 @@ const navItems: NavItem[] = [
   { icon: BarChart3, label: "Analytics", href: "/instructor/analytics" },
   { icon: FileEdit, label: "Content Tools", href: "/instructor/content" },
   { icon: Sparkles, label: "AI Assistant", href: "/instructor/ai-tools" },
-  { icon: Bell, label: "Notifications", href: "/instructor/notifications" },
 ];
 
 interface SidebarProps {
