@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import { useToast } from './use-toast';
 
 export interface ChatMessage {
     id: string;
@@ -13,6 +14,7 @@ export const useAIChat = () => {
     const { user } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
 
     // Load history from localStorage on mount
     useEffect(() => {
@@ -25,7 +27,6 @@ export const useAIChat = () => {
                     console.error("Failed to parse chat history", e);
                 }
             } else {
-                // Default welcome message
                 setMessages([
                     {
                         id: '1',
@@ -45,7 +46,7 @@ export const useAIChat = () => {
         }
     }, [messages, user]);
 
-    const sendMessage = async (content: string, tab: string = "chat") => {
+    const sendMessage = useCallback(async (content: string, tab: string = "chat") => {
         if (!content.trim()) return;
 
         const userMessage: ChatMessage = {
@@ -89,9 +90,9 @@ export const useAIChat = () => {
             setMessages(prev => [...prev, assistantMessage]);
             setIsLoading(false);
         }, 1500);
-    };
+    }, []);
 
-    const clearHistory = () => {
+    const clearHistory = useCallback(() => {
         setMessages([
             {
                 id: crypto.randomUUID(),
@@ -100,7 +101,10 @@ export const useAIChat = () => {
                 timestamp: new Date().toISOString()
             }
         ]);
-    };
+        if (user) {
+            localStorage.removeItem(`chat_history_${user.id}`);
+        }
+    }, [user]);
 
     return {
         messages,

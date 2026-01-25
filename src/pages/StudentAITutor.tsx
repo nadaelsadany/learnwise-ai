@@ -69,21 +69,20 @@ const StudentAITutor = () => {
         return () => window.speechSynthesis.cancel();
     }, []);
 
-    // 1. Auto-send when recording stops
+    // 1. Synchronize voice state with UI and handle auto-send
     useEffect(() => {
-        if (!isListening && transcript.trim()) {
-            sendMessage(transcript, activeTab);
-            setInputMessage("");
-            setTranscript("");
+        if (isListening) {
+            if (transcript) setInputMessage(transcript);
+        } else {
+            // Processing after recording stops
+            if (transcript.trim()) {
+                console.log("Auto-sending transcript:", transcript);
+                sendMessage(transcript, activeTab);
+                setInputMessage("");
+                setTranscript("");
+            }
         }
-    }, [isListening, transcript, activeTab, sendMessage, setInputMessage, setTranscript]);
-
-    // 2. Sync transcript to input while listening (visual feedback)
-    useEffect(() => {
-        if (isListening && transcript) {
-            setInputMessage(transcript);
-        }
-    }, [isListening, transcript, setInputMessage]);
+    }, [isListening, transcript, activeTab, sendMessage]);
 
     // 3. Auto-speak new AI messages
     useEffect(() => {
