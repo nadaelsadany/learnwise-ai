@@ -8,6 +8,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
 import ApplicantDashboard from "./pages/ApplicantDashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import InstructorCourses from "./pages/InstructorCourses";
+import CourseStudents from "./pages/CourseStudents";
+import CourseCatalog from "./pages/CourseCatalog";
 import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
 import Courses from "./pages/Courses";
@@ -56,6 +59,14 @@ const AppRoutes = () => {
 
       {/* Applicant routes */}
       <Route
+        path="/catalog"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <CourseCatalog />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/courses"
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
@@ -89,6 +100,38 @@ const AppRoutes = () => {
       />
 
       {/* Instructor routes */}
+      <Route
+        path="/instructor"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/courses"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorCourses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/courses/:courseId/students"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <CourseStudents />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/syllabus-upload"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <SyllabusUpload />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/instructor"
         element={
