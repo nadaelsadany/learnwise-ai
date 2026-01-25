@@ -16,6 +16,9 @@ export interface Course {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  attachment_url?: string | null;
 }
 
 export interface Enrollment {

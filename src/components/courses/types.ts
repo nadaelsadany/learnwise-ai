@@ -15,6 +15,9 @@ export interface Course {
     isFeatured?: boolean;
     isNew?: boolean;
     lastAccessed?: Date;
+    startDate?: string;
+    endDate?: string;
+    attachmentUrl?: string; // URL to PDF/File
 }
 
 export type CourseCategory =

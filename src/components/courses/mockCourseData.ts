@@ -16,6 +16,9 @@ export const mockCourses: Course[] = [
         tags: ["ISTQB", "Certification", "Foundation"],
         isFeatured: true,
         lastAccessed: new Date("2026-01-03"),
+        startDate: "2026-02-01T09:00",
+        endDate: "2026-05-01T17:00",
+        attachmentUrl: "https://example.com/syllabus.pdf"
     },
     {
         id: "c2",

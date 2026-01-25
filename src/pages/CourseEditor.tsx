@@ -14,6 +14,9 @@ import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { useCourses } from "@/hooks/useCourses";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 const CourseEditor = () => {
     const { courseId } = useParams();
@@ -28,7 +31,10 @@ const CourseEditor = () => {
         category: "",
         level: "beginner",
         minApplicants: 0,
-        pdfUrl: ""
+        pdfUrl: "",
+        startDate: "",
+        endDate: "",
+        attachmentUrl: ""
     });
 
     const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -40,9 +46,12 @@ const CourseEditor = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Upload PDF (Mock usage)
-        // const url = await uploadMedia(file, 'syllabi');
-        // if (url) setCourseInfo(prev => ({ ...prev, pdfUrl: url }));
+        // Upload PDF and save as attachment
+        const url = await uploadMedia(file, 'attachments');
+        if (url) {
+            setCourseInfo(prev => ({ ...prev, pdfUrl: url, attachmentUrl: url }));
+            console.log("Attachment uploaded:", url);
+        }
 
         // AI Analyze
         const structure = await analyzeSyllabus(file);
@@ -70,7 +79,10 @@ const CourseEditor = () => {
             title: courseInfo.title,
             description: courseInfo.description,
             category: courseInfo.category,
-            level: courseInfo.level
+            level: courseInfo.level,
+            start_date: courseInfo.startDate,
+            end_date: courseInfo.endDate,
+            attachment_url: courseInfo.attachmentUrl
         });
     };
 
@@ -96,6 +108,7 @@ const CourseEditor = () => {
                         <TabsList>
                             <TabsTrigger value="info">Course Info</TabsTrigger>
                             <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+                            <TabsTrigger value="students">Students</TabsTrigger>
                             <TabsTrigger value="settings">Settings</TabsTrigger>
                         </TabsList>
 
@@ -167,6 +180,27 @@ const CourseEditor = () => {
                                         <p className="text-sm text-muted-foreground">Minimum number of students required to start the course.</p>
                                     </div>
 
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="startDate">Start Date</Label>
+                                            <Input
+                                                id="startDate"
+                                                type="datetime-local"
+                                                value={courseInfo.startDate}
+                                                onChange={(e) => setCourseInfo({ ...courseInfo, startDate: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="endDate">End Date</Label>
+                                            <Input
+                                                id="endDate"
+                                                type="datetime-local"
+                                                value={courseInfo.endDate}
+                                                onChange={(e) => setCourseInfo({ ...courseInfo, endDate: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="pt-4 border-t">
                                         <Label className="mb-2 block">AI Syllabus Analysis</Label>
                                         <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors">
@@ -219,6 +253,65 @@ const CourseEditor = () => {
                                             Save Curriculum
                                         </Button>
                                     </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="students">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Enrolled Students</CardTitle>
+                                    <CardDescription>Manage and view students enrolled in this course.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Student</TableHead>
+                                                <TableHead>Enrolled Date</TableHead>
+                                                <TableHead>Progress</TableHead>
+                                                <TableHead>Status</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {[
+                                                { id: 1, name: "Alice Johnson", email: "alice@example.com", progress: 45, enrolledAt: "2024-01-15", avatar: "AJ" },
+                                                { id: 2, name: "Bob Smith", email: "bob@example.com", progress: 72, enrolledAt: "2024-01-10", avatar: "BS" },
+                                                { id: 3, name: "Charlie Brown", email: "charlie@example.com", progress: 12, enrolledAt: "2024-01-20", avatar: "CB" },
+                                                { id: 4, name: "Diana Prince", email: "diana@example.com", progress: 100, enrolledAt: "2023-12-05", avatar: "DP" },
+                                                { id: 5, name: "Edward Norton", email: "edward@example.com", progress: 0, enrolledAt: "2024-01-25", avatar: "EN" },
+                                            ].map((student) => (
+                                                <TableRow key={student.id}>
+                                                    <TableCell className="flex items-center gap-3">
+                                                        <Avatar>
+                                                            <AvatarFallback>{student.avatar}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <p className="font-medium">{student.name}</p>
+                                                            <p className="text-xs text-muted-foreground">{student.email}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>{student.enrolledAt}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-2 w-full max-w-[100px] bg-secondary rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-primary"
+                                                                    style={{ width: `${student.progress}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-xs text-muted-foreground">{student.progress}%</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={student.progress === 100 ? "default" : "secondary"}>
+                                                            {student.progress === 100 ? "Completed" : "Active"}
+                                                        </Badge>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </CardContent>
                             </Card>
                         </TabsContent>

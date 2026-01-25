@@ -19,7 +19,9 @@ import {
     Play,
     Target,
     AlertCircle,
-    Upload
+    Upload,
+    CalendarDays,
+    Paperclip
 } from "lucide-react";
 
 const CourseDetail = () => {
@@ -158,6 +160,15 @@ const CourseDetail = () => {
                                     <BookOpen className="w-5 h-5" />
                                     <span>{totalLessons} lessons</span>
                                 </div>
+                                {course.startDate && (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <CalendarDays className="w-5 h-5" />
+                                        <span>
+                                            {new Date(course.startDate).toLocaleDateString()}
+                                            {course.endDate ? ` - ${new Date(course.endDate).toLocaleDateString()}` : ''}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Progress Section */}
@@ -280,11 +291,27 @@ const CourseDetail = () => {
                                     Upload Syllabus
                                 </Button>
                             </div>
+
+                            {course.attachmentUrl && (
+                                <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
+                                    <h3 className="font-semibold flex items-center gap-2 mb-4">
+                                        <Paperclip className="w-5 h-5 text-primary" />
+                                        Course Material
+                                    </h3>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                        onClick={() => window.open(course.attachmentUrl, '_blank')}
+                                    >
+                                        Download Attachment
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 };
 
