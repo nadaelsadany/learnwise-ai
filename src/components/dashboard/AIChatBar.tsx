@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mic, Send, Sparkles, X, Loader2 } from "lucide-react";
+import { Mic, MicOff, Send, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
@@ -21,7 +21,6 @@ export const AIChatBar = ({
   const { isListening, transcript, volume, startListening, stopListening, setTranscript } = useVoiceRecognition();
   const { toast } = useToast();
 
-  // 1. Sync transcript to message while listening
   useEffect(() => {
     if (isListening && transcript) {
       setMessage(transcript);
@@ -33,6 +32,7 @@ export const AIChatBar = ({
       onSend?.(message.trim());
       setMessage("");
       setTranscript("");
+      setIsExpanded(false);
     }
   };
 
@@ -51,6 +51,7 @@ export const AIChatBar = ({
       setMessage("");
       startListening((text) => {
         onSend?.(text);
+        setIsExpanded(false);
       });
       toast({
         title: "Listening...",
@@ -69,87 +70,114 @@ export const AIChatBar = ({
           {/* AI Glow Effect */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 blur-xl opacity-50 -z-10 animate-pulse-glow" />
 
-          {/* Input Area */}
-          <div className="flex items-center gap-2 p-3">
-            {/* AI Icon */}
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-glow-accent">
-              <Sparkles className="w-5 h-5 text-accent-foreground" />
-            </div>
+          {/* Main Container */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3 p-3">
+              {/* AI Icon */}
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-glow-accent">
+                <Sparkles className="w-5 h-5 text-accent-foreground" />
+              </div>
 
-            {/* Input */}
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsExpanded(true)}
-                onBlur={() => !message && setIsExpanded(false)}
-                placeholder={placeholder}
-                className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground py-2 px-1"
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              {/* Voice Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "p-2 rounded-xl transition-all duration-75",
-                  isListening ? "bg-destructive/10 text-destructive" : "hover:bg-accent/10 text-accent group-hover:scale-110"
+              {/* Input Wrapper */}
+              <div className="flex-1 relative flex flex-col gap-2">
+                {isListening && (
+                  <div className="absolute bottom-full left-0 w-full mb-4 bg-background/90 border border-primary/20 backdrop-blur-xl rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex gap-1 h-4 items-center">
+                        {[...Array(4)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-primary rounded-full animate-voice-bar"
+                            style={{ animationDelay: `${i * 150}ms`, height: '100%' }}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Listening</span>
+                    </div>
+                    <p className="text-sm text-foreground/80 italic font-medium truncate">
+                      {transcript || "Speak now..."}
+                    </p>
+                  </div>
                 )}
-                style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
-                onClick={toggleVoice}
-              >
-                {isListening ? (
-                  <X className="w-5 h-5" />
-                ) : (
-                  <Mic className="w-5 h-5" />
-                )}
-              </Button>
 
-              {/* Send Button */}
-              <Button
-                variant="accent"
-                size="icon"
-                className="rounded-xl"
-                onClick={handleSend}
-                disabled={!message.trim() || isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
-            </div>
-          </div>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-none outline-none py-2 text-sm"
+                    placeholder={isListening ? "Listening..." : placeholder}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => setIsExpanded(true)}
+                    disabled={isLoading || isListening}
+                  />
+                </div>
+              </div>
 
-          {/* Quick Suggestions */}
-          {isExpanded && (
-            <div className="px-3 pb-3 flex flex-wrap gap-2 animate-fade-in">
-              {[
-                "Explain test levels",
-                "Quiz me on ISTQB",
-                "Review my weak topics",
-                "Create flashcards"
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => {
-                    setMessage(suggestion);
-                    onSend?.(suggestion);
-                  }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+              {/* Actions */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "p-2 rounded-xl transition-all duration-75",
+                    isListening ? "bg-destructive/10 text-destructive border border-destructive/20" : "text-muted-foreground hover:text-primary"
+                  )}
+                  style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
+                  onClick={toggleVoice}
+                  disabled={isLoading}
                 >
-                  {suggestion}
-                </button>
-              ))}
+                  {isListening ? (
+                    <MicOff className="w-5 h-5" />
+                  ) : (
+                    <Mic className="w-5 h-5" />
+                  )}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="icon"
+                  className="rounded-xl shadow-glow-primary bg-primary text-primary-foreground"
+                  onClick={handleSend}
+                  disabled={!message.trim() || isLoading || isListening}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </Button>
+              </div>
             </div>
-          )}
+
+            {/* Quick Suggestions */}
+            {isExpanded && !isListening && (
+              <div className="px-3 pb-3 flex flex-wrap gap-2 animate-fade-in border-t border-border/10 pt-3">
+                {[
+                  "Explain test levels",
+                  "Quiz me on ISTQB",
+                  "Review my weak topics",
+                  "Create flashcards"
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => {
+                      onSend?.(suggestion);
+                      setIsExpanded(false);
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground ml-auto"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

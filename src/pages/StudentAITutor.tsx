@@ -33,6 +33,7 @@ const StudentAITutor = () => {
     const [inputMessage, setInputMessage] = useState("");
     const [activeTab, setActiveTab] = useState("chat");
     const [speakingId, setSpeakingId] = useState<string | null>(null);
+    const [revealedTranscriptIds, setRevealedTranscriptIds] = useState<Set<string>>(new Set());
 
     const { isListening, transcript, volume, startListening, stopListening, setTranscript } = useVoiceRecognition();
     const { toast } = useToast();
@@ -52,6 +53,15 @@ const StudentAITutor = () => {
                 description: "Speak your question now.",
             });
         }
+    };
+
+    const toggleReveal = (id: string) => {
+        setRevealedTranscriptIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     };
 
     const speakMessage = (text: string, id: string) => {
@@ -83,18 +93,17 @@ const StudentAITutor = () => {
     useEffect(() => {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id !== '1') {
-            // Wait a brief moment for the message to be fully rendered
             setTimeout(() => {
                 speakMessage(lastMessage.content, lastMessage.id);
             }, 100);
         }
-    }, [messages, speakMessage]);
+    }, [messages]);
 
     useEffect(() => {
         const query = searchParams.get("q");
         if (query) {
             sendMessage(query);
-            setSearchParams({}); // Clear the param after sending
+            setSearchParams({});
         }
     }, [searchParams]);
 
@@ -169,27 +178,72 @@ const StudentAITutor = () => {
                                                     )}>
                                                         {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                                     </div>
-                                                    <div className={cn(
-                                                        "rounded-2xl px-4 py-2 text-sm relative group/msg",
-                                                        msg.role === 'user'
-                                                            ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                            : "bg-muted rounded-tl-none"
-                                                    )}>
-                                                        {msg.content}
 
-                                                        {msg.role === 'assistant' && (
-                                                            <button
-                                                                onClick={() => speakMessage(msg.content, msg.id)}
-                                                                className="absolute -right-8 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground opacity-0 group-hover/msg:opacity-100 transition-opacity"
-                                                            >
-                                                                {speakingId === msg.id ? (
-                                                                    <StopCircle className="w-4 h-4 text-destructive" />
-                                                                ) : (
-                                                                    <Volume2 className="w-4 h-4" />
-                                                                )}
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    {msg.role === 'assistant' ? (
+                                                        <div className="flex flex-col gap-2 w-full">
+                                                            <div className={cn(
+                                                                "rounded-2xl px-6 py-4 text-sm relative group/msg bg-muted border border-border/50 shadow-sm",
+                                                                "flex items-center gap-4 min-w-[200px]"
+                                                            )}>
+                                                                <button
+                                                                    onClick={() => speakMessage(msg.content, msg.id)}
+                                                                    className={cn(
+                                                                        "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                                                                        speakingId === msg.id ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary hover:bg-primary/20"
+                                                                    )}
+                                                                >
+                                                                    {speakingId === msg.id ? (
+                                                                        <StopCircle className="w-5 h-5" />
+                                                                    ) : (
+                                                                        <Volume2 className="w-5 h-5" />
+                                                                    )}
+                                                                </button>
+
+                                                                <div className="flex-1 flex flex-col">
+                                                                    <div className="flex items-center gap-1 h-8">
+                                                                        {[...Array(12)].map((_, i) => (
+                                                                            <div
+                                                                                key={i}
+                                                                                className={cn(
+                                                                                    "w-1 bg-primary/30 rounded-full transition-all duration-300",
+                                                                                    speakingId === msg.id ? "animate-voice-bar" : "h-1"
+                                                                                )}
+                                                                                style={{
+                                                                                    height: speakingId === msg.id ? `${Math.random() * 100}%` : '4px',
+                                                                                    animationDelay: `${i * 100}ms`
+                                                                                }}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">AI Voice Response</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex justify-start">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-xs h-7 text-primary/70 hover:text-primary hover:bg-primary/10"
+                                                                    onClick={() => toggleReveal(msg.id)}
+                                                                >
+                                                                    {revealedTranscriptIds.has(msg.id) ? "Hide Transcript" : "Convert to Text"}
+                                                                </Button>
+                                                            </div>
+
+                                                            {revealedTranscriptIds.has(msg.id) && (
+                                                                <div className="bg-card border border-border/50 rounded-xl p-4 text-sm leading-relaxed animate-in fade-in slide-in-from-top-2">
+                                                                    {msg.content}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className={cn(
+                                                            "rounded-2xl px-4 py-2 text-sm",
+                                                            "bg-primary text-primary-foreground rounded-tr-none shadow-sm"
+                                                        )}>
+                                                            {msg.content}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                             {isLoading && (
@@ -197,7 +251,7 @@ const StudentAITutor = () => {
                                                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                                                         <Bot className="w-4 h-4" />
                                                     </div>
-                                                    <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-2 flex items-center gap-1">
+                                                    <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-2 flex items-center gap-1 shadow-sm">
                                                         <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                                                         <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                                         <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -207,7 +261,20 @@ const StudentAITutor = () => {
                                         </div>
                                     </ScrollArea>
                                 </CardContent>
-                                <CardFooter className="p-4 border-t">
+                                <CardFooter className="p-4 border-t flex flex-col gap-3">
+                                    {isListening && (
+                                        <div className="w-full bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-start gap-3 animate-in fade-in zoom-in">
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                                <Mic className="w-4 h-4 text-primary animate-pulse" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs font-semibold text-primary mb-1 uppercase tracking-tighter">Transcribing...</p>
+                                                <p className="text-sm text-foreground/80 italic">
+                                                    {transcript || "Speak now..."}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <form
                                         className="flex w-full items-center gap-2"
                                         onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
@@ -216,15 +283,16 @@ const StudentAITutor = () => {
                                             placeholder={activeTab === 'quiz' ? "Answer here..." : "Type your question..."}
                                             value={inputMessage}
                                             onChange={(e) => setInputMessage(e.target.value)}
-                                            disabled={isLoading}
+                                            disabled={isLoading || isListening}
+                                            className="rounded-xl"
                                         />
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="icon"
                                             className={cn(
-                                                "rounded-xl transition-all duration-75",
-                                                isListening && "bg-destructive/10 text-destructive"
+                                                "rounded-xl transition-all duration-75 min-w-[40px]",
+                                                isListening ? "bg-destructive/10 text-destructive border border-destructive/20" : "bg-muted hover:bg-muted/80"
                                             )}
                                             style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
                                             onClick={handleToggleVoice}
@@ -236,7 +304,7 @@ const StudentAITutor = () => {
                                                 <Mic className="w-4 h-4" />
                                             )}
                                         </Button>
-                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading}>
+                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading || isListening} className="rounded-xl">
                                             <Send className="w-4 h-4" />
                                         </Button>
                                     </form>

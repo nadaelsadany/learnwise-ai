@@ -12,19 +12,28 @@ export const useVoiceRecognition = () => {
     const animationFrameRef = useRef<number | null>(null);
     const { toast } = useToast();
 
+    const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     const stopListening = useCallback(() => {
         if (recognitionRef.current) {
             recognitionRef.current.stop();
+            recognitionRef.current = null;
         }
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
         }
         if (audioContextRef.current) {
-            audioContextRef.current.close();
+            audioContextRef.current.close().catch(() => { });
             audioContextRef.current = null;
+        }
+        if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = null;
         }
         setIsListening(false);
         setVolume(0);
+        console.log("Voice recognition fully stopped.");
     }, []);
 
     const startListening = useCallback((onResult?: (text: string) => void) => {
@@ -33,24 +42,33 @@ export const useVoiceRecognition = () => {
         if (!SpeechRecognition) {
             toast({
                 title: "Not Supported",
-                description: "Voice recognition is not supported in this browser. Try Chrome or Edge.",
+                description: "Voice recognition is not supported in this browser.",
                 variant: "destructive"
             });
             return;
         }
 
         const recognition = new SpeechRecognition();
-        recognition.continuous = false;
+        recognition.continuous = true; // Stay active to prevent early cut-offs
         recognition.interimResults = true;
         recognition.lang = 'en-US';
+
+        const resetSilenceTimer = () => {
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = setTimeout(() => {
+                console.log("Silence detected, stopping...");
+                stopListening();
+            }, 2000); // 2 seconds of silence to auto-stop
+        };
 
         recognition.onstart = () => {
             console.log("Voice recognition started");
             setIsListening(true);
             setTranscript('');
             transcriptRef.current = '';
+            resetSilenceTimer();
 
-            // Start volume analysis
+            // Start volume analysis for visual feedback and silence detection
             try {
                 navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
                     const audioContext = new AudioContext();
@@ -70,6 +88,12 @@ export const useVoiceRecognition = () => {
                         }
                         const average = sum / bufferLength;
                         setVolume(average);
+
+                        // If user is speaking (volume > some threshold), reset silence timer
+                        if (average > 5) {
+                            resetSilenceTimer();
+                        }
+
                         animationFrameRef.current = requestAnimationFrame(updateVolume);
                     };
 
@@ -83,6 +107,7 @@ export const useVoiceRecognition = () => {
         };
 
         recognition.onresult = (event: any) => {
+            resetSilenceTimer();
             let interimText = '';
             let finalText = '';
 
@@ -97,8 +122,6 @@ export const useVoiceRecognition = () => {
             const bestTranscript = finalText || interimText;
             if (bestTranscript) {
                 setTranscript(bestTranscript);
-                // ALWAYS update the ref with the best we have, not just the "final" one
-                // This ensures that if the recognition ends abruptly, we send what we heard
                 transcriptRef.current = finalText || interimText;
                 console.log("Voice update:", { best: bestTranscript, isFinal: !!finalText });
             }
@@ -110,7 +133,9 @@ export const useVoiceRecognition = () => {
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error:", event.error);
-            stopListening();
+            if (event.error !== 'no-speech') {
+                stopListening();
+            }
 
             if (event.error === 'not-allowed') {
                 toast({
@@ -125,16 +150,17 @@ export const useVoiceRecognition = () => {
 
         recognition.onend = () => {
             const final = transcriptRef.current.trim();
-            console.log("Voice recognition onend. Finalizing with:", final);
+            console.log("Voice recognition onend. Result:", final);
             if (final && onResult) {
                 onResult(final);
             }
-            stopListening();
+            // Explicitly ensure cleanup happens
+            if (isListening) stopListening();
         };
 
         recognition.start();
         recognitionRef.current = recognition;
-    }, [toast, stopListening]);
+    }, [toast, stopListening, isListening]);
 
     return {
         isListening,
