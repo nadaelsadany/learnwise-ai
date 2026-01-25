@@ -113,6 +113,26 @@ const Flashcards = () => {
         setInitialCardBack("");
     };
 
+    const handleNextDeck = () => {
+        const currentIndex = decks.findIndex(d => d.id === studyingDeckId);
+        if (currentIndex < decks.length - 1) {
+            setStudyingDeckId(decks[currentIndex + 1].id);
+            setShowResults(null);
+        }
+    };
+
+    const handlePrevDeck = () => {
+        const currentIndex = decks.findIndex(d => d.id === studyingDeckId);
+        if (currentIndex > 0) {
+            setStudyingDeckId(decks[currentIndex - 1].id);
+            setShowResults(null);
+        }
+    };
+
+    const currentIndex = decks.findIndex(d => d.id === studyingDeckId);
+    const hasNextDeck = currentIndex !== -1 && currentIndex < decks.length - 1;
+    const hasPrevDeck = currentIndex > 0;
+
     return (
         <div className="min-h-screen bg-background">
             <ApplicantSidebar onCollapse={setSidebarCollapsed} />
@@ -331,6 +351,10 @@ const Flashcards = () => {
                                 deckName={studyingDeck.name}
                                 onComplete={handleCompleteStudy}
                                 onExit={handleExitStudy}
+                                onNextDeck={handleNextDeck}
+                                onPrevDeck={handlePrevDeck}
+                                hasNextDeck={hasNextDeck}
+                                hasPrevDeck={hasPrevDeck}
                             />
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full">

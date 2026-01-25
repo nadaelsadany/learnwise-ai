@@ -19,9 +19,22 @@ interface FlashcardStudyProps {
     deckName: string;
     onComplete: (results: { correct: number; total: number }) => void;
     onExit: () => void;
+    onNextDeck?: () => void;
+    onPrevDeck?: () => void;
+    hasNextDeck?: boolean;
+    hasPrevDeck?: boolean;
 }
 
-export function FlashcardStudy({ cards, deckName, onComplete, onExit }: FlashcardStudyProps) {
+export function FlashcardStudy({
+    cards,
+    deckName,
+    onComplete,
+    onExit,
+    onNextDeck,
+    onPrevDeck,
+    hasNextDeck,
+    hasPrevDeck
+}: FlashcardStudyProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [showHint, setShowHint] = useState(false);
@@ -75,11 +88,33 @@ export function FlashcardStudy({ cards, deckName, onComplete, onExit }: Flashcar
         <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center">
             {/* Header */}
             <div className="w-full flex items-center justify-between mb-8 max-w-3xl">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">{deckName}</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Card {currentIndex + 1} of {cards.length}
-                    </p>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onPrevDeck}
+                            disabled={!hasPrevDeck}
+                            className="h-8 w-8 rounded-full"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onNextDeck}
+                            disabled={!hasNextDeck}
+                            className="h-8 w-8 rounded-full"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight">{deckName}</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Card {currentIndex + 1} of {cards.length}
+                        </p>
+                    </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={onExit} className="hover:bg-destructive/10 hover:text-destructive">
                     <X className="w-4 h-4 mr-2" />
