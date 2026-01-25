@@ -1,12 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
-import { useStudentStats } from "@/hooks/useStudentStats";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Clock, Trophy, BookOpen, Award, TrendingUp, Flame, Star, Target } from "lucide-react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
+import { Clock, Trophy, BookOpen, Award, TrendingUp, Flame } from "lucide-react";
+import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from "recharts";
 
 const StudentProgress = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
