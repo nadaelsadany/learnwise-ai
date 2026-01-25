@@ -12,6 +12,7 @@ import InstructorCourses from "./pages/InstructorCourses";
 import CourseEditor from "./pages/CourseEditor";
 import CourseStudents from "./pages/CourseStudents";
 import AllStudents from "./pages/AllStudents";
+import StudentProgress from "./pages/StudentProgress";
 import CourseCatalog from "./pages/CourseCatalog";
 import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
@@ -97,6 +98,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <MockExamRunner />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/progress"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <StudentProgress />
           </ProtectedRoute>
         }
       />
