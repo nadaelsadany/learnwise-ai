@@ -48,8 +48,10 @@ export const useVoiceRecognition = () => {
             return;
         }
 
+        stopListening(); // Ensure clean state
+
         const recognition = new SpeechRecognition();
-        recognition.continuous = true; // Stay active to prevent early cut-offs
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
@@ -57,8 +59,8 @@ export const useVoiceRecognition = () => {
             if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = setTimeout(() => {
                 console.log("Silence detected, stopping...");
-                stopListening();
-            }, 2000); // 2 seconds of silence to auto-stop
+                recognition.stop();
+            }, 3000);
         };
 
         recognition.onstart = () => {
@@ -68,7 +70,6 @@ export const useVoiceRecognition = () => {
             transcriptRef.current = '';
             resetSilenceTimer();
 
-            // Start volume analysis for visual feedback and silence detection
             try {
                 navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
                     const audioContext = new AudioContext();
@@ -81,6 +82,7 @@ export const useVoiceRecognition = () => {
                     const dataArray = new Uint8Array(bufferLength);
 
                     const updateVolume = () => {
+                        if (!analyser) return;
                         analyser.getByteFrequencyData(dataArray);
                         let sum = 0;
                         for (let i = 0; i < bufferLength; i++) {
@@ -89,7 +91,6 @@ export const useVoiceRecognition = () => {
                         const average = sum / bufferLength;
                         setVolume(average);
 
-                        // If user is speaking (volume > some threshold), reset silence timer
                         if (average > 5) {
                             resetSilenceTimer();
                         }
@@ -108,59 +109,54 @@ export const useVoiceRecognition = () => {
 
         recognition.onresult = (event: any) => {
             resetSilenceTimer();
-            let interimText = '';
-            let finalText = '';
+            let fullTranscript = '';
 
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalText += event.results[i][0].transcript;
-                } else {
-                    interimText += event.results[i][0].transcript;
-                }
+            for (let i = 0; i < event.results.length; ++i) {
+                fullTranscript += event.results[i][0].transcript;
             }
 
-            const bestTranscript = finalText || interimText;
-            if (bestTranscript) {
-                setTranscript(bestTranscript);
-                transcriptRef.current = finalText || interimText;
-                console.log("Voice update:", { best: bestTranscript, isFinal: !!finalText });
+            if (fullTranscript) {
+                setTranscript(fullTranscript);
+                transcriptRef.current = fullTranscript;
+                console.log("Voice update:", fullTranscript);
             }
-        };
-
-        recognition.onnomatch = () => {
-            console.log("Voice recognition: No match found.");
         };
 
         recognition.onerror = (event: any) => {
             console.error("Speech recognition error:", event.error);
-            if (event.error !== 'no-speech') {
-                stopListening();
+            setIsListening(false);
+
+            let errorMsg = "An error occurred with voice recognition.";
+            if (event.error === 'not-allowed') {
+                errorMsg = "Microphone access denied. Please enable it in browser settings.";
+            } else if (event.error === 'no-speech') {
+                errorMsg = "No speech was detected. Try speaking closer to the mic.";
+            } else if (event.error === 'network') {
+                errorMsg = "Network error. Voice recognition requires an internet connection.";
             }
 
-            if (event.error === 'not-allowed') {
-                toast({
-                    title: "Microphone Access Denied",
-                    description: "Please enable microphone permissions.",
-                    variant: "destructive"
-                });
-            } else if (event.error === 'no-speech') {
-                console.log("No speech detected.");
-            }
+            toast({
+                title: "Voice Error",
+                description: errorMsg,
+                variant: "destructive"
+            });
+
+            stopListening();
         };
 
         recognition.onend = () => {
+            console.log("Voice recognition onend triggered.");
             const final = transcriptRef.current.trim();
-            console.log("Voice recognition onend. Result:", final);
             if (final && onResult) {
+                console.log("Dispatching result to callback:", final);
                 onResult(final);
             }
-            // Explicitly ensure cleanup happens
-            if (isListening) stopListening();
+            stopListening();
         };
 
         recognition.start();
         recognitionRef.current = recognition;
-    }, [toast, stopListening, isListening]);
+    }, [toast, stopListening]);
 
     return {
         isListening,

@@ -18,12 +18,14 @@ export const AIChatBar = ({
 }: AIChatBarProps) => {
   const [message, setMessage] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isVoiceStarting, setIsVoiceStarting] = useState(false);
   const { isListening, transcript, volume, startListening, stopListening, setTranscript } = useVoiceRecognition();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isListening && transcript) {
-      setMessage(transcript);
+    if (isListening) {
+      setIsVoiceStarting(false);
+      if (transcript) setMessage(transcript);
     }
   }, [isListening, transcript]);
 
@@ -46,16 +48,22 @@ export const AIChatBar = ({
   const toggleVoice = () => {
     if (isListening) {
       stopListening();
+      setIsVoiceStarting(false);
     } else {
+      setIsVoiceStarting(true);
       setTranscript("");
       setMessage("");
       startListening((text) => {
-        onSend?.(text);
+        if (text.trim()) {
+          console.log("AIChatBar voice callback sending:", text);
+          onSend?.(text);
+        }
         setIsExpanded(false);
+        setIsVoiceStarting(false);
       });
       toast({
-        title: "Listening...",
-        description: "Speak your question now.",
+        title: "Microphone Activating...",
+        description: "Speak your question once 'Listening' appears.",
       });
     }
   };
@@ -80,7 +88,7 @@ export const AIChatBar = ({
 
               {/* Input Wrapper */}
               <div className="flex-1 relative flex flex-col gap-2">
-                {isListening && (
+                {(isListening || isVoiceStarting) && (
                   <div className="absolute bottom-full left-0 w-full mb-4 bg-background/90 border border-primary/20 backdrop-blur-xl rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-2">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex gap-1 h-4 items-center">
@@ -92,10 +100,12 @@ export const AIChatBar = ({
                           />
                         ))}
                       </div>
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Listening</span>
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
+                        {isVoiceStarting ? "Initializing" : "Listening"}
+                      </span>
                     </div>
                     <p className="text-sm text-foreground/80 italic font-medium truncate">
-                      {transcript || "Speak now..."}
+                      {isVoiceStarting ? "Please wait, warming up..." : (transcript || "Speak now...")}
                     </p>
                   </div>
                 )}
@@ -104,12 +114,12 @@ export const AIChatBar = ({
                   <input
                     type="text"
                     className="w-full bg-transparent border-none outline-none py-2 text-sm"
-                    placeholder={isListening ? "Listening..." : placeholder}
+                    placeholder={(isListening || isVoiceStarting) ? "Listening..." : placeholder}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsExpanded(true)}
-                    disabled={isLoading || isListening}
+                    disabled={isLoading || isListening || isVoiceStarting}
                   />
                 </div>
               </div>
@@ -121,24 +131,24 @@ export const AIChatBar = ({
                   size="icon"
                   className={cn(
                     "p-2 rounded-xl transition-all duration-75",
-                    isListening ? "bg-destructive/10 text-destructive border border-destructive/20" : "text-muted-foreground hover:text-primary"
+                    (isListening || isVoiceStarting) ? "bg-destructive/10 text-destructive border border-destructive/20" : "text-muted-foreground hover:text-primary"
                   )}
                   style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
                   onClick={toggleVoice}
-                  disabled={isLoading}
+                  disabled={isLoading || (isVoiceStarting && !isListening)}
                 >
-                  {isListening ? (
+                  {(isListening || isVoiceStarting) ? (
                     <MicOff className="w-5 h-5" />
                   ) : (
                     <Mic className="w-5 h-5" />
                   )}
                 </Button>
                 <Button
-                  variant="primary"
+                  variant="default"
                   size="icon"
                   className="rounded-xl shadow-glow-primary bg-primary text-primary-foreground"
                   onClick={handleSend}
-                  disabled={!message.trim() || isLoading || isListening}
+                  disabled={!message.trim() || isLoading || isListening || isVoiceStarting}
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

@@ -35,22 +35,30 @@ const StudentAITutor = () => {
     const [speakingId, setSpeakingId] = useState<string | null>(null);
     const [revealedTranscriptIds, setRevealedTranscriptIds] = useState<Set<string>>(new Set());
 
+    const [isVoiceStarting, setIsVoiceStarting] = useState(false);
+
     const { isListening, transcript, volume, startListening, stopListening, setTranscript } = useVoiceRecognition();
     const { toast } = useToast();
 
     const handleToggleVoice = () => {
         if (isListening) {
             stopListening();
+            setIsVoiceStarting(false);
         } else {
+            setIsVoiceStarting(true);
             setTranscript("");
             setInputMessage("");
             startListening((text) => {
                 console.log("Voice callback triggered with text:", text);
-                sendMessage(text, activeTab);
+                if (text.trim()) {
+                    console.log("Sending message from voice recognition:", text, "for tab:", activeTab);
+                    sendMessage(text, activeTab);
+                }
+                setIsVoiceStarting(false);
             });
             toast({
-                title: "Listening...",
-                description: "Speak your question now.",
+                title: "Activating Microphone...",
+                description: "Speak when you see 'Listening'",
             });
         }
     };
@@ -79,13 +87,17 @@ const StudentAITutor = () => {
     };
 
     useEffect(() => {
-        return () => window.speechSynthesis.cancel();
-    }, []);
+        return () => {
+            window.speechSynthesis.cancel();
+            stopListening();
+        };
+    }, [stopListening]);
 
     // 1. Synchronize voice state with UI while listening
     useEffect(() => {
-        if (isListening && transcript) {
-            setInputMessage(transcript);
+        if (isListening) {
+            setIsVoiceStarting(false);
+            if (transcript) setInputMessage(transcript);
         }
     }, [isListening, transcript]);
 
@@ -262,15 +274,17 @@ const StudentAITutor = () => {
                                     </ScrollArea>
                                 </CardContent>
                                 <CardFooter className="p-4 border-t flex flex-col gap-3">
-                                    {isListening && (
+                                    {(isListening || isVoiceStarting) && (
                                         <div className="w-full bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-start gap-3 animate-in fade-in zoom-in">
                                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                                 <Mic className="w-4 h-4 text-primary animate-pulse" />
                                             </div>
                                             <div className="flex-1">
-                                                <p className="text-xs font-semibold text-primary mb-1 uppercase tracking-tighter">Transcribing...</p>
+                                                <p className="text-xs font-semibold text-primary mb-1 uppercase tracking-tighter">
+                                                    {isVoiceStarting ? "Initializing..." : "Transcribing..."}
+                                                </p>
                                                 <p className="text-sm text-foreground/80 italic">
-                                                    {transcript || "Speak now..."}
+                                                    {isVoiceStarting ? "Please wait, mic is warming up..." : (transcript || "Speak now...")}
                                                 </p>
                                             </div>
                                         </div>
@@ -283,7 +297,7 @@ const StudentAITutor = () => {
                                             placeholder={activeTab === 'quiz' ? "Answer here..." : "Type your question..."}
                                             value={inputMessage}
                                             onChange={(e) => setInputMessage(e.target.value)}
-                                            disabled={isLoading || isListening}
+                                            disabled={isLoading || isListening || isVoiceStarting}
                                             className="rounded-xl"
                                         />
                                         <Button
@@ -292,19 +306,19 @@ const StudentAITutor = () => {
                                             size="icon"
                                             className={cn(
                                                 "rounded-xl transition-all duration-75 min-w-[40px]",
-                                                isListening ? "bg-destructive/10 text-destructive border border-destructive/20" : "bg-muted hover:bg-muted/80"
+                                                (isListening || isVoiceStarting) ? "bg-destructive/10 text-destructive border border-destructive/20" : "bg-muted hover:bg-muted/80"
                                             )}
                                             style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
                                             onClick={handleToggleVoice}
-                                            disabled={isLoading}
+                                            disabled={isLoading || (isVoiceStarting && !isListening)}
                                         >
-                                            {isListening ? (
+                                            {(isListening || isVoiceStarting) ? (
                                                 <MicOff className="w-4 h-4" />
                                             ) : (
                                                 <Mic className="w-4 h-4" />
                                             )}
                                         </Button>
-                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading || isListening} className="rounded-xl">
+                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading || isListening || isVoiceStarting} className="rounded-xl">
                                             <Send className="w-4 h-4" />
                                         </Button>
                                     </form>
