@@ -76,11 +76,11 @@ const InstructorCourses = () => {
     setCreating(true);
     const { data } = await createCourse(newCourse);
     setCreating(false);
-    
+
     if (data) {
       setIsCreateDialogOpen(false);
       setNewCourse({ title: "", description: "", category: "", level: "beginner" });
-      fetchInstructorCourses();
+      navigate(`/instructor/courses/${data.id}`);
     }
   };
 

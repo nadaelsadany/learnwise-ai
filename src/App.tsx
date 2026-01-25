@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import ApplicantDashboard from "./pages/ApplicantDashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import InstructorCourses from "./pages/InstructorCourses";
+import CourseEditor from "./pages/CourseEditor";
 import CourseStudents from "./pages/CourseStudents";
 import CourseCatalog from "./pages/CourseCatalog";
 import SyllabusUpload from "./pages/SyllabusUpload";
@@ -113,6 +114,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
             <InstructorCourses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/courses/:courseId"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <CourseEditor />
           </ProtectedRoute>
         }
       />
