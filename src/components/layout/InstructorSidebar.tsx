@@ -35,39 +35,36 @@ const navItems: NavItem[] = [
   { icon: Sparkles, label: "AI Assistant", href: "/instructor/ai-tools" },
 ];
 
-interface SidebarProps {
-  onCollapse?: (collapsed: boolean) => void;
+interface SidebarContentProps {
+  collapsed?: boolean;
+  onItemClick?: () => void;
+  className?: string;
 }
 
-export const InstructorSidebar = ({ onCollapse }: SidebarProps) => {
-  const [collapsed, setCollapsed] = useState(false);
+export const InstructorSidebarContent = ({ collapsed, onItemClick, className }: SidebarContentProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
-
-  const toggleCollapse = () => {
-    const newState = !collapsed;
-    setCollapsed(newState);
-    onCollapse?.(newState);
-  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    onItemClick?.();
+  };
+
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 h-screen bg-card border-r border-border/50 shadow-soft z-40 transition-all duration-300 flex flex-col",
-      collapsed ? "w-20" : "w-64"
-    )}>
+    <div className={cn("flex flex-col h-full bg-card", className)}>
       {/* Logo */}
       <div className="p-4 flex items-center gap-3 border-b border-border/50">
         <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center flex-shrink-0 shadow-glow-accent">
           <GraduationCap className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in text-left">
             <h1 className="font-bold text-lg">LearnAI</h1>
             <p className="text-xs text-muted-foreground">Instructor Portal</p>
           </div>
@@ -81,7 +78,7 @@ export const InstructorSidebar = ({ onCollapse }: SidebarProps) => {
           return (
             <button
               key={item.href}
-              onClick={() => navigate(item.href)}
+              onClick={() => handleNavigate(item.href)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
                 isActive
@@ -116,7 +113,7 @@ export const InstructorSidebar = ({ onCollapse }: SidebarProps) => {
       {/* Footer */}
       <div className="p-3 border-t border-border/50 space-y-1">
         <button
-          onClick={() => navigate("/instructor/settings")}
+          onClick={() => handleNavigate("/instructor/settings")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted text-muted-foreground hover:text-foreground"
         >
           <Settings className="w-5 h-5 flex-shrink-0" />
@@ -138,13 +135,38 @@ export const InstructorSidebar = ({ onCollapse }: SidebarProps) => {
             </span>
           )}
         </button>
+      </div>
+    </div>
+  );
+};
 
-        {/* Collapse Button */}
+interface SidebarProps {
+  onCollapse?: (collapsed: boolean) => void;
+}
+
+export const InstructorSidebar = ({ onCollapse }: SidebarProps) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleCollapse = () => {
+    const newState = !collapsed;
+    setCollapsed(newState);
+    onCollapse?.(newState);
+  };
+
+  return (
+    <aside className={cn(
+      "fixed left-0 top-0 h-screen bg-card border-r border-border/50 shadow-soft z-40 transition-all duration-300 flex-col hidden lg:flex",
+      collapsed ? "w-20" : "w-64"
+    )}>
+      <InstructorSidebarContent collapsed={collapsed} />
+
+      {/* Collapse Button */}
+      <div className="p-3 border-t border-border/50">
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleCollapse}
-          className="w-full mt-2 justify-center"
+          className="w-full justify-center"
         >
           <ChevronLeft className={cn(
             "w-4 h-4 transition-transform",

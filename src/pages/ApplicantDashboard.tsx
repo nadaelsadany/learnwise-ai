@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
+import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -40,14 +40,19 @@ const ApplicantDashboard = () => {
     : 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <ApplicantSidebar onCollapse={setSidebarCollapsed} />
-      <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
+      <Header
+        sidebarCollapsed={sidebarCollapsed}
+        userRole="Student"
+        mobileSidebar={<ApplicantSidebarContent onItemClick={() => console.log('Mobile sidebar clicked')} />}
+      />
 
       <main
         className={cn(
-          "pt-20 pb-24 px-6 transition-all duration-300",
-          sidebarCollapsed ? "ml-20" : "ml-64"
+          "pt-20 pb-24 px-4 sm:px-6 transition-all duration-300",
+          sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
+          "ml-0"
         )}
       >
         <div className="max-w-7xl mx-auto space-y-6">
@@ -72,6 +77,7 @@ const ApplicantDashboard = () => {
               value={`${stats?.currentStreak || 0} days`}
               trend={stats?.currentStreak ? { value: stats.currentStreak, positive: true } : undefined}
               variant="warning"
+              onClick={() => console.log('Streak clicked')}
             />
             <StatsCard
               icon={Target}
@@ -79,6 +85,7 @@ const ApplicantDashboard = () => {
               value={stats?.totalQuizzesTaken ? `${stats.totalQuizzesTaken * 10}` : "0"}
               trend={{ value: 12, positive: true }}
               variant="success"
+              onClick={() => console.log('Questions clicked')}
             />
             <StatsCard
               icon={Clock}
@@ -86,6 +93,7 @@ const ApplicantDashboard = () => {
               value={`${stats?.totalStudyTimeMinutes || 0}m`}
               subtitle="Total"
               variant="primary"
+              onClick={() => console.log('Time clicked')}
             />
             <StatsCard
               icon={Trophy}
@@ -93,6 +101,7 @@ const ApplicantDashboard = () => {
               value={`${stats?.totalLessonsCompleted || 0}`}
               subtitle="Completed"
               variant="accent"
+              onClick={() => navigate('/progress')}
             />
           </section>
 

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
+import { InstructorSidebar, InstructorSidebarContent } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { MasteryHeatmap, mockStudentMastery, topics } from "@/components/mastery";
 import { GraduationCap, Users, TrendingUp, AlertTriangle, BookOpen, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { StatsCard } from "@/components/dashboard/StatsCard";
 
 const InstructorDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -21,14 +22,19 @@ const InstructorDashboard = () => {
   ).length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <InstructorSidebar onCollapse={setSidebarCollapsed} />
-      <Header sidebarCollapsed={sidebarCollapsed} userRole="Instructor" />
+      <Header
+        sidebarCollapsed={sidebarCollapsed}
+        userRole="Instructor"
+        mobileSidebar={<InstructorSidebarContent />}
+      />
 
       <main
         className={cn(
-          "pt-20 pb-8 px-6 transition-all duration-300",
-          sidebarCollapsed ? "ml-20" : "ml-64"
+          "pt-20 pb-8 px-4 sm:px-6 transition-all duration-300",
+          sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
+          "ml-0"
         )}
       >
         <div className="max-w-7xl mx-auto space-y-6">
@@ -47,11 +53,11 @@ const InstructorDashboard = () => {
                 </p>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => navigate("/instructor/courses")}>
+                <Button variant="outline" className="hover:scale-105 transition-transform" onClick={() => navigate("/instructor/courses")}>
                   <BookOpen className="w-4 h-4 mr-2" />
                   My Courses
                 </Button>
-                <Button variant="default" className="gradient-accent text-white" onClick={() => navigate("/syllabus-upload")}>
+                <Button variant="default" className="gradient-accent text-white hover:scale-105 transition-transform shadow-glow-accent" onClick={() => navigate("/syllabus-upload")}>
                   Create Course
                 </Button>
               </div>
@@ -63,53 +69,34 @@ const InstructorDashboard = () => {
             className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{mockStudentMastery.length}</p>
-                  <p className="text-xs text-muted-foreground">Total Students</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{avgMastery}%</p>
-                  <p className="text-xs text-muted-foreground">Avg. Mastery</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-destructive">{strugglingCount}</p>
-                  <p className="text-xs text-muted-foreground">Need Support</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-success">{improvingCount}</p>
-                  <p className="text-xs text-muted-foreground">Improving</p>
-                </div>
-              </div>
-            </div>
+            <StatsCard
+              icon={Users}
+              title="Total Students"
+              value={mockStudentMastery.length}
+              variant="default"
+              onClick={() => navigate("/instructor/students")}
+            />
+            <StatsCard
+              icon={BarChart3}
+              title="Avg. Mastery"
+              value={`${avgMastery}%`}
+              variant="success"
+              onClick={() => console.log('Mastery clicked')}
+            />
+            <StatsCard
+              icon={AlertTriangle}
+              title="Need Support"
+              value={strugglingCount}
+              variant="warning"
+              onClick={() => console.log('Support clicked')}
+            />
+            <StatsCard
+              icon={TrendingUp}
+              title="Improving"
+              value={improvingCount}
+              variant="primary"
+              onClick={() => console.log('Improving clicked')}
+            />
           </section>
 
           {/* Mastery Heatmap */}
@@ -120,7 +107,9 @@ const InstructorDashboard = () => {
                 View performance across all topics at a glance
               </p>
             </div>
-            <MasteryHeatmap students={mockStudentMastery} topics={topics} />
+            <div className="rounded-2xl border border-border/50 bg-card p-4 overflow-x-auto shadow-soft">
+              <MasteryHeatmap students={mockStudentMastery} topics={topics} />
+            </div>
           </section>
         </div>
       </main>

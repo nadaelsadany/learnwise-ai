@@ -11,6 +11,7 @@ interface StatsCardProps {
     positive: boolean;
   };
   variant?: "default" | "primary" | "success" | "warning" | "accent";
+  onClick?: () => void;
 }
 
 export const StatsCard = ({
@@ -20,6 +21,7 @@ export const StatsCard = ({
   icon: Icon,
   trend,
   variant = "default",
+  onClick,
 }: StatsCardProps) => {
   const variants = {
     default: {
@@ -52,10 +54,14 @@ export const StatsCard = ({
   const styles = variants[variant];
 
   return (
-    <div className={cn(
-      "rounded-2xl border border-border/50 shadow-card p-5 transition-all hover:shadow-elevated",
-      styles.bg
-    )}>
+    <div
+      onClick={onClick}
+      className={cn(
+        "rounded-2xl border border-border/50 shadow-card p-5 transition-all",
+        onClick ? "cursor-pointer hover:shadow-elevated hover:scale-[1.02] active:scale-[0.98]" : "hover:shadow-soft",
+        styles.bg
+      )}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className={cn("p-2.5 rounded-xl", styles.iconBg)}>
           <Icon className={cn("w-5 h-5", styles.iconColor)} />
@@ -63,15 +69,15 @@ export const StatsCard = ({
         {trend && (
           <div className={cn(
             "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-            trend.positive 
-              ? "bg-success/10 text-success" 
+            trend.positive
+              ? "bg-success/10 text-success"
               : "bg-destructive/10 text-destructive"
           )}>
             <span>{trend.positive ? "+" : ""}{trend.value}%</span>
           </div>
         )}
       </div>
-      
+
       <div>
         <p className="text-sm text-muted-foreground mb-1">{title}</p>
         <p className="text-2xl font-bold">{value}</p>

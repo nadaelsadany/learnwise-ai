@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
+import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { useCourses, CourseWithEnrollment } from "@/hooks/useCourses";
@@ -173,12 +173,17 @@ const CourseCatalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <ApplicantSidebar onCollapse={setSidebarCollapsed} />
-      <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
+      <Header
+        sidebarCollapsed={sidebarCollapsed}
+        userRole="Student"
+        mobileSidebar={<ApplicantSidebarContent onItemClick={() => console.log('Mobile sidebar clicked')} />}
+      />
 
       <main
         className={cn(
-          "pt-20 pb-8 px-6 transition-all duration-300",
-          sidebarCollapsed ? "ml-20" : "ml-64"
+          "pt-20 pb-8 px-4 sm:px-6 transition-all duration-300",
+          sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
+          "ml-0"
         )}
       >
         <div className="max-w-7xl mx-auto space-y-6">

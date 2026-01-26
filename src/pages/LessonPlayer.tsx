@@ -151,23 +151,22 @@ const LessonPlayer = () => {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            <header className="border-b px-6 py-4 flex items-center justify-between bg-card">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" onClick={() => navigate(`/courses/${courseId}`)}>
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Course
+            <header className="border-b px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card fixed top-0 left-0 right-0 z-50">
+                <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(`/courses/${courseId}`)} className="h-8 px-2">
+                        <ArrowLeft className="w-4 h-4" />
                     </Button>
-                    <h1 className="font-semibold text-lg">{lessonTitle || "Lesson Player"}</h1>
+                    <h1 className="font-semibold text-base sm:text-lg line-clamp-1">{lessonTitle || "Lesson Player"}</h1>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="font-mono text-xl font-medium bg-muted px-4 py-2 rounded-md flex items-center gap-2">
+                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                    <div className="font-mono text-lg sm:text-xl font-medium bg-muted px-3 py-1.5 rounded-md flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                         {formatTime(sessionDuration)}
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 p-6 max-w-7xl mx-auto w-full grid lg:grid-cols-3 gap-6 relative">
+            <main className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6 relative mt-32 sm:mt-20">
                 {/* Video Player Section */}
                 <div className="lg:col-span-2 space-y-4">
                     <Card className="overflow-hidden bg-black aspect-video relative group">
@@ -202,7 +201,7 @@ const LessonPlayer = () => {
                 </div>
 
                 {/* Text Content / Transcript Section */}
-                <div className="lg:col-span-1 h-[calc(100vh-10rem)] flex flex-col">
+                <div className="lg:col-span-1 h-auto lg:h-[calc(100vh-10rem)] flex flex-col">
                     <Card className="flex-1 flex flex-col">
                         <CardContent className="p-0 flex flex-col h-full">
                             <div className="p-4 border-b flex items-center justify-between bg-muted/20">

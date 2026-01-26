@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
+import { InstructorSidebar, InstructorSidebarContent } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -213,12 +213,16 @@ const InstructorAI = () => {
 
     return (
         <div className="min-h-screen bg-background">
-            <InstructorSidebar onCollapse={setSidebarCollapsed} />
-            <Header sidebarCollapsed={sidebarCollapsed} userRole="Instructor" />
+            <Header
+                sidebarCollapsed={sidebarCollapsed}
+                userRole="Instructor"
+                mobileSidebar={<InstructorSidebarContent />}
+            />
 
             <main className={cn(
-                "pt-20 pb-8 px-6 transition-all duration-300",
-                sidebarCollapsed ? "ml-20" : "ml-64"
+                "pt-20 pb-8 px-4 sm:px-6 transition-all duration-300",
+                sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
+                "ml-0"
             )}>
                 <div className="max-w-6xl mx-auto space-y-6">
                     <div>
@@ -232,17 +236,17 @@ const InstructorAI = () => {
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
-                            <TabsTrigger value="chat" className="gap-2">
+                        <TabsList className="flex flex-wrap h-auto w-full max-w-2xl gap-2 bg-transparent border-none">
+                            <TabsTrigger value="chat" className="gap-2 bg-muted data-[state=active]:bg-primary data-[state=active]:text-white">
                                 <MessageSquare className="w-4 h-4" /> Chat
                             </TabsTrigger>
-                            <TabsTrigger value="quiz" className="gap-2">
+                            <TabsTrigger value="quiz" className="gap-2 bg-muted data-[state=active]:bg-primary data-[state=active]:text-white">
                                 <CheckSquare className="w-4 h-4" /> Quiz Gen
                             </TabsTrigger>
-                            <TabsTrigger value="lesson" className="gap-2">
+                            <TabsTrigger value="lesson" className="gap-2 bg-muted data-[state=active]:bg-primary data-[state=active]:text-white">
                                 <FileText className="w-4 h-4" /> Lesson Drafter
                             </TabsTrigger>
-                            <TabsTrigger value="insights" className="gap-2">
+                            <TabsTrigger value="insights" className="gap-2 bg-muted data-[state=active]:bg-primary data-[state=active]:text-white">
                                 <BarChart className="w-4 h-4" /> Insights
                             </TabsTrigger>
                         </TabsList>

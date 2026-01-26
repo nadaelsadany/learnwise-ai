@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, FileText, Sparkles, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
+import { InstructorSidebar, InstructorSidebarContent } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { FileDropzone } from "@/components/syllabus/FileDropzone";
 import { ParsingProgress } from "@/components/syllabus/ParsingProgress";
@@ -112,15 +112,20 @@ const SyllabusUpload = () => {
   return (
     <div className="min-h-screen bg-background">
       <InstructorSidebar onCollapse={setSidebarCollapsed} />
-      <Header sidebarCollapsed={sidebarCollapsed} userRole="Instructor" />
+      <Header
+        sidebarCollapsed={sidebarCollapsed}
+        userRole="Instructor"
+        mobileSidebar={<InstructorSidebarContent />}
+      />
 
       <main className={cn(
-        "pt-20 pb-12 px-6 transition-all duration-300",
-        sidebarCollapsed ? "ml-20" : "ml-64"
+        "pt-20 pb-12 px-4 sm:px-6 transition-all duration-300",
+        sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
+        "ml-0"
       )}>
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
-          <Link 
+          <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
@@ -186,8 +191,8 @@ const SyllabusUpload = () => {
             )}
 
             {uploadState === "parsing" && (
-              <ParsingProgress 
-                isActive={true} 
+              <ParsingProgress
+                isActive={true}
                 onComplete={handleParsingComplete}
               />
             )}
@@ -200,11 +205,11 @@ const SyllabusUpload = () => {
                   onConfirm={handleConfirm}
                   onEdit={handleEdit}
                 />
-                
+
                 {/* Reset Button */}
                 <div className="flex justify-center">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={handleReset}
                     className="text-muted-foreground"
                   >

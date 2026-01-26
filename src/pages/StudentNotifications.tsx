@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
+import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,11 +45,16 @@ const StudentNotifications = () => {
     return (
         <div className="min-h-screen bg-background">
             <ApplicantSidebar onCollapse={setSidebarCollapsed} />
-            <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
+            <Header
+                sidebarCollapsed={sidebarCollapsed}
+                userRole="Student"
+                mobileSidebar={<ApplicantSidebarContent />}
+            />
 
             <main className={cn(
-                "pt-20 pb-8 px-6 transition-all duration-300",
-                sidebarCollapsed ? "ml-20" : "ml-64"
+                "pt-20 pb-8 px-4 sm:px-6 transition-all duration-300",
+                sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
+                "ml-0"
             )}>
                 <div className="max-w-4xl mx-auto space-y-6">
                     <div className="flex items-center justify-between">
