@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { 
-  Target, 
-  Flame, 
+import { useNavigate } from "react-router-dom";
+import {
+  Target,
+  Flame,
   Trophy,
   Clock
 } from "lucide-react";
@@ -17,7 +18,12 @@ import { AIChatBar } from "@/components/dashboard/AIChatBar";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleStartPractice = () => {
+    navigate("/ai-tutor");
+  };
 
   const todaysPlanItems = [
     { id: "1", title: "Review Test Design Techniques", type: "lesson" as const, duration: "20 min", completed: true },
@@ -63,7 +69,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Sidebar onCollapse={setSidebarCollapsed} />
       <Header sidebarCollapsed={sidebarCollapsed} />
-      
+
       <main className={cn(
         "pt-20 pb-32 px-6 transition-all duration-300",
         sidebarCollapsed ? "ml-20" : "ml-64"
@@ -113,9 +119,10 @@ const Index = () => {
             <div className="lg:col-span-2 space-y-6">
               {/* Exam Countdown & Readiness */}
               <section className="grid md:grid-cols-2 gap-4 animate-slide-up" style={{ animationDelay: "200ms" }}>
-                <ExamCountdown 
+                <ExamCountdown
                   examName="ISTQB Foundation Level"
                   date={examDate}
+                  onStartPractice={handleStartPractice}
                 />
                 <div className="rounded-2xl bg-card border border-border/50 shadow-card p-5 flex flex-col items-center justify-center">
                   <h3 className="text-sm font-medium text-muted-foreground mb-3">Exam Readiness</h3>
