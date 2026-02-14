@@ -25,12 +25,20 @@ const Index = () => {
     navigate("/ai-tutor");
   };
 
-  const todaysPlanItems = [
+  const [todaysPlanItems, setTodaysPlanItems] = useState([
     { id: "1", title: "Review Test Design Techniques", type: "lesson" as const, duration: "20 min", completed: true },
     { id: "2", title: "Practice Equivalence Partitioning", type: "flashcard" as const, duration: "15 min", completed: true },
     { id: "3", title: "Chapter 4 Quiz", type: "quiz" as const, duration: "30 min", completed: false },
     { id: "4", title: "AI Review: Weak Topics", type: "ai-review" as const, duration: "10 min", completed: false },
-  ];
+  ]);
+
+  const handleTogglePlanItem = (id: string) => {
+    setTodaysPlanItems(items =>
+      items.map(item =>
+        item.id === id ? { ...item, completed: !item.completed } : item
+      )
+    );
+  };
 
   const courses = [
     {
@@ -149,7 +157,7 @@ const Index = () => {
             {/* Right Column */}
             <div className="space-y-6">
               <div className="animate-slide-up" style={{ animationDelay: "250ms" }}>
-                <TodaysPlan items={todaysPlanItems} />
+                <TodaysPlan items={todaysPlanItems} onToggleComplete={handleTogglePlanItem} />
               </div>
               <div className="animate-slide-up" style={{ animationDelay: "350ms" }}>
                 <WeaknessAnalysis weaknesses={weaknesses} />
