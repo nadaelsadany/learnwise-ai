@@ -26,9 +26,24 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 const UniversityDashboard = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const { toast } = useToast();
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [newDept, setNewDept] = useState({ name: "", head: "", budget: "" });
 
     // Mock Data
     const stats = {
@@ -38,12 +53,40 @@ const UniversityDashboard = () => {
         revenue: 250000
     };
 
-    const departmentStats = [
+    const [departments, setDepartments] = useState([
         { name: "Computer Science", head: "Dr. Alan Turing", courses: 45, students: 420, budget: "$50,000", performance: 92 },
         { name: "Business Administration", head: "Prof. Mary Barra", courses: 38, students: 350, budget: "$45,000", performance: 88 },
         { name: "Design & Arts", head: "Sarah Chen", courses: 25, students: 180, budget: "$30,000", performance: 95 },
         { name: "Physics", head: "Dr. Richard Feynman", courses: 18, students: 120, budget: "$35,000", performance: 85 },
-    ];
+    ]);
+
+    const handleAddDepartment = () => {
+        if (!newDept.name || !newDept.head) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Please fill in all required fields.",
+            });
+            return;
+        }
+
+        const dept = {
+            name: newDept.name,
+            head: newDept.head,
+            courses: 0,
+            students: 0,
+            budget: newDept.budget ? `$${parseInt(newDept.budget).toLocaleString()}` : "$0",
+            performance: 100 // Default performance for new department
+        };
+
+        setDepartments([...departments, dept]);
+        setIsAddDialogOpen(false);
+        setNewDept({ name: "", head: "", budget: "" });
+        toast({
+            title: "Department Added",
+            description: `${dept.name} has been successfully added to the dashboard.`,
+        });
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -71,9 +114,58 @@ const UniversityDashboard = () => {
                             </p>
                         </div>
                         <div className="flex gap-2">
-                            <Button className="shadow-glow-primary gradient-primary text-white border-0">
-                                <Plus className="w-4 h-4 mr-2" /> Add Department
-                            </Button>
+                            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="shadow-glow-primary gradient-primary text-white border-0">
+                                        <Plus className="w-4 h-4 mr-2" /> Add Department
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Add New Department</DialogTitle>
+                                        <DialogDescription>
+                                            Add a new department to the dashboard overview.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="name">Department Name</Label>
+                                            <Input
+                                                id="name"
+                                                placeholder="e.g. Mathematics"
+                                                value={newDept.name}
+                                                onChange={(e) => setNewDept({ ...newDept, name: e.target.value })}
+                                                className="focus-visible:ring-primary bg-background/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="head">Head of Department</Label>
+                                            <Input
+                                                id="head"
+                                                placeholder="e.g. Dr. John Nash"
+                                                value={newDept.head}
+                                                onChange={(e) => setNewDept({ ...newDept, head: e.target.value })}
+                                                className="focus-visible:ring-primary bg-background/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="budget">Initial Budget ($)</Label>
+                                            <Input
+                                                id="budget"
+                                                type="number"
+                                                placeholder="e.g. 100000"
+                                                value={newDept.budget}
+                                                onChange={(e) => setNewDept({ ...newDept, budget: e.target.value })}
+                                                className="focus-visible:ring-primary bg-background/50"
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+                                        <Button onClick={handleAddDepartment} className="gradient-primary text-white shadow-glow-primary border-0">Add Department</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                     </div>
 
@@ -139,7 +231,7 @@ const UniversityDashboard = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {departmentStats.map((dept) => (
+                                        {departments.map((dept) => (
                                             <TableRow key={dept.name} className="hover:bg-muted/30 transition-colors">
                                                 <TableCell className="font-medium">
                                                     <div className="flex items-center gap-3">
