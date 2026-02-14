@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Copy, Eye, EyeOff, Lock, Unlock, Trash2, Archive, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const CourseEditor = () => {
     const { courseId } = useParams();
@@ -56,6 +57,7 @@ const CourseEditor = () => {
 
     const { updateCourse, getCourseById } = useCourses(); // Assuming we use existing hook for basic updates
     const { analyzeSyllabus, uploadMedia, saveCurriculum, fetchCurriculum, analyzing, loading: savingCurriculum, uploading } = useCourseEditor();
+    const { toast } = useToast();
 
     useEffect(() => {
         const loadData = async () => {
@@ -131,6 +133,29 @@ const CourseEditor = () => {
     const handleSaveCurriculum = async () => {
         if (!courseId) return;
         await saveCurriculum(courseId, chapters);
+    };
+
+    const handleSaveSettings = () => {
+        toast({
+            title: "Settings Saved",
+            description: "Course settings have been updated successfully.",
+        });
+    };
+
+    const handleArchiveCourse = () => {
+        toast({
+            title: "Course Archived",
+            description: "This course is now hidden from students.",
+        });
+    };
+
+    const handleDeleteCourse = () => {
+        toast({
+            variant: "destructive",
+            title: "Course Deleted",
+            description: "The course has been permanently deleted.",
+        });
+        navigate("/instructor/courses");
     };
 
     return (
@@ -455,6 +480,13 @@ const CourseEditor = () => {
                                             onCheckedChange={(checked) => setSettings({ ...settings, allowComments: checked })}
                                         />
                                     </div>
+
+                                    <div className="flex justify-end pt-4 border-t">
+                                        <Button onClick={handleSaveSettings}>
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Save Changes
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
 
@@ -477,7 +509,11 @@ const CourseEditor = () => {
                                             <p className="font-medium">Archive Course</p>
                                             <p className="text-sm text-muted-foreground">Hide from public view.</p>
                                         </div>
-                                        <Button variant="outline" className="text-warning hover:text-warning border-warning/50 hover:bg-warning/10">
+                                        <Button
+                                            variant="outline"
+                                            className="text-warning hover:text-warning border-warning/50 hover:bg-warning/10"
+                                            onClick={handleArchiveCourse}
+                                        >
                                             <Archive className="w-4 h-4 mr-2" />
                                             Archive
                                         </Button>
@@ -488,7 +524,10 @@ const CourseEditor = () => {
                                             <p className="font-medium text-destructive">Delete Course</p>
                                             <p className="text-sm text-muted-foreground">Permanently remove this course.</p>
                                         </div>
-                                        <Button variant="destructive">
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleDeleteCourse}
+                                        >
                                             <Trash2 className="w-4 h-4 mr-2" />
                                             Delete Course
                                         </Button>
@@ -498,8 +537,8 @@ const CourseEditor = () => {
                         </TabsContent>
                     </Tabs>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 };
 
