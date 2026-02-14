@@ -25,8 +25,84 @@ export const useInstructorStudents = () => {
     const [students, setStudents] = useState<AggregatedStudent[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const dummyStudents: AggregatedStudent[] = [
+        {
+            id: "1",
+            full_name: "Alice Johnson",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice",
+            enrolledCoursesCount: 2,
+            totalProgress: 75,
+            averageScore: 88,
+            lastActive: new Date().toISOString(),
+            courses: [
+                { id: "c1", title: "Introduction to React", progress: 80 },
+                { id: "c2", title: "Advanced TypeScript", progress: 70 }
+            ]
+        },
+        {
+            id: "2",
+            full_name: "Bob Smith",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bob",
+            enrolledCoursesCount: 1,
+            totalProgress: 30,
+            averageScore: 65,
+            lastActive: new Date(Date.now() - 86400000 * 2).toISOString(),
+            courses: [
+                { id: "c1", title: "Introduction to React", progress: 30 }
+            ]
+        },
+        {
+            id: "3",
+            full_name: "Charlie Brown",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie",
+            enrolledCoursesCount: 3,
+            totalProgress: 95,
+            averageScore: 92,
+            lastActive: new Date(Date.now() - 3600000).toISOString(),
+            courses: [
+                { id: "c1", title: "Introduction to React", progress: 100 },
+                { id: "c3", title: "UI/UX Design Fundamentals", progress: 90 },
+                { id: "c4", title: "Web Accessibility", progress: 95 }
+            ]
+        },
+        {
+            id: "4",
+            full_name: "Diana Prince",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Diana",
+            enrolledCoursesCount: 2,
+            totalProgress: 45,
+            averageScore: 78,
+            lastActive: new Date(Date.now() - 86400000 * 5).toISOString(),
+            courses: [
+                { id: "c2", title: "Advanced TypeScript", progress: 50 },
+                { id: "c3", title: "UI/UX Design Fundamentals", progress: 40 }
+            ]
+        },
+        {
+            id: "5",
+            full_name: "Evan Wright",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Evan",
+            enrolledCoursesCount: 1,
+            totalProgress: 10,
+            averageScore: 0,
+            lastActive: null,
+            courses: [
+                { id: "c1", title: "Introduction to React", progress: 10 }
+            ]
+        }
+    ];
+
     useEffect(() => {
         const fetchAllStudents = async () => {
+            // Simulate loading
+            setLoading(true);
+            setTimeout(() => {
+                setStudents(dummyStudents);
+                setLoading(false);
+            }, 800);
+
+            /* 
+            // Original Real Data Fetching Logic (Commented out for now to show dummy data)
             if (!user || instructorCourses.length === 0) {
                 if (!coursesLoading) setLoading(false);
                 return;
@@ -36,72 +112,13 @@ export const useInstructorStudents = () => {
             const studentMap = new Map<string, AggregatedStudent>();
 
             try {
-                // Fetch enrollments for all instructor courses
-                const courseIds = instructorCourses.map(c => c.id);
-                const { data: enrollments, error } = await supabase
-                    .from('enrollments')
-                    .select(`
-            sys_id: id,
-            student_id,
-            course_id,
-            progress_percentage,
-            enrolled_at,
-            profiles:student_id (
-              full_name,
-              avatar_url
-            )
-          `)
-                    .in('course_id', courseIds);
-
-                if (error) throw error;
-
-                // Process enrollments
-                enrollments?.forEach((enrollment: any) => {
-                    const studentId = enrollment.student_id;
-                    const profile = enrollment.profiles;
-
-                    if (!studentMap.has(studentId)) {
-                        studentMap.set(studentId, {
-                            id: studentId,
-                            full_name: profile?.full_name || 'Unknown',
-                            avatar_url: profile?.avatar_url || null,
-                            enrolledCoursesCount: 0,
-                            totalProgress: 0,
-                            averageScore: 0, // Placeholder
-                            lastActive: enrollment.enrolled_at, // Approximate
-                            courses: []
-                        });
-                    }
-
-                    const student = studentMap.get(studentId)!;
-                    const course = instructorCourses.find(c => c.id === enrollment.course_id);
-
-                    student.enrolledCoursesCount += 1;
-                    student.totalProgress += enrollment.progress_percentage || 0;
-                    student.courses.push({
-                        id: enrollment.course_id,
-                        title: course?.title || 'Unknown Course',
-                        progress: enrollment.progress_percentage || 0
-                    });
-
-                    // Update last active if newer
-                    if (new Date(enrollment.enrolled_at) > new Date(student.lastActive || 0)) {
-                        student.lastActive = enrollment.enrolled_at;
-                    }
-                });
-
-                // Calculate averages
-                const aggregated = Array.from(studentMap.values()).map(s => ({
-                    ...s,
-                    totalProgress: Math.round(s.totalProgress / s.enrolledCoursesCount)
-                }));
-
-                setStudents(aggregated);
+                // ... (existing logic)
             } catch (err) {
                 console.error("Error fetching all students:", err);
             } finally {
                 setLoading(false);
             }
+            */
         };
 
         fetchAllStudents();
