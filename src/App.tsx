@@ -31,6 +31,12 @@ import LessonPlayer from "./pages/LessonPlayer";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 import UniversityDashboard from "./pages/UniversityDashboard";
+import UniversityDepartments from "./pages/UniversityDepartments";
+import UniversityInstructors from "./pages/UniversityInstructors";
+import UniversityStudents from "./pages/UniversityStudents";
+import UniversityCourses from "./pages/UniversityCourses";
+import UniversityAnalytics from "./pages/UniversityAnalytics";
+import UniversitySettings from "./pages/UniversitySettings";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -268,6 +274,54 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["university"]}>
             <UniversityDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/departments"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityDepartments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/instructors"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityInstructors />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/students"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityStudents />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/courses"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityCourses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/analytics"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAnalytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/settings"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversitySettings />
           </ProtectedRoute>
         }
       />
