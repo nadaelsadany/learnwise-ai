@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-type AppRole = "applicant" | "instructor";
+type AppRole = "applicant" | "instructor" | "university";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,10 +11,10 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
-export const ProtectedRoute = ({ 
-  children, 
-  allowedRoles, 
-  redirectTo = "/auth" 
+export const ProtectedRoute = ({
+  children,
+  allowedRoles,
+  redirectTo = "/auth"
 }: ProtectedRouteProps) => {
   const { user, role, loading } = useAuth();
 

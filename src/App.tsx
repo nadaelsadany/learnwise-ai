@@ -30,6 +30,7 @@ import CourseDetail from "./pages/CourseDetail";
 import LessonPlayer from "./pages/LessonPlayer";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
+import UniversityDashboard from "./pages/UniversityDashboard";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,10 @@ const RoleBasedRedirect = () => {
   // Redirect based on role
   if (role === "instructor") {
     return <InstructorDashboard />;
+  }
+
+  if (role === "university") {
+    return <UniversityDashboard />;
   }
 
   return <ApplicantDashboard />;
@@ -254,6 +259,23 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
             <SyllabusUpload />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/university"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/*"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityDashboard />
           </ProtectedRoute>
         }
       />
