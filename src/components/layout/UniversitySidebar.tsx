@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarProps {
     onCollapse?: (collapsed: boolean) => void;
@@ -32,6 +33,13 @@ const menuItems = [
 
 export const UniversitySidebarContent = ({ collapsed }: { collapsed: boolean }) => {
     const location = useLocation();
+    const { signOut } = useAuth();
+    const navigate = useNavigate();
+
+    const handleSignOut = async () => {
+        await signOut();
+        navigate("/auth");
+    };
 
     return (
         <div className="flex flex-col h-full bg-card/50 backdrop-blur-xl border-r border-border/50">
@@ -65,7 +73,7 @@ export const UniversitySidebarContent = ({ collapsed }: { collapsed: boolean }) 
                                 )}
                             >
                                 <Icon className={cn("w-5 h-5", isActive && "text-primary")} />
-                                {!collapsed && <span>{item.label}</span>}
+                                !collapsed && <span>{item.label}</span>
                             </Button>
                         </Link>
                     );
@@ -79,6 +87,7 @@ export const UniversitySidebarContent = ({ collapsed }: { collapsed: boolean }) 
                         "w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10",
                         collapsed ? "justify-center px-2" : "px-4"
                     )}
+                    onClick={handleSignOut}
                 >
                     <LogOut className="w-5 h-5" />
                     {!collapsed && <span>Sign Out</span>}
