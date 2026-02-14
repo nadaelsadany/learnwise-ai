@@ -18,6 +18,9 @@ import { useEffect } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Copy, Eye, EyeOff, Lock, Unlock, Trash2, Archive, AlertTriangle } from "lucide-react";
 
 const CourseEditor = () => {
     const { courseId } = useParams();
@@ -35,7 +38,17 @@ const CourseEditor = () => {
         pdfUrl: "",
         startDate: "",
         endDate: "",
+        endDate: "",
         attachmentUrl: ""
+    });
+
+    // State for Settings
+    const [settings, setSettings] = useState({
+        isPublished: false,
+        isPublic: true,
+        allowComments: true,
+        showReviews: true,
+        enrollmentType: "open"
     });
 
     const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -356,6 +369,130 @@ const CourseEditor = () => {
                                             ))}
                                         </TableBody>
                                     </Table>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="settings" className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle>Course Visibility</CardTitle>
+                                            <CardDescription>Control how your course is viewed by others.</CardDescription>
+                                        </div>
+                                        <Badge variant={settings.isPublished ? "default" : "secondary"}>
+                                            {settings.isPublished ? "Published" : "Draft"}
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <div className="flex items-center gap-2">
+                                                {settings.isPublished ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                <Label className="text-base">Publish Course</Label>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                Make this course visible to students.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={settings.isPublished}
+                                            onCheckedChange={(checked) => setSettings({ ...settings, isPublished: checked })}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <div className="flex items-center gap-2">
+                                                {settings.isPublic ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                                <Label className="text-base">Public Access</Label>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                Allow anyone to view this course without an invite.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={settings.isPublic}
+                                            onCheckedChange={(checked) => setSettings({ ...settings, isPublic: checked })}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Enrollment & Interaction</CardTitle>
+                                    <CardDescription>Manage how students enroll and interact.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="grid gap-2">
+                                        <Label>Enrollment Type</Label>
+                                        <Select
+                                            value={settings.enrollmentType}
+                                            onValueChange={(val) => setSettings({ ...settings, enrollmentType: val })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="open">Open Enrollment</SelectItem>
+                                                <SelectItem value="application">Application Required</SelectItem>
+                                                <SelectItem value="invite">Invite Only</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-base">Allow Comments</Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                Students can comment on lessons.
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            checked={settings.allowComments}
+                                            onCheckedChange={(checked) => setSettings({ ...settings, allowComments: checked })}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-destructive/50">
+                                <CardHeader>
+                                    <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                                    <CardDescription>Irreversible actions for this course.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <Alert variant="destructive">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle>Warning</AlertTitle>
+                                        <AlertDescription>
+                                            Archiving a course will hide it from students but keep data. Deleting is permanent.
+                                        </AlertDescription>
+                                    </Alert>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div>
+                                            <p className="font-medium">Archive Course</p>
+                                            <p className="text-sm text-muted-foreground">Hide from public view.</p>
+                                        </div>
+                                        <Button variant="outline" className="text-warning hover:text-warning border-warning/50 hover:bg-warning/10">
+                                            <Archive className="w-4 h-4 mr-2" />
+                                            Archive
+                                        </Button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div>
+                                            <p className="font-medium text-destructive">Delete Course</p>
+                                            <p className="text-sm text-muted-foreground">Permanently remove this course.</p>
+                                        </div>
+                                        <Button variant="destructive">
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete Course
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
