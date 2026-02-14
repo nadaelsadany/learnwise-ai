@@ -107,9 +107,9 @@ const UniversityStudents = () => {
                 "ml-0"
             )}>
                 <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-slide-up">
                         <div>
-                            <h1 className="text-3xl font-bold flex items-center gap-2">
+                            <h1 className="text-3xl font-bold flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                                 <GraduationCap className="w-8 h-8 text-primary" />
                                 Students
                             </h1>
@@ -117,18 +117,18 @@ const UniversityStudents = () => {
                                 View and manage student enrollments and records.
                             </p>
                         </div>
-                        <Button variant="outline">
+                        <Button variant="outline" className="shadow-sm hover:shadow-md transition-all">
                             <Mail className="w-4 h-4 mr-2" /> Email All Students
                         </Button>
                     </div>
 
                     {/* Filters */}
-                    <div className="flex items-center gap-4 bg-card p-4 rounded-lg border border-border/50 shadow-sm">
+                    <div className="flex items-center gap-4 bg-card p-4 rounded-xl border border-border/50 shadow-soft animate-slide-up" style={{ animationDelay: "100ms" }}>
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search students..."
-                                className="pl-9"
+                                className="pl-9 bg-background/50 focus-visible:ring-primary"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -138,10 +138,10 @@ const UniversityStudents = () => {
                         </Button>
                     </div>
 
-                    <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                    <div className="bg-card rounded-xl border border-border/50 shadow-soft overflow-hidden animate-slide-up" style={{ animationDelay: "200ms" }}>
                         <Table>
                             <TableHeader>
-                                <TableRow>
+                                <TableRow className="bg-muted/30 hover:bg-muted/30">
                                     <TableHead>Student</TableHead>
                                     <TableHead>Department</TableHead>
                                     <TableHead>Status</TableHead>
@@ -151,10 +151,10 @@ const UniversityStudents = () => {
                             </TableHeader>
                             <TableBody>
                                 {filteredStudents.map((student) => (
-                                    <TableRow key={student.id}>
+                                    <TableRow key={student.id} className="hover:bg-muted/30 transition-colors">
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <Avatar>
+                                                <Avatar className="w-8 h-8 border-2 border-background shadow-sm">
                                                     <AvatarImage src={`https://api.dicebear.com/7.x/notionists/svg?seed=${student.name}`} />
                                                     <AvatarFallback>{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                                 </Avatar>
@@ -164,15 +164,19 @@ const UniversityStudents = () => {
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{student.department}</TableCell>
                                         <TableCell>
-                                            <Badge className={getStatusColor(student.status)} variant="secondary">
+                                            <Badge variant="outline" className="text-xs font-normal">
+                                                {student.department}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={cn("text-xs capitalize", getStatusColor(student.status))} variant="secondary">
                                                 {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <div className="text-sm">
-                                                <span className="font-medium">GPA: {student.gpa}</span>
+                                                <span className="font-medium px-2 py-0.5 rounded-full bg-primary/5 text-primary">GPA: {student.gpa}</span>
                                                 <span className="text-muted-foreground mx-2">•</span>
                                                 <span className="text-muted-foreground">{student.enrolledCourses} Courses</span>
                                             </div>
@@ -189,7 +193,7 @@ const UniversityStudents = () => {
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem>View Profile</DropdownMenuItem>
                                                     <DropdownMenuItem>Academic Transcript</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">Expel Student</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive focus:text-destructive">Expel Student</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

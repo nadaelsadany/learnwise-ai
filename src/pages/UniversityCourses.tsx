@@ -36,8 +36,8 @@ interface Course {
     title: string;
     instructor: string;
     department: string;
-    students: number;
-    status: "published" | "draft" | "under_review";
+    enrolledStudents: number;
+    status: "active" | "pending_approval" | "archived";
     lastUpdated: string;
 }
 
@@ -53,8 +53,8 @@ const UniversityCourses = () => {
             title: "Introduction to Computer Science",
             instructor: "Dr. Alan Turing",
             department: "Computer Science",
-            students: 120,
-            status: "published",
+            enrolledStudents: 120,
+            status: "active",
             lastUpdated: "2024-02-10"
         },
         {
@@ -62,8 +62,8 @@ const UniversityCourses = () => {
             title: "Advanced Marketing Strategies",
             instructor: "Prof. Mary Barra",
             department: "Business",
-            students: 85,
-            status: "published",
+            enrolledStudents: 85,
+            status: "active",
             lastUpdated: "2024-02-12"
         },
         {
@@ -71,11 +71,24 @@ const UniversityCourses = () => {
             title: "Thermodynamics II",
             instructor: "Dr. Elon Musk",
             department: "Engineering",
-            students: 0,
-            status: "under_review",
+            enrolledStudents: 0,
+            status: "pending_approval",
             lastUpdated: "2024-02-14"
         },
     ]);
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "active":
+                return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
+            case "pending_approval":
+                return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
+            case "archived":
+                return "bg-muted text-muted-foreground hover:bg-muted/80";
+            default:
+                return "bg-secondary text-secondary-foreground";
+        }
+    };
 
     const filteredCourses = courses.filter(course =>
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,49 +132,69 @@ const UniversityCourses = () => {
                 "ml-0"
             )}>
                 <div className="max-w-7xl mx-auto space-y-6">
-                    <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-2">
-                            <BookOpen className="w-8 h-8 text-primary" />
-                            Courses
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Oversee course catalog and curriculum standards.
-                        </p>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-slide-up">
+                        <div>
+                            <h1 className="text-3xl font-bold flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+                                <BookOpen className="w-8 h-8 text-primary" />
+                                Course Catalog
+                            </h1>
+                            <p className="text-muted-foreground mt-1">
+                                Oversee all courses offered across departments.
+                            </p>
+                        </div>
                     </div>
 
                     {/* Filters */}
-                    <div className="flex items-center gap-4 bg-card p-4 rounded-lg border border-border/50 shadow-sm">
+                    <div className="flex items-center gap-4 bg-card p-4 rounded-xl border border-border/50 shadow-soft animate-slide-up" style={{ animationDelay: "100ms" }}>
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search courses..."
-                                className="pl-9"
+                                className="pl-9 bg-background/50 focus-visible:ring-primary"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        <Button variant="outline">
+                            Filter
+                        </Button>
                     </div>
 
-                    <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                    <div className="bg-card rounded-xl border border-border/50 shadow-soft overflow-hidden animate-slide-up" style={{ animationDelay: "200ms" }}>
                         <Table>
                             <TableHeader>
-                                <TableRow>
+                                <TableRow className="bg-muted/30 hover:bg-muted/30">
                                     <TableHead>Course Title</TableHead>
-                                    <TableHead>Instructor</TableHead>
                                     <TableHead>Department</TableHead>
+                                    <TableHead>Instructor</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead>Enrollment</TableHead>
+                                    <TableHead>Students</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredCourses.map((course) => (
-                                    <TableRow key={course.id}>
-                                        <TableCell className="font-medium">{course.title}</TableCell>
+                                    <TableRow key={course.id} className="hover:bg-muted/30 transition-colors">
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                                                    <BookOpen className="w-4 h-4" />
+                                                </div>
+                                                {course.title}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="text-xs font-normal">
+                                                {course.department}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell>{course.instructor}</TableCell>
-                                        <TableCell>{course.department}</TableCell>
-                                        <TableCell>{getStatusBadge(course.status)}</TableCell>
-                                        <TableCell>{course.students} students</TableCell>
+                                        <TableCell>
+                                            <Badge className={cn("text-xs capitalize", getStatusColor(course.status))} variant="secondary">
+                                                {course.status.replace('_', ' ')}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{course.enrolledStudents}</TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -172,22 +205,33 @@ const UniversityCourses = () => {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                                                    {course.status === 'under_review' && (
+                                                    <DropdownMenuItem>View Syllabus</DropdownMenuItem>
+                                                    {course.status === 'pending_approval' && (
                                                         <>
                                                             <DropdownMenuItem
-                                                                className="text-green-600"
-                                                                onClick={() => handleStatusChange(course.id, 'published')}
+                                                                className="text-green-600 focus:text-green-600"
+                                                                onClick={() => handleStatusChange(course.id, 'active')}
                                                             >
-                                                                <CheckCircle className="w-4 h-4 mr-2" /> Approve
+                                                                <CheckCircle className="w-4 h-4 mr-2" />
+                                                                Approve Course
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onClick={() => handleStatusChange(course.id, 'draft')}
+                                                                className="text-destructive focus:text-destructive"
+                                                                onClick={() => handleStatusChange(course.id, 'archived')}
                                                             >
-                                                                <XCircle className="w-4 h-4 mr-2" /> Reject
+                                                                <XCircle className="w-4 h-4 mr-2" />
+                                                                Reject Course
                                                             </DropdownMenuItem>
                                                         </>
+                                                    )}
+                                                    {course.status === 'active' && (
+                                                        <DropdownMenuItem
+                                                            className="text-muted-foreground focus:text-muted-foreground"
+                                                            onClick={() => handleStatusChange(course.id, 'archived')}
+                                                        >
+                                                            <Clock className="w-4 h-4 mr-2" />
+                                                            Archive Course
+                                                        </DropdownMenuItem>
                                                     )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>

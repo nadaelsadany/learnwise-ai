@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Plus, Search, MoreHorizontal, Users, BookOpen, Trash2, Edit } from "lucide-react";
+import { Building2, Plus, Search, MoreHorizontal, Users, BookOpen, Trash2, Edit, DollarSign } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,6 +32,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Department {
     id: string;
@@ -115,9 +116,9 @@ const UniversityDepartments = () => {
                 "ml-0"
             )}>
                 <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-slide-up">
                         <div>
-                            <h1 className="text-3xl font-bold flex items-center gap-2">
+                            <h1 className="text-3xl font-bold flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                                 <Building2 className="w-8 h-8 text-primary" />
                                 Departments
                             </h1>
@@ -127,11 +128,11 @@ const UniversityDepartments = () => {
                         </div>
                         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button>
+                                <Button className="shadow-glow-primary gradient-primary text-white border-0">
                                     <Plus className="w-4 h-4 mr-2" /> Add Department
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="sm:max-w-[425px]">
                                 <DialogHeader>
                                     <DialogTitle>Add New Department</DialogTitle>
                                     <DialogDescription>
@@ -146,6 +147,7 @@ const UniversityDepartments = () => {
                                             placeholder="e.g. Computer Science"
                                             value={newDept.name}
                                             onChange={(e) => setNewDept({ ...newDept, name: e.target.value })}
+                                            className="focus-visible:ring-primary bg-background/50"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -155,6 +157,7 @@ const UniversityDepartments = () => {
                                             placeholder="e.g. Dr. Jane Doe"
                                             value={newDept.head}
                                             onChange={(e) => setNewDept({ ...newDept, head: e.target.value })}
+                                            className="focus-visible:ring-primary bg-background/50"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -165,44 +168,86 @@ const UniversityDepartments = () => {
                                             placeholder="e.g. 500000"
                                             value={newDept.budget}
                                             onChange={(e) => setNewDept({ ...newDept, budget: e.target.value })}
+                                            className="focus-visible:ring-primary bg-background/50"
                                         />
                                     </div>
                                 </div>
                                 <DialogFooter>
                                     <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleAddDepartment}>Create Department</Button>
+                                    <Button onClick={handleAddDepartment} className="gradient-primary text-white shadow-glow-primary border-0">Create Department</Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
                     </div>
 
+                    {/* Stats Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: "100ms" }}>
+                        <Card className="border-border/50 shadow-soft hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-6 flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                                    <Building2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Total Departments</p>
+                                    <h3 className="text-2xl font-bold text-foreground">{departments.length}</h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border/50 shadow-soft hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-6 flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                        {departments.reduce((acc, curr) => acc + curr.studentCount, 0).toLocaleString()}
+                                    </h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border/50 shadow-soft hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-6 flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-green-500/10 text-green-500">
+                                    <DollarSign className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Total Budget</p>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                        ${(departments.reduce((acc, curr) => acc + curr.budget, 0) / 1000000).toFixed(1)}M
+                                    </h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
                     {/* Filters */}
-                    <div className="flex items-center gap-4 bg-card p-4 rounded-lg border border-border/50 shadow-sm">
+                    <div className="flex items-center gap-4 bg-card p-4 rounded-xl border border-border/50 shadow-soft animate-slide-up" style={{ animationDelay: "200ms" }}>
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search departments..."
-                                className="pl-9"
+                                className="pl-9 bg-background/50 focus-visible:ring-primary"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    {/* Check for empty state */}
-                    {filteredDepartments.length === 0 ? (
-                        <div className="text-center py-12 bg-card rounded-lg border border-dashed border-border">
-                            <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-lg font-medium">No departments found</h3>
-                            <p className="text-muted-foreground mt-2">
-                                Try adjusting your search or add a new department.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                    {/* Content */}
+                    <div className="bg-card rounded-xl border border-border/50 shadow-soft overflow-hidden animate-slide-up" style={{ animationDelay: "300ms" }}>
+                        {filteredDepartments.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <h3 className="text-lg font-medium">No departments found</h3>
+                                <p className="text-muted-foreground mt-2">
+                                    Try adjusting your search or add a new department.
+                                </p>
+                            </div>
+                        ) : (
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
+                                    <TableRow className="bg-muted/30 hover:bg-muted/30">
                                         <TableHead>Department Name</TableHead>
                                         <TableHead>Head</TableHead>
                                         <TableHead>Stats</TableHead>
@@ -212,7 +257,7 @@ const UniversityDepartments = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredDepartments.map((dept) => (
-                                        <TableRow key={dept.id}>
+                                        <TableRow key={dept.id} className="hover:bg-muted/30 transition-colors">
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -221,22 +266,28 @@ const UniversityDepartments = () => {
                                                     {dept.name}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{dept.head}</TableCell>
+                                            <TableCell>
+                                                <div className="text-sm font-medium">{dept.head}</div>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-4 text-sm text-muted-foreground">
-                                                    <span className="flex items-center gap-1">
-                                                        <Users className="w-4 h-4" /> {dept.studentCount}
+                                                    <span className="flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded-md">
+                                                        <Users className="w-3 h-3" /> {dept.studentCount}
                                                     </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <BookOpen className="w-4 h-4" /> {dept.courseCount}
+                                                    <span className="flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded-md">
+                                                        <BookOpen className="w-3 h-3" /> {dept.courseCount}
                                                     </span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>${dept.budget.toLocaleString()}</TableCell>
+                                            <TableCell>
+                                                <span className="font-medium text-green-600 dark:text-green-400">
+                                                    ${dept.budget.toLocaleString()}
+                                                </span>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
+                                                        <Button variant="ghost" size="icon" className="hover:bg-primary/10 hover:text-primary">
                                                             <MoreHorizontal className="w-4 h-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -261,8 +312,8 @@ const UniversityDepartments = () => {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </main>
         </div>

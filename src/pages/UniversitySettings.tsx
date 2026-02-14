@@ -43,8 +43,8 @@ const UniversitySettings = () => {
                 "ml-0"
             )}>
                 <div className="max-w-4xl mx-auto space-y-6">
-                    <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-2">
+                    <div className="animate-slide-up">
+                        <h1 className="text-3xl font-bold flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                             <Settings className="w-8 h-8 text-primary" />
                             Settings
                         </h1>
@@ -53,15 +53,15 @@ const UniversitySettings = () => {
                         </p>
                     </div>
 
-                    <Tabs defaultValue="general" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-                            <TabsTrigger value="general">General</TabsTrigger>
-                            <TabsTrigger value="billing">Billing</TabsTrigger>
-                            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                    <Tabs defaultValue="general" className="w-full animate-slide-up" style={{ animationDelay: "100ms" }}>
+                        <TabsList className="grid w-full grid-cols-3 lg:w-[400px] bg-card border border-border/50 shadow-sm p-1 rounded-xl mb-6">
+                            <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">General</TabsTrigger>
+                            <TabsTrigger value="billing" className="rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Billing</TabsTrigger>
+                            <TabsTrigger value="notifications" className="rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Notifications</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="general">
-                            <Card>
+                            <Card className="border-border/50 shadow-soft">
                                 <CardHeader>
                                     <CardTitle>University Profile</CardTitle>
                                     <CardDescription>
@@ -71,19 +71,19 @@ const UniversitySettings = () => {
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name">University Name</Label>
-                                        <Input id="name" defaultValue="LearnWise University" />
+                                        <Input id="name" defaultValue="LearnWise University" className="bg-background/50 focus-visible:ring-primary" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="domain">Custom Domain</Label>
-                                        <Input id="domain" defaultValue="university.learnwise.edu" />
+                                        <Input id="domain" defaultValue="university.learnwise.edu" className="bg-background/50 focus-visible:ring-primary" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="address">Address</Label>
-                                        <Input id="address" defaultValue="123 Education Lane, Learning City" />
+                                        <Input id="address" defaultValue="123 Education Lane, Learning City" className="bg-background/50 focus-visible:ring-primary" />
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button onClick={handleSave} disabled={loading}>
+                                    <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
                                         {loading ? "Saving..." : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
                                     </Button>
                                 </CardFooter>
@@ -91,7 +91,7 @@ const UniversitySettings = () => {
                         </TabsContent>
 
                         <TabsContent value="billing">
-                            <Card>
+                            <Card className="border-border/50 shadow-soft">
                                 <CardHeader>
                                     <CardTitle>Subscription & Billing</CardTitle>
                                     <CardDescription>
@@ -99,7 +99,7 @@ const UniversitySettings = () => {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                                    <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-accent/5">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                                                 <Shield className="w-5 h-5" />
@@ -114,7 +114,7 @@ const UniversitySettings = () => {
 
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-medium">Payment Method</h3>
-                                        <div className="flex items-center gap-3 p-3 border rounded-md">
+                                        <div className="flex items-center gap-3 p-3 border border-border/50 rounded-xl bg-background/50">
                                             <CreditCard className="w-5 h-5 text-muted-foreground" />
                                             <span className="text-sm">Visa ending in 4242</span>
                                             <Button variant="ghost" size="sm" className="ml-auto">Update</Button>
@@ -125,7 +125,7 @@ const UniversitySettings = () => {
                         </TabsContent>
 
                         <TabsContent value="notifications">
-                            <Card>
+                            <Card className="border-border/50 shadow-soft">
                                 <CardHeader>
                                     <CardTitle>Notification Preferences</CardTitle>
                                     <CardDescription>
@@ -156,7 +156,7 @@ const UniversitySettings = () => {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button onClick={handleSave} disabled={loading}>
+                                    <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
                                         {loading ? "Saving..." : "Save Preferences"}
                                     </Button>
                                 </CardFooter>

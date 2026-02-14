@@ -25,14 +25,14 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
     Users,
-    Plus,
-    Search,
-    MoreHorizontal,
     Mail,
     Star,
     BookOpen,
     Ban,
-    CheckCircle2
+    CheckCircle2,
+    MoreHorizontal,
+    Search,
+    GraduationCap
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Instructor {
     id: string;
@@ -169,9 +170,9 @@ const UniversityInstructors = () => {
                 "ml-0"
             )}>
                 <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-slide-up">
                         <div>
-                            <h1 className="text-3xl font-bold flex items-center gap-2">
+                            <h1 className="text-3xl font-bold flex items-center gap-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                                 <Users className="w-8 h-8 text-primary" />
                                 Instructors
                             </h1>
@@ -181,11 +182,11 @@ const UniversityInstructors = () => {
                         </div>
                         <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button>
+                                <Button className="shadow-glow-primary gradient-primary text-white border-0">
                                     <Mail className="w-4 h-4 mr-2" /> Invite Instructor
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="sm:max-w-[425px]">
                                 <DialogHeader>
                                     <DialogTitle>Invite New Instructor</DialogTitle>
                                     <DialogDescription>
@@ -201,6 +202,7 @@ const UniversityInstructors = () => {
                                             placeholder="instructor@university.edu"
                                             value={inviteEmail}
                                             onChange={(e) => setInviteEmail(e.target.value)}
+                                            className="focus-visible:ring-primary bg-background/50"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -210,34 +212,76 @@ const UniversityInstructors = () => {
                                             placeholder="e.g. Computer Science"
                                             value={selectedDepartment}
                                             onChange={(e) => setSelectedDepartment(e.target.value)}
+                                            className="focus-visible:ring-primary bg-background/50"
                                         />
                                     </div>
                                 </div>
                                 <DialogFooter>
                                     <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleInvite}>Send Invitation</Button>
+                                    <Button onClick={handleInvite} className="gradient-primary text-white shadow-glow-primary border-0">Send Invitation</Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
                     </div>
 
+                    {/* Stats Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style={{ animationDelay: "100ms" }}>
+                        <Card className="border-border/50 shadow-soft hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-6 flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Total Instructors</p>
+                                    <h3 className="text-2xl font-bold text-foreground">{instructors.length}</h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border/50 shadow-soft hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-6 flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-green-500/10 text-green-500">
+                                    <CheckCircle2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Active Faculty</p>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                        {instructors.filter(i => i.status === 'active').length}
+                                    </h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-border/50 shadow-soft hover:shadow-lg transition-all duration-300">
+                            <CardContent className="p-6 flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-orange-500/10 text-orange-500">
+                                    <Star className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Avg Rating</p>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                        {(instructors.reduce((acc, curr) => acc + curr.rating, 0) / instructors.filter(i => i.rating > 0).length || 0).toFixed(1)}
+                                    </h3>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
                     {/* Filters */}
-                    <div className="flex items-center gap-4 bg-card p-4 rounded-lg border border-border/50 shadow-sm">
+                    <div className="flex items-center gap-4 bg-card p-4 rounded-xl border border-border/50 shadow-soft animate-slide-up" style={{ animationDelay: "200ms" }}>
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search instructors..."
-                                className="pl-9"
+                                className="pl-9 bg-background/50 focus-visible:ring-primary"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+                    <div className="bg-card rounded-xl border border-border/50 shadow-soft overflow-hidden animate-slide-up" style={{ animationDelay: "300ms" }}>
                         <Table>
                             <TableHeader>
-                                <TableRow>
+                                <TableRow className="bg-muted/30 hover:bg-muted/30">
                                     <TableHead>Instructor</TableHead>
                                     <TableHead>Department</TableHead>
                                     <TableHead>Status</TableHead>
@@ -247,10 +291,10 @@ const UniversityInstructors = () => {
                             </TableHeader>
                             <TableBody>
                                 {filteredInstructors.map((instructor) => (
-                                    <TableRow key={instructor.id}>
+                                    <TableRow key={instructor.id} className="hover:bg-muted/30 transition-colors">
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <Avatar>
+                                                <Avatar className="w-10 h-10 border-2 border-background shadow-sm">
                                                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${instructor.name}`} />
                                                     <AvatarFallback>{instructor.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                                 </Avatar>
@@ -260,20 +304,24 @@ const UniversityInstructors = () => {
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{instructor.department}</TableCell>
                                         <TableCell>
-                                            <Badge className={getStatusColor(instructor.status)} variant="secondary">
-                                                {instructor.status.charAt(0).toUpperCase() + instructor.status.slice(1)}
+                                            <Badge variant="outline" className="text-xs font-normal">
+                                                {instructor.department}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={cn("text-xs capitalize", getStatusColor(instructor.status))} variant="secondary">
+                                                {instructor.status}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex gap-4 text-sm text-muted-foreground">
-                                                <span className="flex items-center gap-1">
-                                                    <BookOpen className="w-4 h-4" /> {instructor.courses} Courses
+                                                <span className="flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded-md">
+                                                    <BookOpen className="w-3 h-3" /> {instructor.courses} Courses
                                                 </span>
                                                 {instructor.rating > 0 && (
-                                                    <span className="flex items-center gap-1 text-yellow-500">
-                                                        <Star className="w-4 h-4 fill-current" /> {instructor.rating}
+                                                    <span className="flex items-center gap-1 text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-md">
+                                                        <Star className="w-3 h-3 fill-current" /> {instructor.rating}
                                                     </span>
                                                 )}
                                             </div>
@@ -281,7 +329,7 @@ const UniversityInstructors = () => {
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
+                                                    <Button variant="ghost" size="icon" className="hover:bg-primary/10 hover:text-primary">
                                                         <MoreHorizontal className="w-4 h-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
