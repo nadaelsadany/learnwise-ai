@@ -73,7 +73,7 @@ export const UniversitySidebarContent = ({ collapsed }: { collapsed: boolean }) 
                                 )}
                             >
                                 <Icon className={cn("w-5 h-5", isActive && "text-primary")} />
-                                !collapsed && <span>{item.label}</span>
+                                {!collapsed && <span>{item.label}</span>}
                             </Button>
                         </Link>
                     );
