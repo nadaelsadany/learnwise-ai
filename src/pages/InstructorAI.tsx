@@ -213,6 +213,7 @@ const InstructorAI = () => {
 
     return (
         <div className="min-h-screen bg-background">
+            <InstructorSidebar onCollapse={setSidebarCollapsed} />
             <Header
                 sidebarCollapsed={sidebarCollapsed}
                 userRole="Instructor"
