@@ -36,7 +36,7 @@ export const ProtectedRoute = ({
   // If allowedRoles is specified, check if user has one of the allowed roles
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     // Redirect to appropriate dashboard based on role
-    const dashboardPath = role === "instructor" ? "/instructor" : "/";
+    const dashboardPath = role === "instructor" ? "/instructor" : role === "university" ? "/university" : "/";
     return <Navigate to={dashboardPath} replace />;
   }
 
