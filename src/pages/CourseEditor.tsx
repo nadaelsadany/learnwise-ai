@@ -39,7 +39,6 @@ const CourseEditor = () => {
         pdfUrl: "",
         startDate: "",
         endDate: "",
-        endDate: "",
         attachmentUrl: ""
     });
 
