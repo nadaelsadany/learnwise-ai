@@ -38,6 +38,12 @@ import UniversityCourses from "./pages/UniversityCourses";
 import UniversityAnalytics from "./pages/UniversityAnalytics";
 import UniversitySettings from "./pages/UniversitySettings";
 import { Loader2 } from "lucide-react";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminCourses from "./pages/AdminCourses";
+import AdminEnrollments from "./pages/AdminEnrollments";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +73,10 @@ const RoleBasedRedirect = () => {
 
   if (role === "university") {
     return <UniversityDashboard />;
+  }
+
+  if (role === "admin") {
+    return <Navigate to="/admin" replace />;
   }
 
   return <ApplicantDashboard />;
@@ -330,6 +340,56 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["university"]}>
             <UniversityDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/courses"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminCourses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/enrollments"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminEnrollments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminAnalytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminSettings />
           </ProtectedRoute>
         }
       />

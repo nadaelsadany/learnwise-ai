@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, User, BookOpen, Loader2, Eye, EyeOff, Building2 } from "lucide-react";
+import { GraduationCap, User, BookOpen, Loader2, Eye, EyeOff, Building2, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthMode = "signin" | "signup";
-type AppRole = "applicant" | "instructor" | "university";
+type AppRole = "applicant" | "instructor" | "university" | "admin";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -128,7 +128,7 @@ const Auth = () => {
                   {/* Role Selection */}
                   <div className="space-y-2">
                     <Label>I am a...</Label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setSelectedRole("applicant")}
@@ -201,6 +201,31 @@ const Auth = () => {
                         <div className="text-center">
                           <p className="font-medium text-sm">University</p>
                           <p className="text-xs text-muted-foreground">Manage</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole("admin")}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                          selectedRole === "admin"
+                            ? "border-rose-500 bg-rose-500/5 shadow-soft"
+                            : "border-border/50 hover:border-rose-400/50"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center",
+                          selectedRole === "admin" ? "bg-rose-500 text-white" : "bg-muted"
+                        )}>
+                          <Shield className={cn(
+                            "w-6 h-6",
+                            selectedRole === "admin" ? "text-white" : "text-muted-foreground"
+                          )} />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-sm">Admin</p>
+                          <p className="text-xs text-muted-foreground">HR / L&D</p>
                         </div>
                       </button>
                     </div>

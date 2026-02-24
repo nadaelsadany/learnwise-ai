@@ -74,7 +74,7 @@ export const Header = ({
           variant="ghost"
           size="icon"
           className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-          onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : '/notifications')}
+          onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'Admin' ? '/admin' : '/notifications')}
         >
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive border-2 border-background" />
@@ -96,11 +96,11 @@ export const Header = ({
           <DropdownMenuContent align="end" className="w-56 mt-2">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : '/settings')}>
+            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : '/notifications')}>
+            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'Admin' ? '/admin' : '/notifications')}>
               <Bell className="w-4 h-4 mr-2" />
               Notifications
             </DropdownMenuItem>

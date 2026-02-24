@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-type AppRole = "applicant" | "instructor" | "university";
+type AppRole = "applicant" | "instructor" | "university" | "admin";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -36,7 +36,7 @@ export const ProtectedRoute = ({
   // If allowedRoles is specified, check if user has one of the allowed roles
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     // Redirect to appropriate dashboard based on role
-    const dashboardPath = role === "instructor" ? "/instructor" : role === "university" ? "/university" : "/";
+    const dashboardPath = role === "instructor" ? "/instructor" : role === "university" ? "/university" : role === "admin" ? "/admin" : "/";
     return <Navigate to={dashboardPath} replace />;
   }
 
