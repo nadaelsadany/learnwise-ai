@@ -123,6 +123,44 @@ const Auth = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* ── Test Accounts (sign-in only) ── */}
+              {mode === "signin" && (
+                <div className="rounded-xl border border-border/50 bg-muted/30 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">
+                    Quick Test Login
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: "Student", email: "student@demo.com", icon: "👨‍🎓", color: "hover:bg-primary/10 hover:text-primary hover:border-primary/40" },
+                      { label: "Instructor", email: "instructor@demo.com", icon: "👨‍🏫", color: "hover:bg-accent/10 hover:text-accent-foreground hover:border-accent/40" },
+                      { label: "University", email: "university@demo.com", icon: "🏛️", color: "hover:bg-indigo-500/10 hover:text-indigo-600 hover:border-indigo-400/40" },
+                      { label: "Admin", email: "admin@demo.com", icon: "🛡️", color: "hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-400/40" },
+                    ].map((acct) => (
+                      <button
+                        key={acct.label}
+                        type="button"
+                        onClick={() => {
+                          setEmail(acct.email);
+                          setPassword("demo1234");
+                          setErrors({});
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-background text-sm font-medium transition-all",
+                          acct.color
+                        )}
+                      >
+                        <span>{acct.icon}</span>
+                        {acct.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    Password: <span className="font-mono font-semibold">demo1234</span>
+                  </p>
+                </div>
+              )}
+
               {mode === "signup" && (
                 <>
                   {/* Role Selection */}
