@@ -48,12 +48,27 @@ export const useProgress = () => {
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
   const [stats, setStats] = useState<ProgressStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isMockUser } = useAuth();
   const { toast } = useToast();
   const activeSessionRef = useRef<string | null>(null);
 
+  const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   const fetchProgressData = useCallback(async () => {
     if (!user) return;
+
+    // Mock users can't query DB with non-UUID ids
+    if (isMockUser || !isValidUuid(user.id)) {
+      setStats({
+        totalLessonsCompleted: 12,
+        totalQuizzesTaken: 5,
+        averageQuizScore: 78,
+        totalStudyTimeMinutes: 320,
+        currentStreak: 3,
+      });
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -113,7 +128,7 @@ export const useProgress = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isMockUser]);
 
   useEffect(() => {
     if (user) {
@@ -184,7 +199,7 @@ export const useProgress = () => {
   };
 
   const startStudySession = async (courseId?: string, lessonId?: string) => {
-    if (!user) return { error: new Error('Not authenticated'), sessionId: null };
+    if (!user || isMockUser || !isValidUuid(user.id)) return { error: new Error('Mock user'), sessionId: null };
 
     try {
       const { data, error } = await supabase
