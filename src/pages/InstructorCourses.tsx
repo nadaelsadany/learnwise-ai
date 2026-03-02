@@ -4,6 +4,7 @@ import { InstructorSidebar } from "@/components/layout/InstructorSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { useCourses, Course } from "@/hooks/useCourses";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,11 +67,14 @@ const InstructorCourses = () => {
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
+  const { user, role } = useAuth();
   const { courses, loading, fetchInstructorCourses, createCourse, publishCourse, archiveCourse, deleteCourse } = useCourses();
 
   useEffect(() => {
-    fetchInstructorCourses();
-  }, []);
+    if (user && role === 'instructor') {
+      fetchInstructorCourses();
+    }
+  }, [user, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreateCourse = async () => {
     setCreating(true);

@@ -83,6 +83,12 @@ export const useCourses = () => {
   const fetchInstructorCourses = async () => {
     if (!user || role !== 'instructor') return;
 
+    // Mock users can't query DB
+    if (isMockUser || !isValidUuid(user.id)) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: coursesData, error } = await supabase
@@ -212,6 +218,15 @@ export const useCourses = () => {
       return { error: new Error('Not authorized'), data: null };
     }
 
+    // Handle mock user faux-create
+    if (isMockUser || !isValidUuid(user.id)) {
+      toast({
+        title: 'Course Created (Demo)',
+        description: 'Mock course created successfully',
+      });
+      return { error: null, data: { ...courseData, id: 'mock-course-id', status: 'draft', instructor_id: user.id } as Course };
+    }
+
     try {
       const { data, error } = await supabase
         .from('courses')
@@ -249,6 +264,14 @@ export const useCourses = () => {
   const updateCourse = async (courseId: string, updates: Partial<Course>) => {
     if (!user || role !== 'instructor') {
       return { error: new Error('Not authorized') };
+    }
+
+    if (isMockUser || !isValidUuid(user.id)) {
+      toast({
+        title: 'Course Updated (Demo)',
+        description: 'Mock course updated successfully',
+      });
+      return { error: null };
     }
 
     try {
@@ -291,6 +314,14 @@ export const useCourses = () => {
       return { error: new Error('Not authorized') };
     }
 
+    if (isMockUser || !isValidUuid(user.id)) {
+      toast({
+        title: 'Course Deleted (Demo)',
+        description: 'Mock course deleted successfully',
+      });
+      return { error: null };
+    }
+
     try {
       const { error } = await supabase
         .from('courses')
@@ -320,6 +351,22 @@ export const useCourses = () => {
 
   const getCourseById = async (courseId: string) => {
     setLoading(true);
+
+    if (isMockUser || !isValidUuid(courseId)) {
+      setLoading(false);
+      return {
+        course: { 
+          id: courseId, 
+          title: "Mock Course", 
+          description: "This is a demo course.", 
+          level: "beginner", 
+          status: "draft", 
+          enrollmentCount: 0 
+        } as any, 
+        error: null 
+      };
+    }
+
     try {
       const { data, error } = await supabase
         .from('courses')
@@ -335,7 +382,7 @@ export const useCourses = () => {
         .eq('course_id', courseId);
 
       let enrollment = null;
-      if (user) {
+      if (user && isValidUuid(user.id)) {
         const { data: enrollData } = await supabase
           .from('enrollments')
           .select('*')
