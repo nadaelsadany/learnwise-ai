@@ -38,8 +38,10 @@ export interface CourseWithEnrollment extends Course {
 export const useCourses = () => {
   const [courses, setCourses] = useState<CourseWithEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, role } = useAuth();
+  const { user, role, isMockUser } = useAuth();
   const { toast } = useToast();
+
+  const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
   const fetchPublishedCourses = async () => {
     setLoading(true);
@@ -51,7 +53,7 @@ export const useCourses = () => {
 
       if (error) throw error;
 
-      if (user) {
+      if (user && isValidUuid(user.id)) {
         const { data: enrollments } = await supabase
           .from('enrollments')
           .select('*')
@@ -118,6 +120,11 @@ export const useCourses = () => {
 
   const fetchEnrolledCourses = async () => {
     if (!user || role !== 'applicant') return;
+    // Mock users can't query DB
+    if (isMockUser || !isValidUuid(user.id)) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
