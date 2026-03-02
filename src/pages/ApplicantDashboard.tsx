@@ -17,6 +17,19 @@ import { Flame, Target, Clock, Trophy, Loader2 } from "lucide-react";
 const ApplicantDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
+
+  const [todaysPlanItems, setTodaysPlanItems] = useState([
+    { id: "1", title: "Review Test Design", duration: "25 min", type: "lesson" as const, completed: true },
+    { id: "2", title: "Practice: Black-box", duration: "15 min", type: "quiz" as const, completed: true },
+    { id: "3", title: "Flashcard Review", duration: "10 min", type: "flashcard" as const, completed: false },
+    { id: "4", title: "AI Review Session", duration: "30 min", type: "ai-review" as const, completed: false },
+  ]);
+
+  const handleTogglePlanItem = (id: string) => {
+    setTodaysPlanItems(items =>
+      items.map(item => item.id === id ? { ...item, completed: !item.completed } : item)
+    );
+  };
   const { courses, loading: coursesLoading, fetchEnrolledCourses } = useCourses();
   const { stats, loading: progressLoading } = useProgress();
 
@@ -121,6 +134,7 @@ const ApplicantDashboard = () => {
                 <ExamCountdown
                   examName="ISTQB Foundation Level"
                   date={new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)}
+                  onStartPractice={() => navigate("/mock-exam")}
                 />
               </div>
 
@@ -175,36 +189,8 @@ const ApplicantDashboard = () => {
               style={{ animationDelay: "300ms" }}
             >
               <TodaysPlan
-                items={[
-                  {
-                    id: "1",
-                    title: "Review Test Design",
-                    duration: "25 min",
-                    type: "lesson",
-                    completed: true,
-                  },
-                  {
-                    id: "2",
-                    title: "Practice: Black-box",
-                    duration: "15 min",
-                    type: "quiz",
-                    completed: true,
-                  },
-                  {
-                    id: "3",
-                    title: "Flashcard Review",
-                    duration: "10 min",
-                    type: "flashcard",
-                    completed: false,
-                  },
-                  {
-                    id: "4",
-                    title: "AI Review Session",
-                    duration: "30 min",
-                    type: "ai-review",
-                    completed: false,
-                  },
-                ]}
+                items={todaysPlanItems}
+                onToggleComplete={handleTogglePlanItem}
               />
 
               <WeaknessAnalysis
@@ -213,6 +199,7 @@ const ApplicantDashboard = () => {
                   { topic: "Static Testing", score: 52, questionsAttempted: 28 },
                   { topic: "Test Management", score: 58, questionsAttempted: 24 },
                 ]}
+                onPractice={(topic) => navigate(`/ai-tutor?q=${encodeURIComponent(`Help me practice ${topic}`)}`)}
               />
             </div>
           </div>
