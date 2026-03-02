@@ -30,6 +30,7 @@ const ApplicantDashboard = () => {
       items.map(item => item.id === id ? { ...item, completed: !item.completed } : item)
     );
   };
+
   const { courses, loading: coursesLoading, fetchEnrolledCourses } = useCourses();
   const { stats, loading: progressLoading } = useProgress();
 

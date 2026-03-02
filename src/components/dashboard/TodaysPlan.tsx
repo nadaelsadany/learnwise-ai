@@ -1,4 +1,5 @@
 import { Check, Circle, Sparkles, BookOpen, Brain, FileQuestion } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface PlanItem {
@@ -15,6 +16,7 @@ interface TodaysPlanProps {
 }
 
 export const TodaysPlan = ({ items, onToggleComplete }: TodaysPlanProps) => {
+  const navigate = useNavigate();
   const completedCount = items.filter(item => item.completed).length;
   const progress = Math.round((completedCount / items.length) * 100);
 
@@ -66,16 +68,30 @@ export const TodaysPlan = ({ items, onToggleComplete }: TodaysPlanProps) => {
                   ? "bg-muted/50 opacity-60" 
                   : "hover:bg-muted/50"
               )}
-              onClick={() => onToggleComplete?.(item.id)}
+              onClick={() => {
+                const routes: Record<string, string> = {
+                  lesson: "/courses",
+                  flashcard: "/flashcards",
+                  quiz: "/mock-exam",
+                  "ai-review": "/ai-tutor",
+                };
+                navigate(routes[item.type]);
+              }}
               style={{ animationDelay: `${index * 50}ms` }}
             >
               {/* Checkbox */}
-              <div className={cn(
-                "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                item.completed
-                  ? "bg-success border-success"
-                  : "border-muted-foreground/30 group-hover:border-primary"
-              )}>
+              <div 
+                className={cn(
+                  "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                  item.completed
+                    ? "bg-success border-success"
+                    : "border-muted-foreground/30 group-hover:border-primary"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleComplete?.(item.id);
+                }}
+              >
                 {item.completed ? (
                   <Check className="w-3.5 h-3.5 text-success-foreground" />
                 ) : (

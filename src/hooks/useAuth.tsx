@@ -172,8 +172,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       if (data.user) {
-        await supabase.from('profiles').insert({ user_id: data.user.id, full_name: fullName });
-        await supabase.from('user_roles').insert({ user_id: data.user.id, role: selectedRole });
+        const dbRole = selectedRole as "applicant" | "instructor" | "university";
+        await supabase.from('profiles').insert([{ user_id: data.user.id, full_name: fullName }]);
+        await supabase.from('user_roles').insert([{ user_id: data.user.id, role: dbRole }]);
         setRole(selectedRole);
       }
 

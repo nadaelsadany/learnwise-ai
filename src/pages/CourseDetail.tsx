@@ -169,12 +169,19 @@ const CourseDetail = () => {
 
     const nextLesson = getNextLesson();
 
+    // Check if this is a mock course (non-UUID id)
+    const isMockCourse = courseId ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId) : false;
+
     const handleEnroll = async () => {
         if (!courseId) return;
+        if (isMockCourse) {
+            // For mock courses, just update local state
+            setCourseData(prev => prev ? { ...prev, enrolled: true, progress: 0 } : null);
+            return;
+        }
         setEnrolling(true);
         const { error } = await enrollInCourse(courseId);
         if (!error) {
-            // Refresh local state
             const { course } = await getCourseById(courseId);
             if (course) {
                 setCourseData(prev => prev ? {
