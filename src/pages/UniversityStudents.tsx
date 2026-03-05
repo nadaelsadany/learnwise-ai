@@ -10,8 +10,28 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
     GraduationCap, Search, MoreHorizontal, Mail, BookOpen,
-    TrendingUp, Users, Award,
+    TrendingUp, Users, Award, User, FileText, Send, UserX,
 } from "lucide-react";
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -35,7 +55,14 @@ const UniversityStudents = () => {
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const { toast } = useToast();
 
-    const [students] = useState<Student[]>([
+    // Action dialogs
+    const [viewProfileStudent, setViewProfileStudent] = useState<Student | null>(null);
+    const [transcriptStudent, setTranscriptStudent] = useState<Student | null>(null);
+    const [messageStudent, setMessageStudent] = useState<Student | null>(null);
+    const [expelStudent, setExpelStudent] = useState<Student | null>(null);
+    const [messageText, setMessageText] = useState("");
+
+    const [students, setStudents] = useState<Student[]>([
         { id: "1", name: "Alice Smith", email: "alice@student.edu", department: "Computer Science", enrolledCourses: 4, gpa: 3.8, completionRate: 87, status: "active" },
         { id: "2", name: "Bob Johnson", email: "bob@student.edu", department: "Business", enrolledCourses: 5, gpa: 3.5, completionRate: 72, status: "active" },
         { id: "3", name: "Charlie Brown", email: "charlie@student.edu", department: "Engineering", enrolledCourses: 3, gpa: 3.9, completionRate: 100, status: "graduated" },
@@ -65,6 +92,29 @@ const UniversityStudents = () => {
         if (gpa >= 3.0) return "text-amber-600";
         return "text-destructive";
     };
+
+    const handleSendMessage = () => {
+        if (!messageStudent || !messageText.trim()) return;
+        toast({ title: "Message Sent", description: `Message sent to ${messageStudent.name}.` });
+        setMessageStudent(null);
+        setMessageText("");
+    };
+
+    const handleExpel = () => {
+        if (!expelStudent) return;
+        setStudents(students.filter(s => s.id !== expelStudent.id));
+        toast({ variant: "destructive", title: "Student Expelled", description: `${expelStudent.name} has been expelled.` });
+        setExpelStudent(null);
+    };
+
+    // Mock transcript data
+    const mockTranscript = [
+        { course: "Introduction to CS", grade: "A", credits: 3 },
+        { course: "Data Structures", grade: "A-", credits: 3 },
+        { course: "Calculus I", grade: "B+", credits: 4 },
+        { course: "English Composition", grade: "A", credits: 3 },
+        { course: "Physics I", grade: "B", credits: 4 },
+    ];
 
     return (
         <div className="min-h-screen bg-background">
@@ -169,18 +219,24 @@ const UniversityStudents = () => {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem>View Profile</DropdownMenuItem>
-                                                        <DropdownMenuItem>Academic Transcript</DropdownMenuItem>
-                                                        <DropdownMenuItem>Send Message</DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive focus:text-destructive">Expel Student</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setViewProfileStudent(student)}>
+                                                            <User className="w-4 h-4 mr-2" /> View Profile
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setTranscriptStudent(student)}>
+                                                            <FileText className="w-4 h-4 mr-2" /> Academic Transcript
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => { setMessageStudent(student); setMessageText(""); }}>
+                                                            <Send className="w-4 h-4 mr-2" /> Send Message
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setExpelStudent(student)}>
+                                                            <UserX className="w-4 h-4 mr-2" /> Expel Student
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
 
-                                            {/* Department */}
                                             <Badge variant="outline" className="text-xs font-medium">{student.department}</Badge>
 
-                                            {/* GPA + courses stats */}
                                             <div className="grid grid-cols-3 gap-2">
                                                 <div className="text-center p-2 rounded-lg bg-muted/40">
                                                     <p className={cn("text-base font-black", gpaColor(student.gpa))}>{student.gpa}</p>
@@ -196,7 +252,6 @@ const UniversityStudents = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Completion progress bar */}
                                             <div>
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="text-xs text-muted-foreground">Course Completion</span>
@@ -205,12 +260,11 @@ const UniversityStudents = () => {
                                                 <Progress value={student.completionRate} className="h-1.5" />
                                             </div>
 
-                                            {/* Status */}
                                             <div className="flex items-center justify-between pt-1 border-t border-border/40">
                                                 <Badge variant="outline" className={cn("text-xs font-semibold border", cfg.cls)}>
                                                     {cfg.label}
                                                 </Badge>
-                                                <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground hover:text-primary">
+                                                <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground hover:text-primary" onClick={() => { setMessageStudent(student); setMessageText(""); }}>
                                                     <Mail className="w-3 h-3 mr-1" /> Message
                                                 </Button>
                                             </div>
@@ -222,6 +276,128 @@ const UniversityStudents = () => {
                     )}
                 </div>
             </main>
+
+            {/* View Profile Dialog */}
+            <Dialog open={!!viewProfileStudent} onOpenChange={(open) => !open && setViewProfileStudent(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Student Profile</DialogTitle>
+                        <DialogDescription>Detailed information about the student.</DialogDescription>
+                    </DialogHeader>
+                    {viewProfileStudent && (
+                        <div className="space-y-4 py-4">
+                            <div className="flex items-center gap-4">
+                                <Avatar className="w-16 h-16 border-2 border-background shadow-md">
+                                    <AvatarImage src={`https://api.dicebear.com/7.x/notionists/svg?seed=${viewProfileStudent.name}`} />
+                                    <AvatarFallback className="font-bold">{viewProfileStudent.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h3 className="font-bold text-lg">{viewProfileStudent.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{viewProfileStudent.email}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-lg bg-muted/40">
+                                    <p className="text-xs text-muted-foreground">Department</p>
+                                    <p className="font-semibold text-sm">{viewProfileStudent.department}</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-muted/40">
+                                    <p className="text-xs text-muted-foreground">Status</p>
+                                    <p className="font-semibold text-sm capitalize">{viewProfileStudent.status}</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-muted/40">
+                                    <p className="text-xs text-muted-foreground">GPA</p>
+                                    <p className={cn("font-bold text-lg", gpaColor(viewProfileStudent.gpa))}>{viewProfileStudent.gpa}</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-muted/40">
+                                    <p className="text-xs text-muted-foreground">Enrolled Courses</p>
+                                    <p className="font-bold text-lg">{viewProfileStudent.enrolledCourses}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground mb-1">Completion Rate</p>
+                                <Progress value={viewProfileStudent.completionRate} className="h-2" />
+                                <p className="text-xs font-semibold mt-1">{viewProfileStudent.completionRate}%</p>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Academic Transcript Dialog */}
+            <Dialog open={!!transcriptStudent} onOpenChange={(open) => !open && setTranscriptStudent(null)}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Academic Transcript</DialogTitle>
+                        <DialogDescription>{transcriptStudent?.name} — {transcriptStudent?.department}</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <div className="border rounded-lg overflow-hidden">
+                            <div className="grid grid-cols-3 bg-muted/50 p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                <span>Course</span>
+                                <span className="text-center">Grade</span>
+                                <span className="text-right">Credits</span>
+                            </div>
+                            {mockTranscript.map((item, i) => (
+                                <div key={i} className="grid grid-cols-3 p-3 border-t border-border/40 text-sm">
+                                    <span className="font-medium">{item.course}</span>
+                                    <span className="text-center font-bold">{item.grade}</span>
+                                    <span className="text-right text-muted-foreground">{item.credits}</span>
+                                </div>
+                            ))}
+                            <div className="grid grid-cols-3 p-3 border-t border-border bg-muted/30 text-sm font-bold">
+                                <span>Total</span>
+                                <span className="text-center">GPA: {transcriptStudent?.gpa}</span>
+                                <span className="text-right">{mockTranscript.reduce((a, c) => a + c.credits, 0)} credits</span>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Send Message Dialog */}
+            <Dialog open={!!messageStudent} onOpenChange={(open) => !open && setMessageStudent(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Send Message</DialogTitle>
+                        <DialogDescription>Send a message to {messageStudent?.name}.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="msg-to">To</Label>
+                            <Input id="msg-to" value={messageStudent?.email || ""} disabled />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="msg-body">Message</Label>
+                            <Textarea id="msg-body" rows={4} placeholder="Type your message..." value={messageText} onChange={(e) => setMessageText(e.target.value)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMessageStudent(null)}>Cancel</Button>
+                        <Button onClick={handleSendMessage} disabled={!messageText.trim()}>
+                            <Send className="w-4 h-4 mr-2" /> Send
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Expel Student Confirmation */}
+            <AlertDialog open={!!expelStudent} onOpenChange={(open) => !open && setExpelStudent(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Expel Student?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove {expelStudent?.name} from the university. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleExpel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Expel
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
