@@ -53,6 +53,10 @@ const UniversityDepartments = () => {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [newDept, setNewDept] = useState({ name: "", head: "", budget: "" });
 
+    // Edit state
+    const [editingDept, setEditingDept] = useState<Department | null>(null);
+    const [editForm, setEditForm] = useState({ name: "", head: "", budget: "" });
+
     const [departments, setDepartments] = useState<Department[]>([
         { id: "1", name: "Computer Science", head: "Dr. Alan Turing", studentCount: 450, courseCount: 24, budget: 500000, performance: 92, color: "0" },
         { id: "2", name: "Business Administration", head: "Prof. Mary Barra", studentCount: 380, courseCount: 18, budget: 420000, performance: 88, color: "1" },
@@ -90,6 +94,25 @@ const UniversityDepartments = () => {
     const handleDelete = (id: string) => {
         setDepartments(departments.filter(d => d.id !== id));
         toast({ title: "Department Removed", description: "The department has been deleted." });
+    };
+
+    const handleOpenEdit = (dept: Department) => {
+        setEditingDept(dept);
+        setEditForm({ name: dept.name, head: dept.head, budget: String(dept.budget) });
+    };
+
+    const handleSaveEdit = () => {
+        if (!editingDept || !editForm.name || !editForm.head) {
+            toast({ variant: "destructive", title: "Missing fields", description: "Name and head are required." });
+            return;
+        }
+        setDepartments(departments.map(d =>
+            d.id === editingDept.id
+                ? { ...d, name: editForm.name, head: editForm.head, budget: Number(editForm.budget) || d.budget }
+                : d
+        ));
+        setEditingDept(null);
+        toast({ title: "Department Updated", description: `${editForm.name} has been updated.` });
     };
 
     const totalStudents = departments.reduce((a, d) => a + d.studentCount, 0);
@@ -217,7 +240,7 @@ const UniversityDepartments = () => {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenEdit(dept)}>
                                                                 <Edit className="w-4 h-4 mr-2" /> Edit Details
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(dept.id)}>
@@ -274,6 +297,34 @@ const UniversityDepartments = () => {
                     )}
                 </div>
             </main>
+
+            {/* Edit Department Dialog */}
+            <Dialog open={!!editingDept} onOpenChange={(open) => !open && setEditingDept(null)}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit Department</DialogTitle>
+                        <DialogDescription>Update department details below.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-name">Department Name</Label>
+                            <Input id="edit-name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-head">Head of Department</Label>
+                            <Input id="edit-head" value={editForm.head} onChange={(e) => setEditForm({ ...editForm, head: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-budget">Annual Budget ($)</Label>
+                            <Input id="edit-budget" type="number" value={editForm.budget} onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingDept(null)}>Cancel</Button>
+                        <Button onClick={handleSaveEdit} className="gradient-primary text-white border-0">Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

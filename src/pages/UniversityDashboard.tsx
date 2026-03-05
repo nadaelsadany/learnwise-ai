@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UniversitySidebar, UniversitySidebarContent } from "@/components/layout/UniversitySidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,7 @@ const StatCard = ({
 
 const UniversityDashboard = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const navigate = useNavigate();
     const { toast } = useToast();
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [newDept, setNewDept] = useState({ name: "", head: "", budget: "" });
@@ -334,7 +336,7 @@ const UniversityDashboard = () => {
                                             <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
                                         </div>
                                     ))}
-                                    <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-primary mt-2">
+                                    <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-primary mt-2" onClick={() => navigate("/university/analytics")}>
                                         View all activity
                                     </Button>
                                 </CardContent>

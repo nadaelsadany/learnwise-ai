@@ -168,7 +168,12 @@ export const useCourseEditor = (courseId?: string) => {
         }
     };
 
+    const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
     const fetchCurriculum = async (courseId: string) => {
+        if (!isValidUuid(courseId)) {
+            return [];
+        }
         setLoading(true);
         try {
             const { data: chaptersData, error: chaptersError } = await supabase

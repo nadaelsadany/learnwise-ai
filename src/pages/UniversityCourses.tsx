@@ -12,6 +12,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
     BookOpen,
@@ -19,7 +26,8 @@ import {
     MoreHorizontal,
     CheckCircle,
     XCircle,
-    Clock
+    Clock,
+    FileText,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -44,6 +52,7 @@ interface Course {
 const UniversityCourses = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [syllabusCourse, setSyllabusCourse] = useState<Course | null>(null);
     const { toast } = useToast();
 
     // Mock Data
@@ -205,7 +214,9 @@ const UniversityCourses = () => {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem>View Syllabus</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setSyllabusCourse(course)}>
+                                                        <FileText className="w-4 h-4 mr-2" /> View Syllabus
+                                                    </DropdownMenuItem>
                                                     {course.status === 'pending_approval' && (
                                                         <>
                                                             <DropdownMenuItem
@@ -243,6 +254,46 @@ const UniversityCourses = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Syllabus Dialog */}
+            <Dialog open={!!syllabusCourse} onOpenChange={(open) => !open && setSyllabusCourse(null)}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Course Syllabus</DialogTitle>
+                        <DialogDescription>{syllabusCourse?.title} — {syllabusCourse?.instructor}</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 rounded-lg bg-muted/40">
+                                <p className="text-xs text-muted-foreground">Department</p>
+                                <p className="font-semibold text-sm">{syllabusCourse?.department}</p>
+                            </div>
+                            <div className="p-3 rounded-lg bg-muted/40">
+                                <p className="text-xs text-muted-foreground">Enrolled Students</p>
+                                <p className="font-semibold text-sm">{syllabusCourse?.enrolledStudents}</p>
+                            </div>
+                        </div>
+                        <div className="border rounded-lg p-4 space-y-3">
+                            <h4 className="font-semibold text-sm">Course Outline</h4>
+                            <div className="space-y-2 text-sm">
+                                {[
+                                    { week: "Week 1-2", topic: "Introduction & Fundamentals" },
+                                    { week: "Week 3-4", topic: "Core Concepts & Theory" },
+                                    { week: "Week 5-6", topic: "Practical Applications" },
+                                    { week: "Week 7-8", topic: "Advanced Topics" },
+                                    { week: "Week 9-10", topic: "Projects & Assessment" },
+                                    { week: "Week 11-12", topic: "Review & Final Exam" },
+                                ].map((item) => (
+                                    <div key={item.week} className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-0">
+                                        <span className="text-xs font-mono text-muted-foreground w-20 shrink-0">{item.week}</span>
+                                        <span>{item.topic}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
