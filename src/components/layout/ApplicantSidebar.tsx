@@ -11,6 +11,8 @@ import {
   Sparkles,
   GraduationCap,
   LogOut,
+  CalendarDays,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,8 @@ const navItems: NavItem[] = [
   { icon: FileQuestion, label: "Mock Exams", href: "/mock-exam" },
   { icon: BarChart3, label: "My Progress", href: "/progress" },
   { icon: Sparkles, label: "AI Tutor", href: "/ai-tutor" },
+  { icon: CalendarDays, label: "Time Blocking", href: "/time-blocking" },
+  { icon: RotateCcw, label: "Spaced Repetition", href: "/spaced-repetition" },
 ];
 
 interface SidebarContentProps {

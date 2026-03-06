@@ -29,6 +29,8 @@ import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import LessonPlayer from "./pages/LessonPlayer";
 import Flashcards from "./pages/Flashcards";
+import TimeBlocking from "./pages/TimeBlocking";
+import SpacedRepetition from "./pages/SpacedRepetition";
 import NotFound from "./pages/NotFound";
 import UniversityDashboard from "./pages/UniversityDashboard";
 import UniversityDepartments from "./pages/UniversityDepartments";
@@ -169,6 +171,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <StudentSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/time-blocking"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <TimeBlocking />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/spaced-repetition"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <SpacedRepetition />
           </ProtectedRoute>
         }
       />
