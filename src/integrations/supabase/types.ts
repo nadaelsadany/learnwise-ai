@@ -383,6 +383,48 @@ export type Database = {
           },
         ]
       }
+      sr_cards: {
+        Row: {
+          answer: string
+          created_at: string
+          ease_factor: number
+          id: string
+          interval_days: number
+          last_reviewed: string | null
+          next_review: string
+          question: string
+          repetitions: number
+          student_id: string
+          topic: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string | null
+          next_review?: string
+          question: string
+          repetitions?: number
+          student_id: string
+          topic?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string | null
+          next_review?: string
+          question?: string
+          repetitions?: number
+          student_id?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           course_id: string | null
@@ -427,6 +469,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      time_blocks: {
+        Row: {
+          block_date: string
+          category: string
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          block_date?: string
+          category?: string
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          block_date?: string
+          category?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          student_id?: string
+          title?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
