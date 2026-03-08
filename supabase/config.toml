@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.explain-card]
 verify_jwt = false
+
+[functions.ai-study-coach]
+verify_jwt = false

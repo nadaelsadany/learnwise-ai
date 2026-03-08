@@ -200,6 +200,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/ai-coach"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <AIStudyCoach />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Instructor routes */}
       <Route
