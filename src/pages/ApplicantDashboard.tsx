@@ -212,6 +212,7 @@ const ApplicantDashboard = () => {
       </main>
 
       <AIChatBar onSend={(msg) => navigate(`/ai-tutor?q=${encodeURIComponent(msg)}`)} />
+      <FloatingCoachButton />
     </div>
   );
 };
