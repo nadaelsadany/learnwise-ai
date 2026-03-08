@@ -13,6 +13,13 @@ import {
   Upload,
   FileEdit,
   Bell,
+  ListTree,
+  ClipboardList,
+  FileQuestion,
+  MessageSquare,
+  Megaphone,
+  Layers,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,8 +36,15 @@ const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/instructor" },
   { icon: BookOpen, label: "My Courses", href: "/instructor/courses" },
   { icon: Upload, label: "Create Course", href: "/syllabus-upload" },
+  { icon: ListTree, label: "Curriculum", href: "/instructor/curriculum" },
   { icon: Users, label: "Students", href: "/instructor/students" },
+  { icon: ClipboardList, label: "Assignments", href: "/instructor/assignments" },
+  { icon: FileQuestion, label: "Quizzes & Exams", href: "/instructor/quizzes" },
+  { icon: MessageSquare, label: "Discussions", href: "/instructor/discussions" },
+  { icon: Megaphone, label: "Announcements", href: "/instructor/announcements" },
+  { icon: Layers, label: "Flashcards", href: "/instructor/flashcards" },
   { icon: BarChart3, label: "Analytics", href: "/instructor/analytics" },
+  { icon: Trophy, label: "Leaderboard", href: "/instructor/leaderboard" },
   { icon: FileEdit, label: "Content Tools", href: "/instructor/content" },
   { icon: Sparkles, label: "AI Assistant", href: "/instructor/ai-tools" },
 ];
@@ -112,6 +126,17 @@ export const InstructorSidebarContent = ({ collapsed, onItemClick, className }: 
 
       {/* Footer */}
       <div className="p-3 border-t border-border/50 space-y-1">
+        <button
+          onClick={() => handleNavigate("/instructor/notifications")}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted text-muted-foreground hover:text-foreground"
+        >
+          <Bell className="w-5 h-5 flex-shrink-0" />
+          {!collapsed && (
+            <span className="flex-1 text-left text-sm font-medium animate-fade-in">
+              Notifications
+            </span>
+          )}
+        </button>
         <button
           onClick={() => handleNavigate("/instructor/settings")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted text-muted-foreground hover:text-foreground"
