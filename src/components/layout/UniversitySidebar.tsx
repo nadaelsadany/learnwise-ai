@@ -9,7 +9,16 @@ import {
     ChevronLeft,
     ChevronRight,
     GraduationCap,
-    PieChart
+    PieChart,
+    Calendar,
+    Layers,
+    UserCheck,
+    ClipboardList,
+    Megaphone,
+    FolderOpen,
+    FileBarChart,
+    Brain,
+    ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,10 +33,19 @@ interface SidebarProps {
 const menuItems = [
     { icon: LayoutDashboard, label: "Overview", path: "/university" },
     { icon: Building2, label: "Departments", path: "/university/departments" },
+    { icon: Calendar, label: "Academic Terms", path: "/university/terms" },
+    { icon: Layers, label: "Sections", path: "/university/sections" },
     { icon: Users, label: "Instructors", path: "/university/instructors" },
     { icon: GraduationCap, label: "Students", path: "/university/students" },
     { icon: BookOpen, label: "Courses", path: "/university/courses" },
+    { icon: UserCheck, label: "Enrollment", path: "/university/enrollment" },
+    { icon: ClipboardList, label: "Exams", path: "/university/exams" },
+    { icon: Megaphone, label: "Announcements", path: "/university/announcements" },
+    { icon: FolderOpen, label: "Content Library", path: "/university/content" },
     { icon: PieChart, label: "Analytics", path: "/university/analytics" },
+    { icon: FileBarChart, label: "Reports", path: "/university/reports" },
+    { icon: Brain, label: "AI Insights", path: "/university/ai-insights" },
+    { icon: ShieldCheck, label: "Roles & Permissions", path: "/university/roles" },
     { icon: Settings, label: "Settings", path: "/university/settings" },
 ];
 

@@ -50,6 +50,15 @@ import UniversityStudents from "./pages/UniversityStudents";
 import UniversityCourses from "./pages/UniversityCourses";
 import UniversityAnalytics from "./pages/UniversityAnalytics";
 import UniversitySettings from "./pages/UniversitySettings";
+import UniversityAcademicTerms from "./pages/UniversityAcademicTerms";
+import UniversitySections from "./pages/UniversitySections";
+import UniversityEnrollment from "./pages/UniversityEnrollment";
+import UniversityExams from "./pages/UniversityExams";
+import UniversityAnnouncements from "./pages/UniversityAnnouncements";
+import UniversityContentLibrary from "./pages/UniversityContentLibrary";
+import UniversityReports from "./pages/UniversityReports";
+import UniversityAIInsights from "./pages/UniversityAIInsights";
+import UniversityRoles from "./pages/UniversityRoles";
 import { Loader2 } from "lucide-react";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
@@ -448,6 +457,78 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["university"]}>
             <UniversitySettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/terms"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAcademicTerms />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/sections"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversitySections />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/enrollment"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityEnrollment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/exams"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAnnouncements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/content"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityContentLibrary />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/reports"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityReports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/ai-insights"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAIInsights />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/roles"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityRoles />
           </ProtectedRoute>
         }
       />
