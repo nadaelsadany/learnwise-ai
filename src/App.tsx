@@ -33,6 +33,7 @@ import TimeBlocking from "./pages/TimeBlocking";
 import SpacedRepetition from "./pages/SpacedRepetition";
 import LearningAnalytics from "./pages/LearningAnalytics";
 import AIStudyCoach from "./pages/AIStudyCoach";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 import UniversityDashboard from "./pages/UniversityDashboard";
 import UniversityDepartments from "./pages/UniversityDepartments";
@@ -208,8 +209,15 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/achievements"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <Achievements />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Instructor routes */}
       <Route
         path="/instructor"
         element={
