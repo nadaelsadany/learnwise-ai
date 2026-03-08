@@ -246,7 +246,7 @@ const UniversityDashboard = () => {
                                     <BarChart2 className="w-5 h-5 text-primary" />
                                     Department Performance
                                 </h2>
-                                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">
+                                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary" onClick={() => navigate("/university/departments")}>
                                     View All <ChevronRight className="w-3 h-3 ml-1" />
                                 </Button>
                             </div>
