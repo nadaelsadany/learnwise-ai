@@ -420,8 +420,8 @@ const Landing = () => {
       </section>
 
       {/* Stats Bar */}
-      <section className="py-8 px-6 border-y border-border/50 bg-card/50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.02] via-accent/[0.02] to-success/[0.02]" />
+      <section className="py-8 px-6 border-y border-border/30 relative overflow-hidden" style={{ background: "linear-gradient(90deg, hsl(var(--primary) / 0.05), hsl(var(--accent) / 0.04), hsl(var(--success) / 0.05))" }}>
+        <div className="absolute inset-0 backdrop-blur-sm" />
         <motion.div
           className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8"
           variants={staggerContainer}
