@@ -70,8 +70,8 @@ export const ApplicantSidebarContent = ({ collapsed, onItemClick, className }: S
         </div>
         {!collapsed && (
           <div className="animate-fade-in text-left">
-            <h1 className="font-bold text-lg">نافع</h1>
-            <p className="text-xs text-muted-foreground">بوابة الطالب</p>
+            <h1 className="font-bold text-lg">Nafea</h1>
+            <p className="text-xs text-muted-foreground">Student Portal</p>
           </div>
         )}
       </div>
