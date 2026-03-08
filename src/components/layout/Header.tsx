@@ -99,6 +99,10 @@ export const Header = ({
           <DropdownMenuContent align="end" className="w-56 mt-2">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <User className="w-4 h-4 mr-2" />
+              My Profile
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
