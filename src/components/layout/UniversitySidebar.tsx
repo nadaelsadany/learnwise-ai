@@ -9,7 +9,16 @@ import {
     ChevronLeft,
     ChevronRight,
     GraduationCap,
-    PieChart
+    PieChart,
+    Calendar,
+    Layers,
+    UserCheck,
+    ClipboardList,
+    Megaphone,
+    FolderOpen,
+    FileBarChart,
+    Brain,
+    ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
