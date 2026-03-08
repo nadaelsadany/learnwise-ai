@@ -122,8 +122,7 @@ const AppRoutes = () => {
 
       {/* Profile route - accessible by all authenticated users */}
       <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      {/* Role-based home route (legacy) */}
-      <Route path="/" element={<RoleBasedRedirect />} />
+      {/* Legacy root redirect - handled by / above */}
 
       {/* Applicant routes */}
       <Route
