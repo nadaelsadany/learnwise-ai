@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bell, Search, User, Menu, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { GlobalSearchDialog } from "./GlobalSearchDialog";
 
 interface HeaderProps {
   userName?: string;
