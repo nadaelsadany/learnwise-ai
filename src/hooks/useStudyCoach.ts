@@ -21,7 +21,13 @@ export interface StudentData {
   quizAverage: number;
   cardsReviewedToday: number;
   sessionsThisWeek: number;
+  totalCards: number;
+  retentionRate: number;
+  timeBlocksToday: number;
+  deepWorkSessions: number;
 }
+
+const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 const COACH_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-study-coach`;
 
@@ -51,6 +57,14 @@ async function streamCoach({
 
   if (!resp.ok) {
     const body = await resp.json().catch(() => ({ error: "Unknown error" }));
+    if (resp.status === 429) {
+      onError("Rate limit exceeded. Please wait a moment and try again.");
+      return;
+    }
+    if (resp.status === 402) {
+      onError("AI credits depleted. Please add funds to continue.");
+      return;
+    }
     onError(body.error || `Error ${resp.status}`);
     return;
   }
@@ -86,20 +100,63 @@ async function streamCoach({
       }
     }
   }
+
+  // Final flush
+  if (textBuffer.trim()) {
+    for (let raw of textBuffer.split("\n")) {
+      if (!raw) continue;
+      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+      if (raw.startsWith(":") || raw.trim() === "") continue;
+      if (!raw.startsWith("data: ")) continue;
+      const jsonStr = raw.slice(6).trim();
+      if (jsonStr === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content;
+        if (content) onDelta(content);
+      } catch { /* ignore partial leftovers */ }
+    }
+  }
+
   onDone();
 }
 
+const MOCK_STUDENT_DATA: StudentData = {
+  totalStudyHours: 47.5,
+  avgFocusScore: 78,
+  streak: 12,
+  flashcardsDue: 8,
+  weakTopics: ['Test Design', 'Static Testing', 'Risk Analysis'],
+  bestStudyTime: 'Morning',
+  coursesEnrolled: 3,
+  lessonsCompleted: 24,
+  quizAverage: 76,
+  cardsReviewedToday: 12,
+  sessionsThisWeek: 5,
+  totalCards: 85,
+  retentionRate: 82,
+  timeBlocksToday: 3,
+  deepWorkSessions: 7,
+};
+
 export const useStudyCoach = () => {
-  const { user } = useAuth();
+  const { user, isMockUser } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Fetch student data for context
   useEffect(() => {
     if (!user) return;
+
+    // Mock users get instant mock data
+    if (isMockUser || !isValidUuid(user.id)) {
+      setStudentData(MOCK_STUDENT_DATA);
+      setDataLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       setDataLoading(true);
       try {
@@ -107,12 +164,13 @@ export const useStudyCoach = () => {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const today = now.toISOString().split('T')[0];
 
-        const [sessionsRes, cardsRes, enrollRes, lessonsRes, quizRes] = await Promise.all([
+        const [sessionsRes, cardsRes, enrollRes, lessonsRes, quizRes, blocksRes] = await Promise.all([
           supabase.from('study_sessions').select('*').eq('student_id', user.id).gte('started_at', weekAgo.toISOString()),
           supabase.from('sr_cards').select('*').eq('student_id', user.id),
           supabase.from('enrollments').select('*').eq('student_id', user.id),
           supabase.from('lesson_completions').select('*').eq('student_id', user.id),
           supabase.from('quiz_results').select('*').eq('student_id', user.id),
+          supabase.from('time_blocks').select('*').eq('student_id', user.id).eq('block_date', today),
         ]);
 
         const sessions = sessionsRes.data || [];
@@ -120,6 +178,7 @@ export const useStudyCoach = () => {
         const enrollments = enrollRes.data || [];
         const lessons = lessonsRes.data || [];
         const quizzes = quizRes.data || [];
+        const todayBlocks = blocksRes.data || [];
 
         const totalSeconds = sessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
         const dueCards = cards.filter(c => new Date(c.next_review) <= now);
@@ -129,7 +188,7 @@ export const useStudyCoach = () => {
           ? Math.round(quizzes.reduce((s, q) => s + Number(q.percentage), 0) / quizzes.length)
           : 0;
 
-        // Determine best study time from sessions
+        // Best study time from sessions
         const hourCounts: Record<number, number> = {};
         sessions.forEach(s => {
           const h = new Date(s.started_at).getHours();
@@ -138,7 +197,7 @@ export const useStudyCoach = () => {
         const bestHour = Object.entries(hourCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
         const bestTime = bestHour ? (Number(bestHour[0]) < 12 ? 'Morning' : Number(bestHour[0]) < 17 ? 'Afternoon' : 'Evening') : 'Unknown';
 
-        // Calculate streak
+        // Streak
         const completionDates = new Set(lessons.map(l => l.completed_at.split('T')[0]));
         let streak = 0;
         const d = new Date(today);
@@ -148,10 +207,16 @@ export const useStudyCoach = () => {
         }
 
         const reviewedToday = cards.filter(c => c.last_reviewed && c.last_reviewed.startsWith(today)).length;
+        const avgEase = cards.length > 0 ? cards.reduce((s, c) => s + c.ease_factor, 0) / cards.length : 2.5;
+        const deepSessions = sessions.filter(s => (s.duration_seconds || 0) >= 2700).length;
+
+        // All-time sessions for total hours
+        const allSessionsRes = await supabase.from('study_sessions').select('duration_seconds').eq('student_id', user.id);
+        const allTotalSeconds = (allSessionsRes.data || []).reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
 
         setStudentData({
-          totalStudyHours: Math.round(totalSeconds / 3600 * 10) / 10,
-          avgFocusScore: 72, // would need focus_score table; using heuristic
+          totalStudyHours: Math.round(allTotalSeconds / 3600 * 10) / 10,
+          avgFocusScore: Math.min(100, Math.round(60 + (sessions.length * 3))),
           streak,
           flashcardsDue: dueCards.length,
           weakTopics,
@@ -161,6 +226,10 @@ export const useStudyCoach = () => {
           quizAverage: quizAvg,
           cardsReviewedToday: reviewedToday,
           sessionsThisWeek: sessions.length,
+          totalCards: cards.length,
+          retentionRate: Math.min(100, Math.round(avgEase * 35)),
+          timeBlocksToday: todayBlocks.length,
+          deepWorkSessions: deepSessions,
         });
       } catch (e) {
         console.error("Failed to fetch student data", e);
@@ -169,7 +238,7 @@ export const useStudyCoach = () => {
       }
     };
     fetchData();
-  }, [user]);
+  }, [user, isMockUser]);
 
   const sendMessage = useCallback(async (content: string, mode: string = 'chat') => {
     if (!content.trim()) return;
