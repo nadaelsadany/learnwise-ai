@@ -11,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarWidget } from "@/components/ui/calendar";
-import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical } from "lucide-react";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
-import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
+import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 
 type BlockCategory = "study" | "break" | "review" | "practice" | "personal";
 
@@ -64,6 +64,7 @@ const TimeBlocking = () => {
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
   const [newBlock, setNewBlock] = useState({ title: "", startTime: "08:00", endTime: "09:00", category: "study" as BlockCategory });
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
@@ -86,6 +87,39 @@ const TimeBlocking = () => {
     };
     load();
   }, [user, isMock, weekStart.toISOString()]);
+
+  // Calculate streak
+  useEffect(() => {
+    const calcStreak = async () => {
+      if (isMock) {
+        setStreak(5); // Demo streak
+        return;
+      }
+      // Query distinct dates with blocks in the last 60 days
+      const today = new Date();
+      const lookback = format(subDays(today, 60), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("time_blocks")
+        .select("block_date")
+        .eq("student_id", user!.id)
+        .gte("block_date", lookback)
+        .order("block_date", { ascending: false });
+      if (error || !data) { setStreak(0); return; }
+      const uniqueDates = [...new Set(data.map((r: any) => r.block_date))].sort().reverse();
+      let count = 0;
+      let checkDate = format(today, "yyyy-MM-dd");
+      for (const d of uniqueDates) {
+        if (d === checkDate) {
+          count++;
+          checkDate = format(subDays(new Date(checkDate + "T12:00:00"), 1), "yyyy-MM-dd");
+        } else if (d < checkDate) {
+          break;
+        }
+      }
+      setStreak(count);
+    };
+    calcStreak();
+  }, [blocks, user, isMock]);
 
   const blocksForDate = useCallback((dateStr: string) => blocks.filter((b) => b.date === dateStr), [blocks]);
   const todayBlocks = blocksForDate(selectedDateStr);
@@ -323,9 +357,9 @@ const TimeBlocking = () => {
             </Button>
           </div>
 
-          {/* Stats Row + Pomodoro */}
+          {/* Stats Row + Streak + Pomodoro */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
                 { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
                 { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
@@ -339,6 +373,17 @@ const TimeBlocking = () => {
                   </CardContent>
                 </Card>
               ))}
+              {/* Streak Card */}
+              <Card className={cn("overflow-hidden border", streak >= 7 ? "border-warning/40 bg-gradient-to-br from-warning/10 to-warning/5" : streak >= 3 ? "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent" : "")}>
+                <CardContent className="p-4 text-center">
+                  <Flame className={cn("w-5 h-5 mx-auto mb-0.5", streak >= 7 ? "text-warning" : streak >= 3 ? "text-primary" : "text-muted-foreground")} />
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Streak</p>
+                  <p className={cn("text-2xl font-bold mt-0.5", streak >= 7 ? "text-warning-foreground" : streak >= 3 ? "text-primary" : "text-foreground")}>
+                    {streak} {streak === 1 ? "day" : "days"}
+                  </p>
+                  {streak >= 3 && <p className="text-[10px] text-muted-foreground mt-0.5">🔥 Keep it going!</p>}
+                </CardContent>
+              </Card>
             </div>
             <PomodoroTimer activeBlockTitle={activeBlock?.title || null} />
           </div>
