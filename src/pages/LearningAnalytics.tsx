@@ -17,7 +17,7 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis,
   Tooltip, ResponsiveContainer, Cell, CartesianGrid
 } from "recharts";
-import { MasteryHeatmap } from "@/components/mastery/MasteryHeatmap";
+import { StudyHeatmap } from "@/components/analytics/StudyHeatmap";
 
 const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
