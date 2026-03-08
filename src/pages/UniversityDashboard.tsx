@@ -222,10 +222,18 @@ const UniversityDashboard = () => {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Total Students" value={stats.totalStudents} sub="Enrolled this semester" icon={GraduationCap} trend={{ value: 12, positive: true }} color="primary" />
-                        <StatCard title="Instructors" value={stats.activeInstructors} sub="Across all departments" icon={Users} trend={{ value: 5, positive: true }} color="accent" />
-                        <StatCard title="Active Courses" value={stats.totalCourses} sub="Published & running" icon={BookOpen} trend={{ value: 8, positive: true }} color="emerald" />
-                        <StatCard title="Avg Completion" value={`${stats.avgCompletion}%`} sub="Student course completion" icon={TrendingUp} trend={{ value: 3, positive: true }} color="amber" />
+                        <div onClick={() => navigate("/university/students")} className="cursor-pointer">
+                            <StatCard title="Total Students" value={stats.totalStudents} sub="Enrolled this semester" icon={GraduationCap} trend={{ value: 12, positive: true }} color="primary" />
+                        </div>
+                        <div onClick={() => navigate("/university/instructors")} className="cursor-pointer">
+                            <StatCard title="Instructors" value={stats.activeInstructors} sub="Across all departments" icon={Users} trend={{ value: 5, positive: true }} color="accent" />
+                        </div>
+                        <div onClick={() => navigate("/university/courses")} className="cursor-pointer">
+                            <StatCard title="Active Courses" value={stats.totalCourses} sub="Published & running" icon={BookOpen} trend={{ value: 8, positive: true }} color="emerald" />
+                        </div>
+                        <div onClick={() => navigate("/university/analytics")} className="cursor-pointer">
+                            <StatCard title="Avg Completion" value={`${stats.avgCompletion}%`} sub="Student course completion" icon={TrendingUp} trend={{ value: 3, positive: true }} color="amber" />
+                        </div>
                     </div>
 
                     {/* Main Grid */}
