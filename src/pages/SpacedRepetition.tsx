@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -9,10 +9,13 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Brain, RotateCcw, CheckCircle2, XCircle, Clock, Layers, TrendingUp, Zap, Plus, Loader2, Sparkles, BookOpen, Target } from "lucide-react";
+import { Brain, RotateCcw, CheckCircle2, XCircle, Clock, Layers, TrendingUp, Zap, Plus, Loader2, Sparkles, BookOpen, Target, Lightbulb, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { ReviewModeSelector, type ReviewMode } from "@/components/spaced-repetition/ReviewModeSelector";
+import { MemoryStrengthBadge } from "@/components/spaced-repetition/MemoryStrengthBadge";
+import { ForgettingCurveChart } from "@/components/spaced-repetition/ForgettingCurveChart";
 
 interface ReviewCard {
   id: string;
@@ -56,6 +59,12 @@ const SpacedRepetition = () => {
   const [sessionStats, setSessionStats] = useState({ reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 });
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newCard, setNewCard] = useState({ question: "", answer: "", topic: "General" });
+  const [reviewMode, setReviewMode] = useState<ReviewMode>("all-due");
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [isGeneratingCards, setIsGeneratingCards] = useState(false);
+  const [generateTopic, setGenerateTopic] = useState("");
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
@@ -77,8 +86,19 @@ const SpacedRepetition = () => {
     load();
   }, [user, isMock]);
 
-  const dueCards = cards.filter((c) => c.nextReview <= new Date());
-  const currentCard = isReviewing ? dueCards[currentIndex] : null;
+  const dueCards = useMemo(() => cards.filter((c) => c.nextReview <= new Date()), [cards]);
+  const weakCards = useMemo(() => cards.filter((c) => c.easeFactor < 2.0 || (c.repetitions < 2 && c.lastReviewed)), [cards]);
+
+  const getReviewDeck = useMemo(() => {
+    switch (reviewMode) {
+      case "quick": return dueCards.slice(0, 10);
+      case "exam": return dueCards;
+      case "weak-only": return weakCards.length > 0 ? weakCards : dueCards.filter(c => c.repetitions < 3);
+      default: return dueCards;
+    }
+  }, [reviewMode, dueCards, weakCards]);
+
+  const currentCard = isReviewing ? getReviewDeck[currentIndex] : null;
 
   const calculateNextInterval = (card: ReviewCard, difficulty: Difficulty) => {
     let { interval, easeFactor, repetitions } = card;
@@ -102,13 +122,14 @@ const SpacedRepetition = () => {
     setCards((prev) => prev.map((c) => (c.id === currentCard.id ? { ...c, ...updates } : c)));
     setSessionStats((prev) => ({ ...prev, reviewed: prev.reviewed + 1, [difficulty]: prev[difficulty] + 1 }));
     setShowAnswer(false);
+    setExplanation(null);
     if (!isMock && isValidUuid(currentCard.id)) {
       await supabase.from("sr_cards").update({
         interval_days: updates.interval, ease_factor: updates.easeFactor, repetitions: updates.repetitions,
         next_review: updates.nextReview.toISOString(), last_reviewed: updates.lastReviewed!.toISOString(),
       }).eq("id", currentCard.id);
     }
-    if (currentIndex + 1 >= dueCards.length) {
+    if (currentIndex + 1 >= getReviewDeck.length) {
       setIsReviewing(false);
       toast.success(`Session complete! Reviewed ${sessionStats.reviewed + 1} cards.`);
     } else {
@@ -117,8 +138,9 @@ const SpacedRepetition = () => {
   };
 
   const startSession = () => {
-    if (dueCards.length === 0) { toast.info("No cards due for review!"); return; }
-    setCurrentIndex(0); setShowAnswer(false);
+    const deck = getReviewDeck;
+    if (deck.length === 0) { toast.info("No cards available for this mode!"); return; }
+    setCurrentIndex(0); setShowAnswer(false); setExplanation(null);
     setSessionStats({ reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 });
     setIsReviewing(true);
   };
@@ -141,6 +163,64 @@ const SpacedRepetition = () => {
     setNewCard({ question: "", answer: "", topic: "General" });
     setAddDialogOpen(false);
     toast.success("Card added!");
+  };
+
+  // AI Explain Card
+  const explainCard = async () => {
+    if (!currentCard) return;
+    setIsExplaining(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("explain-card", {
+        body: { question: currentCard.question, answer: currentCard.answer, topic: currentCard.topic, type: "explain" },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      setExplanation(data?.explanation || "No explanation available.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to get explanation");
+    } finally {
+      setIsExplaining(false);
+    }
+  };
+
+  // AI Generate Cards
+  const generateCards = async () => {
+    if (!generateTopic.trim()) { toast.error("Enter a topic"); return; }
+    setIsGeneratingCards(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("explain-card", {
+        body: { topic: generateTopic, type: "generate-cards" },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      const aiCards = data?.cards || [];
+      if (aiCards.length === 0) { toast.info("No cards generated. Try a different topic."); return; }
+
+      const newCards: ReviewCard[] = [];
+      for (const ac of aiCards) {
+        if (!ac.question || !ac.answer) continue;
+        if (isMock) {
+          newCards.push({ id: `ai-${Date.now()}-${Math.random()}`, question: ac.question, answer: ac.answer, topic: generateTopic, interval: 1, easeFactor: 2.5, repetitions: 0, nextReview: new Date(), lastReviewed: null });
+        } else {
+          const { data: saved, error: saveErr } = await supabase.from("sr_cards").insert({
+            student_id: user!.id, question: ac.question, answer: ac.answer, topic: generateTopic,
+          }).select().single();
+          if (!saveErr && saved) {
+            newCards.push({ id: saved.id, question: saved.question, answer: saved.answer, topic: saved.topic, interval: saved.interval_days, easeFactor: Number(saved.ease_factor), repetitions: saved.repetitions, nextReview: new Date(saved.next_review), lastReviewed: null });
+          }
+        }
+      }
+      setCards(p => [...p, ...newCards]);
+      setGenerateTopic("");
+      setGenerateDialogOpen(false);
+      toast.success(`Generated ${newCards.length} flashcards!`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to generate cards");
+    } finally {
+      setIsGeneratingCards(false);
+    }
   };
 
   const masteredCards = cards.filter((c) => c.repetitions >= 3);
@@ -175,7 +255,25 @@ const SpacedRepetition = () => {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-2 max-w-md">Master your knowledge with scientifically-proven interval-based review.</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2 border-accent/30 text-accent hover:bg-accent/10">
+                      <Wand2 className="w-4 h-4" /> AI Generate
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-accent" /> AI Flashcard Generator</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <p className="text-sm text-muted-foreground">Enter a topic and the AI will generate study flashcards for you.</p>
+                      <Input placeholder="e.g. React Hooks, Calculus Derivatives, World War II" value={generateTopic} onChange={(e) => setGenerateTopic(e.target.value)} />
+                      <Button onClick={generateCards} className="w-full gap-2" disabled={isGeneratingCards}>
+                        {isGeneratingCards ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                        {isGeneratingCards ? "Generating..." : "Generate Flashcards"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Add Card</Button>
@@ -191,11 +289,14 @@ const SpacedRepetition = () => {
                   </DialogContent>
                 </Dialog>
                 <Button onClick={startSession} className="gap-2 shadow-md" disabled={isReviewing}>
-                  <Zap className="w-4 h-4" /> Start Review ({dueCards.length} due)
+                  <Zap className="w-4 h-4" /> Start Review ({getReviewDeck.length})
                 </Button>
               </div>
             </div>
           </div>
+
+          {/* Review Mode Selector */}
+          <ReviewModeSelector value={reviewMode} onChange={setReviewMode} dueTodayCount={dueCards.length} weakCount={weakCards.length} />
 
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -233,11 +334,14 @@ const SpacedRepetition = () => {
           {/* Review Session */}
           {isReviewing && currentCard ? (
             <Card className="overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-primary via-accent to-success" style={{ width: `${((currentIndex + 1) / dueCards.length) * 100}%`, transition: "width 0.3s ease" }} />
+              <div className="h-1 bg-gradient-to-r from-primary via-accent to-success" style={{ width: `${((currentIndex + 1) / getReviewDeck.length) * 100}%`, transition: "width 0.3s ease" }} />
               <CardContent className="p-6 sm:p-8 max-w-2xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
-                  <Badge variant="outline" className="text-xs border-accent/30 text-accent">{currentCard.topic}</Badge>
-                  <span className="text-xs text-muted-foreground font-medium">{currentIndex + 1} / {dueCards.length}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs border-accent/30 text-accent">{currentCard.topic}</Badge>
+                    <MemoryStrengthBadge repetitions={currentCard.repetitions} easeFactor={currentCard.easeFactor} />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">{currentIndex + 1} / {getReviewDeck.length}</span>
                 </div>
                 <div className="text-center space-y-6">
                   <div className="py-4">
@@ -248,6 +352,21 @@ const SpacedRepetition = () => {
                       <div className="border-t border-border pt-6 pb-2">
                         <p className="text-muted-foreground leading-relaxed">{currentCard.answer}</p>
                       </div>
+
+                      {/* AI Explain Button */}
+                      {!explanation && (
+                        <Button variant="outline" size="sm" className="gap-2 border-accent/30 text-accent hover:bg-accent/10" onClick={explainCard} disabled={isExplaining}>
+                          {isExplaining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5" />}
+                          Explain This Card
+                        </Button>
+                      )}
+                      {explanation && (
+                        <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 text-left">
+                          <p className="text-xs font-semibold text-accent mb-2 flex items-center gap-1.5"><Lightbulb className="w-3.5 h-3.5" /> AI Explanation</p>
+                          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{explanation}</p>
+                        </div>
+                      )}
+
                       <p className="text-xs text-muted-foreground">How well did you remember?</p>
                       <div className="grid grid-cols-4 gap-2">
                         {(["again", "hard", "good", "easy"] as Difficulty[]).map((d) => {
@@ -286,14 +405,17 @@ const SpacedRepetition = () => {
                   <div className="text-center"><p className="text-lg font-bold text-success">{sessionStats.good}</p><p className="text-[11px] text-muted-foreground">Good</p></div>
                   <div className="text-center"><p className="text-lg font-bold text-primary">{sessionStats.easy}</p><p className="text-[11px] text-muted-foreground">Easy</p></div>
                 </div>
-                <Button onClick={startSession} className="gap-2" disabled={dueCards.length === 0}>
-                  <RotateCcw className="w-4 h-4" /> Review Again ({dueCards.length} due)
+                <Button onClick={startSession} className="gap-2" disabled={getReviewDeck.length === 0}>
+                  <RotateCcw className="w-4 h-4" /> Review Again ({getReviewDeck.length})
                 </Button>
               </CardContent>
             </Card>
           ) : null}
 
-          {/* All Cards */}
+          {/* Forgetting Curve Chart */}
+          <ForgettingCurveChart cards={cards} />
+
+          {/* All Cards with Memory Strength */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -313,6 +435,7 @@ const SpacedRepetition = () => {
                         <p className="text-sm font-medium truncate">{card.question}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">{card.topic}</Badge>
+                          <MemoryStrengthBadge repetitions={card.repetitions} easeFactor={card.easeFactor} />
                           <span className="text-[10px] text-muted-foreground">
                             {card.repetitions === 0 ? "New" : card.repetitions >= 3 ? "Mastered" : `${card.repetitions} reviews`}
                           </span>
@@ -339,8 +462,9 @@ const SpacedRepetition = () => {
               <ul className="text-sm text-muted-foreground space-y-1.5">
                 <li>• Cards you find <strong>easy</strong> appear less frequently (longer intervals).</li>
                 <li>• Cards you struggle with (<strong>again/hard</strong>) reset to shorter intervals.</li>
-                <li>• The algorithm adapts to your performance using the <strong>SM-2 method</strong>.</li>
-                <li>• Review daily for best results – consistency beats volume.</li>
+                <li>• Use <strong>AI Generate</strong> to create flashcards from any topic instantly.</li>
+                <li>• Click <strong>Explain This Card</strong> during review for AI-powered explanations.</li>
+                <li>• The <strong>forgetting curve</strong> shows why regular review matters.</li>
               </ul>
             </CardContent>
           </Card>

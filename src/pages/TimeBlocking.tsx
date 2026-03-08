@@ -11,12 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarWidget } from "@/components/ui/calendar";
-import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame, BarChart3, Bell } from "lucide-react";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame, BarChart3, Bell, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
 import { AchievementBadges } from "@/components/timeblocking/AchievementBadges";
+import { EnergyLevelSelector, type EnergyLevel } from "@/components/timeblocking/EnergyLevelSelector";
+import { FocusScoreCard } from "@/components/timeblocking/FocusScoreCard";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -67,6 +69,9 @@ const TimeBlocking = () => {
   const [newBlock, setNewBlock] = useState({ title: "", startTime: "08:00", endTime: "09:00", category: "study" as BlockCategory });
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
+  const [energyLevel, setEnergyLevel] = useState<EnergyLevel>("morning");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
@@ -93,19 +98,12 @@ const TimeBlocking = () => {
   // Calculate streak
   useEffect(() => {
     const calcStreak = async () => {
-      if (isMock) {
-        setStreak(5); // Demo streak
-        return;
-      }
-      // Query distinct dates with blocks in the last 60 days
+      if (isMock) { setStreak(5); return; }
       const today = new Date();
       const lookback = format(subDays(today, 60), "yyyy-MM-dd");
       const { data, error } = await supabase
-        .from("time_blocks")
-        .select("block_date")
-        .eq("student_id", user!.id)
-        .gte("block_date", lookback)
-        .order("block_date", { ascending: false });
+        .from("time_blocks").select("block_date").eq("student_id", user!.id)
+        .gte("block_date", lookback).order("block_date", { ascending: false });
       if (error || !data) { setStreak(0); return; }
       const uniqueDates = [...new Set(data.map((r: any) => r.block_date))].sort().reverse();
       let count = 0;
@@ -114,9 +112,7 @@ const TimeBlocking = () => {
         if (d === checkDate) {
           count++;
           checkDate = format(subDays(new Date(checkDate + "T12:00:00"), 1), "yyyy-MM-dd");
-        } else if (d < checkDate) {
-          break;
-        }
+        } else if (d < checkDate) { break; }
       }
       setStreak(count);
     };
@@ -150,14 +146,12 @@ const TimeBlocking = () => {
     toast.success("Block removed");
   };
 
-  // Duplicate day's blocks to target date
   const duplicateDay = async () => {
     if (!copyTargetDate) { toast.error("Select a target date"); return; }
     const targetStr = format(copyTargetDate, "yyyy-MM-dd");
     if (targetStr === selectedDateStr) { toast.error("Choose a different date"); return; }
     const source = todayBlocks;
     if (source.length === 0) { toast.error("No blocks to copy"); return; }
-
     const newBlocks: TimeBlock[] = [];
     for (const b of source) {
       if (isMock) {
@@ -177,7 +171,49 @@ const TimeBlocking = () => {
     toast.success(`Copied ${newBlocks.length} blocks to ${format(copyTargetDate, "MMM d")}`);
   };
 
-  // Drag & drop reorder (swap time slots)
+  // AI Schedule Generator
+  const generateAISchedule = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-schedule", {
+        body: {
+          energyLevel,
+          courses: ["Test Design", "Fundamentals", "Test Management"],
+          existingBlocks: todayBlocks.map(b => ({ title: b.title, startTime: b.startTime, endTime: b.endTime })),
+          date: selectedDateStr,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      
+      const aiBlocks = data?.blocks || [];
+      if (aiBlocks.length === 0) { toast.info("AI couldn't generate blocks. Try again."); return; }
+
+      const newBlocks: TimeBlock[] = [];
+      for (const ab of aiBlocks) {
+        if (!ab.title || !ab.startTime || !ab.endTime) continue;
+        const category = (["study", "break", "review", "practice", "personal"].includes(ab.category) ? ab.category : "study") as BlockCategory;
+        if (isMock) {
+          newBlocks.push({ id: `ai-${Date.now()}-${Math.random()}`, title: ab.title, startTime: ab.startTime, endTime: ab.endTime, category, date: selectedDateStr });
+        } else {
+          const { data: saved, error: saveErr } = await supabase.from("time_blocks").insert({
+            student_id: user!.id, title: ab.title, start_time: ab.startTime, end_time: ab.endTime, category, block_date: selectedDateStr,
+          }).select().single();
+          if (!saveErr && saved) {
+            newBlocks.push({ id: saved.id, title: saved.title, startTime: saved.start_time, endTime: saved.end_time, category: saved.category as BlockCategory, date: saved.block_date });
+          }
+        }
+      }
+      setBlocks(p => [...p.filter(b => b.date !== selectedDateStr), ...newBlocks].sort((a, b) => a.startTime.localeCompare(b.startTime)));
+      toast.success(`AI generated ${newBlocks.length} optimized blocks!`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Failed to generate schedule. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleDragStart = (blockId: string) => setDraggedBlockId(blockId);
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
   const handleDrop = async (targetBlockId: string) => {
@@ -185,22 +221,14 @@ const TimeBlocking = () => {
     const draggedBlock = blocks.find((b) => b.id === draggedBlockId);
     const targetBlock = blocks.find((b) => b.id === targetBlockId);
     if (!draggedBlock || !targetBlock) { setDraggedBlockId(null); return; }
-
-    // Swap times
     setBlocks((prev) => prev.map((b) => {
       if (b.id === draggedBlockId) return { ...b, startTime: targetBlock.startTime, endTime: targetBlock.endTime };
       if (b.id === targetBlockId) return { ...b, startTime: draggedBlock.startTime, endTime: draggedBlock.endTime };
       return b;
     }).sort((a, b) => a.startTime.localeCompare(b.startTime)));
-
-    // Persist swaps
     if (!isMock) {
-      if (isValidUuid(draggedBlockId)) {
-        await supabase.from("time_blocks").update({ start_time: targetBlock.startTime, end_time: targetBlock.endTime }).eq("id", draggedBlockId);
-      }
-      if (isValidUuid(targetBlockId)) {
-        await supabase.from("time_blocks").update({ start_time: draggedBlock.startTime, end_time: draggedBlock.endTime }).eq("id", targetBlockId);
-      }
+      if (isValidUuid(draggedBlockId)) await supabase.from("time_blocks").update({ start_time: targetBlock.startTime, end_time: targetBlock.endTime }).eq("id", draggedBlockId);
+      if (isValidUuid(targetBlockId)) await supabase.from("time_blocks").update({ start_time: draggedBlock.startTime, end_time: draggedBlock.endTime }).eq("id", targetBlockId);
     }
     setDraggedBlockId(null);
     toast.success("Blocks swapped!");
@@ -235,7 +263,6 @@ const TimeBlocking = () => {
     todayBlocks.filter((b) => b.category !== "break" && b.category !== "personal")
       .reduce((acc, b) => acc + getMinutes(b.startTime, b.endTime), 0), [todayBlocks]);
 
-  // Weekly chart data
   const weeklyChartData = useMemo(() => {
     return weekDays.map((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
@@ -243,12 +270,7 @@ const TimeBlocking = () => {
       const studyMins = dayBlocks
         .filter((b) => b.category !== "break" && b.category !== "personal")
         .reduce((acc, b) => acc + getMinutes(b.startTime, b.endTime), 0);
-      return {
-        day: format(day, "EEE"),
-        date: dateStr,
-        hours: Math.round((studyMins / 60) * 10) / 10,
-        isToday: isToday(day),
-      };
+      return { day: format(day, "EEE"), date: dateStr, hours: Math.round((studyMins / 60) * 10) / 10, isToday: isToday(day) };
     });
   }, [weekDays, blocks]);
 
@@ -261,13 +283,9 @@ const TimeBlocking = () => {
     const nowMin = now.getHours() * 60 + now.getMinutes();
     const todayStr = format(now, "yyyy-MM-dd");
     const todayBlocksList = blocks.filter((b) => b.date === todayStr);
-
-    // Morning reminder if no blocks scheduled
     if (nowMin < 600 && todayBlocksList.length === 0) {
       setTimeout(() => toast("📋 No blocks scheduled today", { description: "Plan your day with time blocks to stay focused!", duration: 6000 }), 1500);
     }
-
-    // Upcoming block reminder
     const upcoming = todayBlocksList.find((b) => {
       const [sh, sm] = b.startTime.split(":").map(Number);
       const blockMin = sh * 60 + sm;
@@ -276,8 +294,6 @@ const TimeBlocking = () => {
     if (upcoming) {
       setTimeout(() => toast(`⏰ "${upcoming.title}" starts soon`, { description: `${upcoming.startTime} – ${upcoming.endTime}`, duration: 8000 }), 2000);
     }
-
-    // Streak risk warning (evening with no blocks today)
     if (nowMin >= 1080 && todayBlocksList.length === 0 && streak > 0) {
       setTimeout(() => toast("🔥 Your streak is at risk!", { description: `You have a ${streak}-day streak. Add a block today to keep it alive!`, duration: 8000 }), 2500);
     }
@@ -318,6 +334,17 @@ const TimeBlocking = () => {
                   </TabsList>
                 </Tabs>
 
+                {/* AI Generate Button */}
+                <Button
+                  variant="outline"
+                  className="gap-2 border-accent/30 text-accent hover:bg-accent/10"
+                  onClick={generateAISchedule}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                  {isGenerating ? "Generating..." : "AI Schedule"}
+                </Button>
+
                 {/* Copy Day Dialog */}
                 <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
                   <DialogTrigger asChild>
@@ -331,13 +358,7 @@ const TimeBlocking = () => {
                       Copy all {todayBlocks.length} blocks from <strong>{format(selectedDate, "MMM d")}</strong> to another day:
                     </p>
                     <div className="flex justify-center pt-2">
-                      <CalendarWidget
-                        mode="single"
-                        selected={copyTargetDate}
-                        onSelect={setCopyTargetDate}
-                        disabled={(date) => isSameDay(date, selectedDate)}
-                        className="p-3 pointer-events-auto"
-                      />
+                      <CalendarWidget mode="single" selected={copyTargetDate} onSelect={setCopyTargetDate} disabled={(date) => isSameDay(date, selectedDate)} className="p-3 pointer-events-auto" />
                     </div>
                     {copyTargetDate && (
                       <p className="text-sm text-center text-muted-foreground">
@@ -407,35 +428,42 @@ const TimeBlocking = () => {
             </Button>
           </div>
 
-          {/* Stats Row + Streak + Pomodoro */}
+          {/* Stats Row + Energy + Pomodoro + Focus */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
-                { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
-                { label: "Breaks", value: todayBlocks.filter((b) => b.category === "break").length, color: "text-success" },
-                { label: "Focus Ratio", value: todayBlocks.length > 0 ? `${Math.round((todayBlocks.filter((b) => b.category === "study" || b.category === "practice").length / todayBlocks.length) * 100)}%` : "0%", color: "text-accent" },
-              ].map((stat) => (
-                <Card key={stat.label} className="overflow-hidden">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {[
+                  { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
+                  { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
+                  { label: "Breaks", value: todayBlocks.filter((b) => b.category === "break").length, color: "text-success" },
+                  { label: "Focus Ratio", value: todayBlocks.length > 0 ? `${Math.round((todayBlocks.filter((b) => b.category === "study" || b.category === "practice").length / todayBlocks.length) * 100)}%` : "0%", color: "text-accent" },
+                ].map((stat) => (
+                  <Card key={stat.label} className="overflow-hidden">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</p>
+                      <p className={cn("text-2xl font-bold mt-1", stat.color)}>{stat.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+                {/* Streak Card */}
+                <Card className={cn("overflow-hidden border", streak >= 7 ? "border-warning/40 bg-gradient-to-br from-warning/10 to-warning/5" : streak >= 3 ? "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent" : "")}>
                   <CardContent className="p-4 text-center">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</p>
-                    <p className={cn("text-2xl font-bold mt-1", stat.color)}>{stat.value}</p>
+                    <Flame className={cn("w-5 h-5 mx-auto mb-0.5", streak >= 7 ? "text-warning" : streak >= 3 ? "text-primary" : "text-muted-foreground")} />
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Streak</p>
+                    <p className={cn("text-2xl font-bold mt-0.5", streak >= 7 ? "text-warning-foreground" : streak >= 3 ? "text-primary" : "text-foreground")}>
+                      {streak} {streak === 1 ? "day" : "days"}
+                    </p>
+                    {streak >= 3 && <p className="text-[10px] text-muted-foreground mt-0.5">🔥 Keep it going!</p>}
                   </CardContent>
                 </Card>
-              ))}
-              {/* Streak Card */}
-              <Card className={cn("overflow-hidden border", streak >= 7 ? "border-warning/40 bg-gradient-to-br from-warning/10 to-warning/5" : streak >= 3 ? "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent" : "")}>
-                <CardContent className="p-4 text-center">
-                  <Flame className={cn("w-5 h-5 mx-auto mb-0.5", streak >= 7 ? "text-warning" : streak >= 3 ? "text-primary" : "text-muted-foreground")} />
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Streak</p>
-                  <p className={cn("text-2xl font-bold mt-0.5", streak >= 7 ? "text-warning-foreground" : streak >= 3 ? "text-primary" : "text-foreground")}>
-                    {streak} {streak === 1 ? "day" : "days"}
-                  </p>
-                  {streak >= 3 && <p className="text-[10px] text-muted-foreground mt-0.5">🔥 Keep it going!</p>}
-                </CardContent>
-              </Card>
+              </div>
+              {/* Energy Level Selector */}
+              <EnergyLevelSelector value={energyLevel} onChange={setEnergyLevel} />
             </div>
-            <PomodoroTimer activeBlockTitle={activeBlock?.title || null} />
+            <div className="space-y-4">
+              <PomodoroTimer activeBlockTitle={activeBlock?.title || null} onSessionComplete={() => setCompletedPomodoros(p => p + 1)} />
+              <FocusScoreCard completedPomodoros={completedPomodoros} totalStudyMinutes={totalStudyMinutes} totalBlocks={todayBlocks.length} />
+            </div>
           </div>
 
           {/* Category Legend */}
@@ -469,16 +497,12 @@ const TimeBlocking = () => {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "0.75rem",
                         fontSize: "12px",
-                        boxShadow: "var(--shadow-md)",
                       }}
                       formatter={(value: number) => [`${value}h`, "Study Time"]}
                     />
                     <Bar dataKey="hours" radius={[8, 8, 4, 4]}>
                       {weeklyChartData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.isToday ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.35)"}
-                        />
+                        <Cell key={`cell-${index}`} fill={entry.isToday ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.35)"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -489,7 +513,6 @@ const TimeBlocking = () => {
               </p>
             </CardContent>
           </Card>
-
 
           {viewMode === "day" && (
             <Card className="overflow-hidden">
@@ -543,10 +566,7 @@ const TimeBlocking = () => {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[11px] font-medium text-muted-foreground">{format(day, "EEE")}</span>
-                          <span className={cn(
-                            "text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full",
-                            isToday(day) ? "bg-primary text-primary-foreground" : ""
-                          )}>
+                          <span className={cn("text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full", isToday(day) ? "bg-primary text-primary-foreground" : "")}>
                             {format(day, "d")}
                           </span>
                         </div>
@@ -583,10 +603,10 @@ const TimeBlocking = () => {
             <CardContent className="p-5">
               <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">💡 Time Blocking Tips</h3>
               <ul className="text-sm text-muted-foreground space-y-1.5">
-                <li>• <strong>Batch similar tasks</strong> – group all review activities together for deeper focus.</li>
+                <li>• <strong>Use AI Schedule</strong> – let the AI generate an optimized day based on your energy levels.</li>
+                <li>• <strong>Set your peak energy</strong> – the AI prioritizes deep work during your most productive hours.</li>
                 <li>• <strong>Include breaks</strong> – the Pomodoro technique suggests 25 min work / 5 min break cycles.</li>
-                <li>• <strong>Protect deep work</strong> – schedule your hardest study in your peak energy hours.</li>
-                <li>• <strong>Copy your best day</strong> – use "Copy Day" to duplicate a productive schedule to other days.</li>
+                <li>• <strong>Track your focus score</strong> – complete pomodoros and study blocks to boost your daily score.</li>
               </ul>
             </CardContent>
           </Card>
