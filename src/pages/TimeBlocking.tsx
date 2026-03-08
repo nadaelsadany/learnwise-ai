@@ -357,9 +357,9 @@ const TimeBlocking = () => {
             </Button>
           </div>
 
-          {/* Stats Row + Pomodoro */}
+          {/* Stats Row + Streak + Pomodoro */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
                 { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
                 { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
@@ -373,6 +373,17 @@ const TimeBlocking = () => {
                   </CardContent>
                 </Card>
               ))}
+              {/* Streak Card */}
+              <Card className={cn("overflow-hidden border", streak >= 7 ? "border-warning/40 bg-gradient-to-br from-warning/10 to-warning/5" : streak >= 3 ? "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent" : "")}>
+                <CardContent className="p-4 text-center">
+                  <Flame className={cn("w-5 h-5 mx-auto mb-0.5", streak >= 7 ? "text-warning" : streak >= 3 ? "text-primary" : "text-muted-foreground")} />
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Streak</p>
+                  <p className={cn("text-2xl font-bold mt-0.5", streak >= 7 ? "text-warning-foreground" : streak >= 3 ? "text-primary" : "text-foreground")}>
+                    {streak} {streak === 1 ? "day" : "days"}
+                  </p>
+                  {streak >= 3 && <p className="text-[10px] text-muted-foreground mt-0.5">🔥 Keep it going!</p>}
+                </CardContent>
+              </Card>
             </div>
             <PomodoroTimer activeBlockTitle={activeBlock?.title || null} />
           </div>
