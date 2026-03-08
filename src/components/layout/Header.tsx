@@ -30,6 +30,7 @@ export const Header = ({
 }: HeaderProps) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
