@@ -59,15 +59,15 @@ export const Header = ({
         )}
 
         <div className="flex-1 max-w-md hidden xs:block">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full h-10 pl-10 pr-4 rounded-xl bg-muted/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
-            />
-          </div>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-muted/50 border border-border/50 text-sm text-muted-foreground text-left relative hover:border-primary/50 transition-all"
+          >
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+            Search... <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex h-5 items-center gap-0.5 rounded border bg-muted px-1 font-mono text-[10px]">⌘K</kbd>
+          </button>
         </div>
+        <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       </div>
 
       {/* Right Section */}
