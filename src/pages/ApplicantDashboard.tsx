@@ -196,6 +196,8 @@ const ApplicantDashboard = () => {
                 onToggleComplete={handleTogglePlanItem}
               />
 
+              <StudyCoachWidget />
+
               <WeaknessAnalysis
                 weaknesses={[
                   { topic: "Test Design Techniques", score: 45, questionsAttempted: 32 },
