@@ -20,7 +20,6 @@ import { AchievementBadges } from "@/components/timeblocking/AchievementBadges";
 import { EnergyLevelSelector, type EnergyLevel } from "@/components/timeblocking/EnergyLevelSelector";
 import { FocusScoreCard } from "@/components/timeblocking/FocusScoreCard";
 import { DistractionTracker } from "@/components/timeblocking/DistractionTracker";
-import { FocusScoreCard } from "@/components/timeblocking/FocusScoreCard";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
