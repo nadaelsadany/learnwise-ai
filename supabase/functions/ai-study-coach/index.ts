@@ -61,7 +61,7 @@ serve(async (req) => {
 });
 
 function buildSystemPrompt(studentData: any, mode: string): string {
-  const base = `You are an AI Study Coach — a personal learning mentor for students on the نافع (Nafea) platform. 
+  const base = `You are an AI Study Coach — a personal learning mentor for students on the Nafea platform. 
 You are warm, motivational, data-driven, and actionable. Use emojis sparingly for encouragement.
 Always give specific, personalized advice based on the student data provided.
 Format your responses with markdown for readability (headers, bullet points, bold text).`;
