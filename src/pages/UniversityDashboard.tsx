@@ -334,7 +334,7 @@ const UniversityDashboard = () => {
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     {recentActivity.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-3 group cursor-pointer">
+                                        <div key={i} className="flex items-start gap-3 group cursor-pointer hover:bg-muted/50 rounded-lg p-1 -m-1 transition-colors" onClick={() => navigate(item.type === "warn" ? "/university/ai-insights" : "/university/analytics")}>
                                             <div className={cn(
                                                 "w-2 h-2 rounded-full mt-1.5 shrink-0",
                                                 item.type === "success" && "bg-emerald-500",

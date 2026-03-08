@@ -67,7 +67,7 @@ const ApplicantDashboard = () => {
                 <p className="text-muted-foreground">Ready to continue your learning journey?</p>
               </div>
               {levelInfo && (
-                <div className="hidden sm:flex items-center gap-3 bg-card border border-border/50 rounded-xl px-4 py-2.5 shadow-sm">
+                <div className="hidden sm:flex items-center gap-3 bg-card border border-border/50 rounded-xl px-4 py-2.5 shadow-sm cursor-pointer hover:border-primary/30 transition-all" onClick={() => navigate('/achievements')}>
                   <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
                     <Star className="w-4 h-4 text-primary-foreground" />
                   </div>
