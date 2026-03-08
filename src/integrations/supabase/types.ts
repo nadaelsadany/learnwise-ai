@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_terms: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          status: string
+          type: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+          type?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           course_id: string
@@ -48,6 +84,105 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_library: {
+        Row: {
+          course_name: string | null
+          created_at: string
+          department: string | null
+          downloads: number
+          file_path: string
+          file_size: string | null
+          file_type: string
+          id: string
+          name: string
+          uploaded_by: string
+          uploaded_by_name: string
+        }
+        Insert: {
+          course_name?: string | null
+          created_at?: string
+          department?: string | null
+          downloads?: number
+          file_path: string
+          file_size?: string | null
+          file_type?: string
+          id?: string
+          name: string
+          uploaded_by: string
+          uploaded_by_name?: string
+        }
+        Update: {
+          course_name?: string | null
+          created_at?: string
+          department?: string | null
+          downloads?: number
+          file_path?: string
+          file_size?: string | null
+          file_type?: string
+          id?: string
+          name?: string
+          uploaded_by?: string
+          uploaded_by_name?: string
+        }
+        Relationships: []
+      }
+      course_sections: {
+        Row: {
+          capacity: number
+          course_id: string
+          created_at: string
+          enrolled: number
+          id: string
+          instructor_id: string
+          room: string | null
+          schedule: string | null
+          section_label: string
+          term_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          course_id: string
+          created_at?: string
+          enrolled?: number
+          id?: string
+          instructor_id: string
+          room?: string | null
+          schedule?: string | null
+          section_label?: string
+          term_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          course_id?: string
+          created_at?: string
+          enrolled?: number
+          id?: string
+          instructor_id?: string
+          room?: string | null
+          schedule?: string | null
+          section_label?: string
+          term_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_sections_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_sections_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
             referencedColumns: ["id"]
           },
         ]
@@ -540,6 +675,42 @@ export type Database = {
           id?: string
           start_time?: string
           student_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      university_announcements: {
+        Row: {
+          audience: string
+          audience_detail: string | null
+          author_id: string
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+          pinned: boolean
+          title: string
+        }
+        Insert: {
+          audience?: string
+          audience_detail?: string | null
+          author_id: string
+          author_name?: string
+          body: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
+          title: string
+        }
+        Update: {
+          audience?: string
+          audience_detail?: string | null
+          author_id?: string
+          author_name?: string
+          body?: string
+          created_at?: string
+          id?: string
+          pinned?: boolean
           title?: string
         }
         Relationships: []
