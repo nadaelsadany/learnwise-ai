@@ -667,7 +667,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 bg-muted/30 relative overflow-hidden">
+      <section id="pricing" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(var(--card) / 0.6) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--card) / 0.4) 100%)" }}>
         <FloatingOrb className="w-[400px] h-[400px] bg-primary/[0.03] blur-[100px] -top-20 right-1/4" delay={2} />
         <div className="max-w-7xl mx-auto relative">
           <motion.div className="text-center mb-16 space-y-4" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
