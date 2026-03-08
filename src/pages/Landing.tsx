@@ -439,7 +439,7 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 px-6 relative overflow-hidden">
+      <section id="features" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--accent) / 0.03) 0%, hsl(var(--card) / 0.5) 40%, hsl(var(--primary) / 0.02) 100%)" }}>
         <FloatingOrb className="w-[300px] h-[300px] bg-accent/[0.04] blur-[80px] top-20 -right-20" delay={1} />
         <div className="max-w-7xl mx-auto relative">
           <motion.div className="text-center mb-16 space-y-4" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
