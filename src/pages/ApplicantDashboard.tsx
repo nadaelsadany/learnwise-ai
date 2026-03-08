@@ -149,7 +149,7 @@ const ApplicantDashboard = () => {
             {/* Left Column */}
             <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-2xl bg-card border border-border/50 shadow-card p-6 flex flex-col items-center justify-center">
+                <div className="rounded-2xl bg-card border border-border/50 shadow-card p-6 flex flex-col items-center justify-center cursor-pointer hover:shadow-elevated transition-all" onClick={() => navigate("/analytics")}>
                   <p className="text-sm text-muted-foreground mb-2">Exam Readiness</p>
                   <ReadinessGauge percentage={readinessPercentage} />
                   <p className="text-sm text-muted-foreground mt-2">Overall Progress</p>
