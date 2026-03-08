@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -8,18 +9,23 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import {
   Brain, Send, Bot, User, Lightbulb, Target, CalendarDays, AlertTriangle,
-  Sparkles, TrendingUp, Clock, Flame, BookOpen, RotateCcw, Loader2, Trash2, Zap
+  Sparkles, TrendingUp, Clock, Flame, BookOpen, RotateCcw, Loader2, Trash2, Zap, Award, BarChart3
 } from "lucide-react";
 import { useStudyCoach } from "@/hooks/useStudyCoach";
+import { useAchievements } from "@/hooks/useAchievements";
+import ReactMarkdown from "react-markdown";
 
 const AIStudyCoach = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
   const { messages, isLoading, studentData, dataLoading, sendMessage, generateInsights, clearMessages } = useStudyCoach();
+  const { levelInfo, totalXP } = useAchievements();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -47,35 +53,41 @@ const AIStudyCoach = () => {
     { label: "Streak", value: `${studentData.streak} days`, icon: Flame, color: "text-orange-500" },
     { label: "Cards Due", value: `${studentData.flashcardsDue}`, icon: RotateCcw, color: "text-rose-500" },
     { label: "Quiz Avg", value: `${studentData.quizAverage}%`, icon: TrendingUp, color: "text-emerald-500" },
-    { label: "Courses", value: `${studentData.coursesEnrolled}`, icon: BookOpen, color: "text-blue-500" },
-    { label: "Lessons Done", value: `${studentData.lessonsCompleted}`, icon: Zap, color: "text-amber-500" },
+    { label: "Retention", value: `${studentData.retentionRate}%`, icon: Brain, color: "text-violet-500" },
+    { label: "Focus", value: `${studentData.avgFocusScore}%`, icon: Target, color: "text-blue-500" },
   ] : [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <ApplicantSidebar onCollapse={setSidebarCollapsed} />
-      <Header
-        sidebarCollapsed={sidebarCollapsed}
-        userRole="Student"
-        mobileSidebar={<ApplicantSidebarContent onItemClick={() => {}} />}
-      />
+      <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" mobileSidebar={<ApplicantSidebarContent onItemClick={() => {}} />} />
 
-      <main className={cn(
-        "pt-20 pb-8 px-4 sm:px-6 transition-all duration-300",
-        sidebarCollapsed ? "lg:ml-20" : "lg:ml-64",
-        "ml-0"
-      )}>
+      <main className={cn("pt-20 pb-8 px-4 sm:px-6 transition-all duration-300", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64", "ml-0")}>
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
+          {/* Header with Level */}
           <section className="animate-slide-up">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary">
-                <Brain className="w-5 h-5 text-primary-foreground" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary">
+                  <Brain className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold">AI Study Coach</h1>
+                  <p className="text-muted-foreground text-sm">Your personal learning mentor — powered by AI</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">AI Study Coach</h1>
-                <p className="text-muted-foreground text-sm">Your personal learning mentor — powered by AI</p>
-              </div>
+              {levelInfo && (
+                <div className="hidden sm:flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Level {levelInfo.level}</p>
+                    <p className="text-sm font-semibold">{levelInfo.title}</p>
+                  </div>
+                  <div className="w-24">
+                    <Progress value={(levelInfo.currentXP / levelInfo.xpForNext) * 100} className="h-2" />
+                    <p className="text-[10px] text-muted-foreground text-center mt-0.5">{totalXP} XP</p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
@@ -99,6 +111,22 @@ const AIStudyCoach = () => {
             </section>
           )}
 
+          {/* Quick Navigation */}
+          <section className="flex gap-2 flex-wrap animate-slide-up" style={{ animationDelay: "150ms" }}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/analytics')}>
+              <BarChart3 className="w-3.5 h-3.5" /> Analytics
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/achievements')}>
+              <Award className="w-3.5 h-3.5" /> Achievements
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/spaced-repetition')}>
+              <RotateCcw className="w-3.5 h-3.5" /> Flashcards
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/time-blocking')}>
+              <Clock className="w-3.5 h-3.5" /> Time Blocking
+            </Button>
+          </section>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid grid-cols-2 w-full max-w-md">
               <TabsTrigger value="overview" className="gap-2"><Sparkles className="w-4 h-4" /> Coach Insights</TabsTrigger>
@@ -115,10 +143,7 @@ const AIStudyCoach = () => {
                       key={action.mode}
                       variant="outline"
                       className="h-auto py-4 flex flex-col items-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-all"
-                      onClick={() => {
-                        setActiveTab("chat");
-                        generateInsights(action.mode);
-                      }}
+                      onClick={() => { setActiveTab("chat"); generateInsights(action.mode); }}
                       disabled={isLoading}
                     >
                       <action.icon className={cn("w-6 h-6", action.color)} />
@@ -137,12 +162,10 @@ const AIStudyCoach = () => {
                       <CardContent className="p-4 flex items-center gap-3">
                         <RotateCcw className="w-5 h-5 text-rose-500 shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium">You have {studentData.flashcardsDue} flashcards due for review</p>
+                          <p className="text-sm font-medium">{studentData.flashcardsDue} flashcards due for review</p>
                           <p className="text-xs text-muted-foreground">Reviewing now will strengthen your memory retention</p>
                         </div>
-                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => window.location.href = '/spaced-repetition'}>
-                          Review Now
-                        </Button>
+                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate('/spaced-repetition')}>Review Now</Button>
                       </CardContent>
                     </Card>
                   )}
@@ -162,15 +185,10 @@ const AIStudyCoach = () => {
                       <CardContent className="p-4 flex items-center gap-3">
                         <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium">Weak topics detected: {studentData.weakTopics.slice(0, 2).join(', ')}</p>
+                          <p className="text-sm font-medium">Weak topics: {studentData.weakTopics.slice(0, 2).join(', ')}</p>
                           <p className="text-xs text-muted-foreground">Extra review recommended for better retention</p>
                         </div>
-                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => {
-                          setActiveTab("chat");
-                          generateInsights("weak_topics");
-                        }}>
-                          Get Help
-                        </Button>
+                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => { setActiveTab("chat"); generateInsights("weak_topics"); }}>Get Help</Button>
                       </CardContent>
                     </Card>
                   )}
@@ -182,9 +200,19 @@ const AIStudyCoach = () => {
                           <p className="text-sm font-medium">Only {studentData.sessionsThisWeek} study sessions this week</p>
                           <p className="text-xs text-muted-foreground">Try to aim for at least 5 sessions per week</p>
                         </div>
-                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => window.location.href = '/time-blocking'}>
-                          Plan Session
-                        </Button>
+                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate('/time-blocking')}>Plan Session</Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {studentData && studentData.timeBlocksToday === 0 && (
+                    <Card className="border-violet-500/30 bg-violet-500/5">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <CalendarDays className="w-5 h-5 text-violet-500 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">No time blocks planned for today</p>
+                          <p className="text-xs text-muted-foreground">AI can create an optimal schedule based on your energy levels</p>
+                        </div>
+                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate('/time-blocking')}>AI Schedule</Button>
                       </CardContent>
                     </Card>
                   )}
@@ -203,16 +231,7 @@ const AIStudyCoach = () => {
                     "Which flashcards need the most attention?",
                     "Am I on track to pass my exam?",
                   ].map((q) => (
-                    <Button
-                      key={q}
-                      variant="ghost"
-                      className="justify-start text-left h-auto py-3 px-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
-                      onClick={() => {
-                        setActiveTab("chat");
-                        sendMessage(q, "chat");
-                      }}
-                      disabled={isLoading}
-                    >
+                    <Button key={q} variant="ghost" className="justify-start text-left h-auto py-3 px-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => { setActiveTab("chat"); sendMessage(q, "chat"); }} disabled={isLoading}>
                       <Sparkles className="w-4 h-4 mr-2 text-primary shrink-0" />
                       {q}
                     </Button>
@@ -243,23 +262,18 @@ const AIStudyCoach = () => {
                         </div>
                       )}
                       {messages.map((msg) => (
-                        <div key={msg.id} className={cn(
-                          "flex gap-3 max-w-[85%]",
-                          msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
-                        )}>
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                            msg.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted"
-                          )}>
+                        <div key={msg.id} className={cn("flex gap-3 max-w-[85%]", msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto")}>
+                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0", msg.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
                             {msg.role === 'user' ? <User className="w-4 h-4" /> : <Brain className="w-4 h-4" />}
                           </div>
-                          <div className={cn(
-                            "rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
-                            msg.role === 'user'
-                              ? "bg-primary text-primary-foreground rounded-tr-none"
-                              : "bg-muted border border-border/50 rounded-tl-none"
-                          )}>
-                            {msg.content}
+                          <div className={cn("rounded-2xl px-4 py-3 text-sm", msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted border border-border/50 rounded-tl-none")}>
+                            {msg.role === 'assistant' ? (
+                              <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>ul]:mb-2 [&>ol]:mb-2 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm">
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                              </div>
+                            ) : (
+                              <span className="whitespace-pre-wrap">{msg.content}</span>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -280,13 +294,7 @@ const AIStudyCoach = () => {
                 </CardContent>
                 <div className="p-4 border-t">
                   <form className="flex gap-2" onSubmit={handleSend}>
-                    <Input
-                      placeholder="Ask your AI Coach..."
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      disabled={isLoading}
-                      className="rounded-xl"
-                    />
+                    <Input placeholder="Ask your AI Coach..." value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} disabled={isLoading} className="rounded-xl" />
                     <Button type="submit" size="icon" disabled={isLoading || !inputMessage.trim()}>
                       <Send className="w-4 h-4" />
                     </Button>
