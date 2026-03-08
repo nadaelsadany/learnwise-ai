@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarWidget } from "@/components/ui/calendar";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,7 +26,7 @@ interface TimeBlock {
   startTime: string;
   endTime: string;
   category: BlockCategory;
-  date: string; // YYYY-MM-DD
+  date: string;
 }
 
 const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -55,10 +57,13 @@ const TimeBlocking = () => {
   const [blocks, setBlocks] = useState<TimeBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyTargetDate, setCopyTargetDate] = useState<Date | undefined>(undefined);
   const [activeBlock, setActiveBlock] = useState<TimeBlock | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
   const [newBlock, setNewBlock] = useState({ title: "", startTime: "08:00", endTime: "09:00", category: "study" as BlockCategory });
+  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
@@ -66,19 +71,14 @@ const TimeBlocking = () => {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Load blocks for the visible range
   useEffect(() => {
     const load = async () => {
       if (isMock) { setBlocks(defaultBlocks); setLoading(false); return; }
       const rangeStart = format(weekStart, "yyyy-MM-dd");
       const rangeEnd = format(addDays(weekStart, 6), "yyyy-MM-dd");
       const { data, error } = await supabase
-        .from("time_blocks")
-        .select("*")
-        .eq("student_id", user!.id)
-        .gte("block_date", rangeStart)
-        .lte("block_date", rangeEnd)
-        .order("start_time");
+        .from("time_blocks").select("*").eq("student_id", user!.id)
+        .gte("block_date", rangeStart).lte("block_date", rangeEnd).order("start_time");
       if (error) { console.error(error); setBlocks(defaultBlocks); }
       else if (data.length === 0) { setBlocks(defaultBlocks); }
       else { setBlocks(data.map((r: any) => ({ id: r.id, title: r.title, startTime: r.start_time, endTime: r.end_time, category: r.category as BlockCategory, date: r.block_date }))); }
@@ -114,6 +114,62 @@ const TimeBlocking = () => {
     toast.success("Block removed");
   };
 
+  // Duplicate day's blocks to target date
+  const duplicateDay = async () => {
+    if (!copyTargetDate) { toast.error("Select a target date"); return; }
+    const targetStr = format(copyTargetDate, "yyyy-MM-dd");
+    if (targetStr === selectedDateStr) { toast.error("Choose a different date"); return; }
+    const source = todayBlocks;
+    if (source.length === 0) { toast.error("No blocks to copy"); return; }
+
+    const newBlocks: TimeBlock[] = [];
+    for (const b of source) {
+      if (isMock) {
+        newBlocks.push({ ...b, id: `${Date.now()}-${Math.random()}`, date: targetStr });
+      } else {
+        const { data, error } = await supabase.from("time_blocks").insert({
+          student_id: user!.id, title: b.title, start_time: b.startTime, end_time: b.endTime, category: b.category, block_date: targetStr,
+        }).select().single();
+        if (!error && data) {
+          newBlocks.push({ id: data.id, title: data.title, startTime: data.start_time, endTime: data.end_time, category: data.category as BlockCategory, date: data.block_date });
+        }
+      }
+    }
+    setBlocks((p) => [...p, ...newBlocks]);
+    setCopyDialogOpen(false);
+    setCopyTargetDate(undefined);
+    toast.success(`Copied ${newBlocks.length} blocks to ${format(copyTargetDate, "MMM d")}`);
+  };
+
+  // Drag & drop reorder (swap time slots)
+  const handleDragStart = (blockId: string) => setDraggedBlockId(blockId);
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+  const handleDrop = async (targetBlockId: string) => {
+    if (!draggedBlockId || draggedBlockId === targetBlockId) { setDraggedBlockId(null); return; }
+    const draggedBlock = blocks.find((b) => b.id === draggedBlockId);
+    const targetBlock = blocks.find((b) => b.id === targetBlockId);
+    if (!draggedBlock || !targetBlock) { setDraggedBlockId(null); return; }
+
+    // Swap times
+    setBlocks((prev) => prev.map((b) => {
+      if (b.id === draggedBlockId) return { ...b, startTime: targetBlock.startTime, endTime: targetBlock.endTime };
+      if (b.id === targetBlockId) return { ...b, startTime: draggedBlock.startTime, endTime: draggedBlock.endTime };
+      return b;
+    }).sort((a, b) => a.startTime.localeCompare(b.startTime)));
+
+    // Persist swaps
+    if (!isMock) {
+      if (isValidUuid(draggedBlockId)) {
+        await supabase.from("time_blocks").update({ start_time: targetBlock.startTime, end_time: targetBlock.endTime }).eq("id", draggedBlockId);
+      }
+      if (isValidUuid(targetBlockId)) {
+        await supabase.from("time_blocks").update({ start_time: draggedBlock.startTime, end_time: draggedBlock.endTime }).eq("id", targetBlockId);
+      }
+    }
+    setDraggedBlockId(null);
+    toast.success("Blocks swapped!");
+  };
+
   // Detect current active block
   useEffect(() => {
     const check = () => {
@@ -143,12 +199,6 @@ const TimeBlocking = () => {
     todayBlocks.filter((b) => b.category !== "break" && b.category !== "personal")
       .reduce((acc, b) => acc + getMinutes(b.startTime, b.endTime), 0), [todayBlocks]);
 
-  const getBlockHeight = (b: TimeBlock) => Math.max(getMinutes(b.startTime, b.endTime) * 1.2, 40);
-  const getBlockTop = (b: TimeBlock) => {
-    const [sh, sm] = b.startTime.split(":").map(Number);
-    return (sh - 6) * 72 + sm * 1.2;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -176,13 +226,47 @@ const TimeBlocking = () => {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-2 max-w-md">Schedule focused blocks to maximize your productivity and study performance.</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "week")}>
                   <TabsList className="h-9">
                     <TabsTrigger value="day" className="gap-1.5 text-xs px-3"><Calendar className="w-3.5 h-3.5" />Day</TabsTrigger>
                     <TabsTrigger value="week" className="gap-1.5 text-xs px-3"><LayoutGrid className="w-3.5 h-3.5" />Week</TabsTrigger>
                   </TabsList>
                 </Tabs>
+
+                {/* Copy Day Dialog */}
+                <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2" disabled={todayBlocks.length === 0}>
+                      <Copy className="w-4 h-4" /> Copy Day
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Copy Day's Blocks</DialogTitle></DialogHeader>
+                    <p className="text-sm text-muted-foreground">
+                      Copy all {todayBlocks.length} blocks from <strong>{format(selectedDate, "MMM d")}</strong> to another day:
+                    </p>
+                    <div className="flex justify-center pt-2">
+                      <CalendarWidget
+                        mode="single"
+                        selected={copyTargetDate}
+                        onSelect={setCopyTargetDate}
+                        disabled={(date) => isSameDay(date, selectedDate)}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </div>
+                    {copyTargetDate && (
+                      <p className="text-sm text-center text-muted-foreground">
+                        Target: <strong className="text-foreground">{format(copyTargetDate, "EEEE, MMM d")}</strong>
+                      </p>
+                    )}
+                    <Button onClick={duplicateDay} className="w-full" disabled={!copyTargetDate}>
+                      Copy {todayBlocks.length} Blocks
+                    </Button>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Add Block Dialog */}
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="gap-2 shadow-md"><Plus className="w-4 h-4" /> Add Block</Button>
@@ -273,16 +357,23 @@ const TimeBlocking = () => {
           {viewMode === "day" && (
             <Card className="overflow-hidden">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  {isToday(selectedDate) ? "Today's Schedule" : format(selectedDate, "EEEE's Schedule")}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    {isToday(selectedDate) ? "Today's Schedule" : format(selectedDate, "EEEE's Schedule")}
+                  </CardTitle>
+                  <p className="text-[11px] text-muted-foreground">Drag blocks to swap time slots</p>
+                </div>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
                 <DayTimeline
                   blocks={todayBlocks}
                   activeBlock={activeBlock}
                   onRemove={removeBlock}
+                  draggedBlockId={draggedBlockId}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
                 />
               </CardContent>
             </Card>
@@ -324,24 +415,12 @@ const TimeBlocking = () => {
                         </div>
                         <div className="flex-1 space-y-1">
                           {dayBlocks.slice(0, 5).map((block) => (
-                            <div
-                              key={block.id}
-                              className={cn(
-                                "rounded-md px-1.5 py-0.5 text-[10px] font-medium truncate border",
-                                categoryConfig[block.category].bg,
-                                categoryConfig[block.category].border,
-                                categoryConfig[block.category].text
-                              )}
-                            >
+                            <div key={block.id} className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-medium truncate border", categoryConfig[block.category].bg, categoryConfig[block.category].border, categoryConfig[block.category].text)}>
                               {block.title}
                             </div>
                           ))}
-                          {dayBlocks.length > 5 && (
-                            <p className="text-[10px] text-muted-foreground">+{dayBlocks.length - 5} more</p>
-                          )}
-                          {dayBlocks.length === 0 && (
-                            <p className="text-[10px] text-muted-foreground/50 italic mt-4 text-center">No blocks</p>
-                          )}
+                          {dayBlocks.length > 5 && <p className="text-[10px] text-muted-foreground">+{dayBlocks.length - 5} more</p>}
+                          {dayBlocks.length === 0 && <p className="text-[10px] text-muted-foreground/50 italic mt-4 text-center">No blocks</p>}
                         </div>
                         <div className="mt-2 pt-2 border-t border-border/30">
                           <p className="text-[10px] text-muted-foreground">{dayBlocks.length} blocks</p>
@@ -362,7 +441,7 @@ const TimeBlocking = () => {
                 <li>• <strong>Batch similar tasks</strong> – group all review activities together for deeper focus.</li>
                 <li>• <strong>Include breaks</strong> – the Pomodoro technique suggests 25 min work / 5 min break cycles.</li>
                 <li>• <strong>Protect deep work</strong> – schedule your hardest study in your peak energy hours.</li>
-                <li>• <strong>Be realistic</strong> – buffer 10-15 min between blocks for transitions.</li>
+                <li>• <strong>Copy your best day</strong> – use "Copy Day" to duplicate a productive schedule to other days.</li>
               </ul>
             </CardContent>
           </Card>
@@ -372,8 +451,18 @@ const TimeBlocking = () => {
   );
 };
 
-// --- Day Timeline Component ---
-function DayTimeline({ blocks, activeBlock, onRemove }: { blocks: TimeBlock[]; activeBlock: TimeBlock | null; onRemove: (id: string) => void }) {
+// --- Day Timeline Component with Drag & Drop ---
+interface DayTimelineProps {
+  blocks: TimeBlock[];
+  activeBlock: TimeBlock | null;
+  onRemove: (id: string) => void;
+  draggedBlockId: string | null;
+  onDragStart: (id: string) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (targetId: string) => void;
+}
+
+function DayTimeline({ blocks, activeBlock, onRemove, draggedBlockId, onDragStart, onDragOver, onDrop }: DayTimelineProps) {
   const getBlockHeight = (b: TimeBlock) => {
     const [sh, sm] = b.startTime.split(":").map(Number);
     const [eh, em] = b.endTime.split(":").map(Number);
@@ -395,19 +484,26 @@ function DayTimeline({ blocks, activeBlock, onRemove }: { blocks: TimeBlock[]; a
       {blocks.map((block) => {
         const cfg = categoryConfig[block.category];
         const isActive = activeBlock?.id === block.id;
+        const isDragged = draggedBlockId === block.id;
         return (
           <div
             key={block.id}
+            draggable
+            onDragStart={() => onDragStart(block.id)}
+            onDragOver={onDragOver}
+            onDrop={() => onDrop(block.id)}
             className={cn(
-              "absolute left-16 right-4 rounded-xl border px-3 py-2 flex items-start justify-between gap-2 transition-all hover:shadow-lg cursor-default group",
+              "absolute left-16 right-4 rounded-xl border px-3 py-2 flex items-start justify-between gap-2 transition-all hover:shadow-lg cursor-grab active:cursor-grabbing group",
               cfg.bg, cfg.border,
-              isActive && "ring-2 ring-primary shadow-lg scale-[1.01]"
+              isActive && "ring-2 ring-primary shadow-lg scale-[1.01]",
+              isDragged && "opacity-50 scale-95"
             )}
             style={{ top: `${getBlockTop(block)}px`, height: `${getBlockHeight(block)}px`, minHeight: "40px" }}
           >
             <div className="flex items-start gap-2 min-w-0">
               <span className={cn("w-1.5 h-full rounded-full absolute left-0 top-0 bottom-0", cfg.dot)} />
-              <div className="min-w-0 pl-1">
+              <GripVertical className="w-3.5 h-3.5 mt-0.5 text-muted-foreground/40 flex-shrink-0" />
+              <div className="min-w-0">
                 <p className={cn("text-sm font-semibold truncate", cfg.text)}>{block.title}</p>
                 <p className="text-[11px] text-muted-foreground">{block.startTime} – {block.endTime}</p>
               </div>
@@ -417,7 +513,7 @@ function DayTimeline({ blocks, activeBlock, onRemove }: { blocks: TimeBlock[]; a
                 <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 animate-pulse shadow-sm">LIVE</Badge>
               )}
               <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", cfg.text, cfg.border)}>{cfg.label}</Badge>
-              <button onClick={() => onRemove(block.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-destructive/10">
+              <button onClick={(e) => { e.stopPropagation(); onRemove(block.id); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-destructive/10">
                 <Trash2 className="w-3.5 h-3.5 text-destructive" />
               </button>
             </div>
