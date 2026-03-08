@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { StudySessionProvider } from "@/components/learning/StudySessionProvider";
 import Auth from "./pages/Auth";
+import CreateCourse from "./pages/CreateCourse";
 import ApplicantDashboard from "./pages/ApplicantDashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
 import InstructorCourses from "./pages/InstructorCourses";
@@ -270,6 +271,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
             <SyllabusUpload />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/create-course"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <CreateCourse />
           </ProtectedRoute>
         }
       />

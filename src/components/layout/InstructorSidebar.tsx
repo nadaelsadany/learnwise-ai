@@ -35,7 +35,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/instructor" },
   { icon: BookOpen, label: "My Courses", href: "/instructor/courses" },
-  { icon: Upload, label: "Create Course", href: "/syllabus-upload" },
+  { icon: Upload, label: "Create Course", href: "/instructor/create-course" },
   { icon: ListTree, label: "Curriculum", href: "/instructor/curriculum" },
   { icon: Users, label: "Students", href: "/instructor/students" },
   { icon: ClipboardList, label: "Assignments", href: "/instructor/assignments" },
