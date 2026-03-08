@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
   { icon: FileQuestion, label: "Mock Exams", href: "/mock-exam" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: Sparkles, label: "AI Tutor", href: "/ai-tutor" },
+  { icon: Brain, label: "AI Coach", href: "/ai-coach" },
   { icon: CalendarDays, label: "Time Blocking", href: "/time-blocking" },
   { icon: RotateCcw, label: "Spaced Repetition", href: "/spaced-repetition" },
 ];

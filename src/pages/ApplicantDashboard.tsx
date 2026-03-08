@@ -10,6 +10,8 @@ import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
 import { TodaysPlan } from "@/components/dashboard/TodaysPlan";
 import { WeaknessAnalysis } from "@/components/dashboard/WeaknessAnalysis";
 import { AIChatBar } from "@/components/dashboard/AIChatBar";
+import { StudyCoachWidget } from "@/components/dashboard/StudyCoachWidget";
+import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 import { useCourses } from "@/hooks/useCourses";
 import { useProgress } from "@/hooks/useProgress";
 import { Flame, Target, Clock, Trophy, Loader2 } from "lucide-react";
@@ -194,6 +196,8 @@ const ApplicantDashboard = () => {
                 onToggleComplete={handleTogglePlanItem}
               />
 
+              <StudyCoachWidget />
+
               <WeaknessAnalysis
                 weaknesses={[
                   { topic: "Test Design Techniques", score: 45, questionsAttempted: 32 },
@@ -208,6 +212,7 @@ const ApplicantDashboard = () => {
       </main>
 
       <AIChatBar onSend={(msg) => navigate(`/ai-tutor?q=${encodeURIComponent(msg)}`)} />
+      <FloatingCoachButton />
     </div>
   );
 };

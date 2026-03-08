@@ -32,6 +32,7 @@ import Flashcards from "./pages/Flashcards";
 import TimeBlocking from "./pages/TimeBlocking";
 import SpacedRepetition from "./pages/SpacedRepetition";
 import LearningAnalytics from "./pages/LearningAnalytics";
+import AIStudyCoach from "./pages/AIStudyCoach";
 import NotFound from "./pages/NotFound";
 import UniversityDashboard from "./pages/UniversityDashboard";
 import UniversityDepartments from "./pages/UniversityDepartments";
@@ -196,6 +197,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <LearningAnalytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai-coach"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <AIStudyCoach />
           </ProtectedRoute>
         }
       />

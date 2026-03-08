@@ -1,0 +1,60 @@
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Brain, Lightbulb, Target, Flame, RotateCcw, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useStudyCoach } from "@/hooks/useStudyCoach";
+
+export const StudyCoachWidget = () => {
+  const navigate = useNavigate();
+  const { studentData, dataLoading } = useStudyCoach();
+
+  const alerts: { icon: React.ElementType; text: string; color: string }[] = [];
+
+  if (studentData) {
+    if (studentData.flashcardsDue > 0) {
+      alerts.push({ icon: RotateCcw, text: `${studentData.flashcardsDue} flashcards due for review`, color: "text-rose-500" });
+    }
+    if (studentData.streak > 0) {
+      alerts.push({ icon: Flame, text: `🔥 ${studentData.streak}-day streak! Keep it up!`, color: "text-orange-500" });
+    }
+    if (studentData.weakTopics.length > 0) {
+      alerts.push({ icon: Target, text: `Focus on: ${studentData.weakTopics[0]}`, color: "text-amber-500" });
+    }
+    if (alerts.length === 0) {
+      alerts.push({ icon: Lightbulb, text: "Start a study session to get personalized insights", color: "text-primary" });
+    }
+  }
+
+  return (
+    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Brain className="w-5 h-5 text-primary" />
+          AI Study Coach
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {dataLoading ? (
+          <p className="text-sm text-muted-foreground">Analyzing your progress...</p>
+        ) : (
+          <>
+            {alerts.slice(0, 3).map((alert, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <alert.icon className={cn("w-4 h-4 mt-0.5 shrink-0", alert.color)} />
+                <p className="text-sm text-muted-foreground">{alert.text}</p>
+              </div>
+            ))}
+          </>
+        )}
+        <Button
+          size="sm"
+          className="w-full mt-2 gap-2"
+          onClick={() => navigate("/ai-coach")}
+        >
+          Open AI Coach <ArrowRight className="w-4 h-4" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
