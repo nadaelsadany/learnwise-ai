@@ -60,6 +60,8 @@ import UniversityReports from "./pages/UniversityReports";
 import UniversityAIInsights from "./pages/UniversityAIInsights";
 import UniversityRoles from "./pages/UniversityRoles";
 import { Loader2 } from "lucide-react";
+import Onboarding from "./pages/Onboarding";
+import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCourses from "./pages/AdminCourses";
@@ -107,9 +109,12 @@ const RoleBasedRedirect = () => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public route */}
+      {/* Public routes */}
       <Route path="/auth" element={<Auth />} />
+      <Route path="/onboarding" element={<Onboarding />} />
 
+      {/* Profile route - accessible by all authenticated users */}
+      <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       {/* Role-based home route */}
       <Route path="/" element={<RoleBasedRedirect />} />
 
