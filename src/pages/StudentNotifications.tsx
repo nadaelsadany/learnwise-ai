@@ -118,12 +118,22 @@ const StudentNotifications = () => {
             ))}
           </div>
 
-          {notifications.length === 0 && !loading ? (
+          {filteredNotifications.length === 0 && !loading ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <Bell className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-                <p className="text-muted-foreground">No notifications right now</p>
-                <p className="text-xs text-muted-foreground mt-1">Smart alerts will appear based on your study activity</p>
+                <p className="text-muted-foreground font-medium">
+                  {filter === "all" ? "No notifications right now" : `No ${filter.replace('_', ' ')} notifications`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {filter === "all"
+                    ? "Smart alerts will appear based on your study activity"
+                    : "Try a different filter or check back later"
+                  }
+                </p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate("/")}>
+                  Back to Dashboard
+                </Button>
               </CardContent>
             </Card>
           ) : (
