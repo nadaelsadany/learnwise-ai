@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
-import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
+import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 
 type BlockCategory = "study" | "break" | "review" | "practice" | "personal";
 
