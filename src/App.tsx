@@ -72,8 +72,8 @@ import AdminSettings from "./pages/AdminSettings";
 
 const queryClient = new QueryClient();
 
-// Component to handle role-based redirection for the root route
-const RoleBasedRedirect = () => {
+// Landing page: show landing for guests, redirect logged-in users to dashboard
+const LandingOrDashboard = () => {
   const { user, role, loading } = useAuth();
 
   if (loading) {
@@ -88,22 +88,21 @@ const RoleBasedRedirect = () => {
   }
 
   if (!user) {
-    return <Navigate to="/landing" replace />;
+    return <Landing />;
   }
 
-  // Redirect based on role
-  if (role === "instructor") {
-    return <InstructorDashboard />;
-  }
+  // Redirect logged-in users to their dashboard
+  if (role === "instructor") return <Navigate to="/instructor" replace />;
+  if (role === "university") return <Navigate to="/university" replace />;
+  if (role === "admin") return <Navigate to="/admin" replace />;
+  return <Navigate to="/dashboard" replace />;
+};
 
-  if (role === "university") {
-    return <UniversityDashboard />;
-  }
-
-  if (role === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
-
+// Student dashboard route
+const StudentDashboardRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/auth" replace />;
   return <ApplicantDashboard />;
 };
 
@@ -111,14 +110,19 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<LandingOrDashboard />} />
       <Route path="/landing" element={<Landing />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/login" element={<Auth />} />
+      <Route path="/signup" element={<Auth />} />
       <Route path="/onboarding" element={<Onboarding />} />
+
+      {/* Student dashboard */}
+      <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["applicant"]}><ApplicantDashboard /></ProtectedRoute>} />
 
       {/* Profile route - accessible by all authenticated users */}
       <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      {/* Role-based home route */}
-      <Route path="/" element={<RoleBasedRedirect />} />
+      {/* Legacy root redirect - handled by / above */}
 
       {/* Applicant routes */}
       <Route
