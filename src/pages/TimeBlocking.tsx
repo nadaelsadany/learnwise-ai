@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarWidget } from "@/components/ui/calendar";
-import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame } from "lucide-react";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame, BarChart3, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
 type BlockCategory = "study" | "break" | "review" | "practice" | "personal";
 
@@ -233,6 +234,54 @@ const TimeBlocking = () => {
     todayBlocks.filter((b) => b.category !== "break" && b.category !== "personal")
       .reduce((acc, b) => acc + getMinutes(b.startTime, b.endTime), 0), [todayBlocks]);
 
+  // Weekly chart data
+  const weeklyChartData = useMemo(() => {
+    return weekDays.map((day) => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      const dayBlocks = blocks.filter((b) => b.date === dateStr);
+      const studyMins = dayBlocks
+        .filter((b) => b.category !== "break" && b.category !== "personal")
+        .reduce((acc, b) => acc + getMinutes(b.startTime, b.endTime), 0);
+      return {
+        day: format(day, "EEE"),
+        date: dateStr,
+        hours: Math.round((studyMins / 60) * 10) / 10,
+        isToday: isToday(day),
+      };
+    });
+  }, [weekDays, blocks]);
+
+  // Notification reminders
+  const notifiedRef = useRef(false);
+  useEffect(() => {
+    if (notifiedRef.current || loading) return;
+    notifiedRef.current = true;
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const todayStr = format(now, "yyyy-MM-dd");
+    const todayBlocksList = blocks.filter((b) => b.date === todayStr);
+
+    // Morning reminder if no blocks scheduled
+    if (nowMin < 600 && todayBlocksList.length === 0) {
+      setTimeout(() => toast("📋 No blocks scheduled today", { description: "Plan your day with time blocks to stay focused!", duration: 6000 }), 1500);
+    }
+
+    // Upcoming block reminder
+    const upcoming = todayBlocksList.find((b) => {
+      const [sh, sm] = b.startTime.split(":").map(Number);
+      const blockMin = sh * 60 + sm;
+      return blockMin > nowMin && blockMin - nowMin <= 15;
+    });
+    if (upcoming) {
+      setTimeout(() => toast(`⏰ "${upcoming.title}" starts soon`, { description: `${upcoming.startTime} – ${upcoming.endTime}`, duration: 8000 }), 2000);
+    }
+
+    // Streak risk warning (evening with no blocks today)
+    if (nowMin >= 1080 && todayBlocksList.length === 0 && streak > 0) {
+      setTimeout(() => toast("🔥 Your streak is at risk!", { description: `You have a ${streak}-day streak. Add a block today to keep it alive!`, duration: 8000 }), 2500);
+    }
+  }, [blocks, loading, streak]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -398,7 +447,49 @@ const TimeBlocking = () => {
             ))}
           </div>
 
-          {/* Day View */}
+          {/* Weekly Study Hours Chart */}
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                Weekly Study Hours
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyChartData} barSize={32}>
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} unit="h" width={35} />
+                    <RechartsTooltip
+                      cursor={{ fill: "hsl(var(--muted) / 0.3)", radius: 8 }}
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.75rem",
+                        fontSize: "12px",
+                        boxShadow: "var(--shadow-md)",
+                      }}
+                      formatter={(value: number) => [`${value}h`, "Study Time"]}
+                    />
+                    <Bar dataKey="hours" radius={[8, 8, 4, 4]}>
+                      {weeklyChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.isToday ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.35)"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center mt-1">
+                Total: {weeklyChartData.reduce((s, d) => s + d.hours, 0).toFixed(1)}h this week
+              </p>
+            </CardContent>
+          </Card>
+
+
           {viewMode === "day" && (
             <Card className="overflow-hidden">
               <CardHeader className="pb-2">
