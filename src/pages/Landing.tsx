@@ -473,7 +473,7 @@ const Landing = () => {
       </section>
 
       {/* For Students */}
-      <section id="students" className="py-24 px-6 bg-muted/30 relative overflow-hidden">
+      <section id="students" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.03) 0%, hsl(var(--card) / 0.5) 50%, hsl(var(--accent) / 0.02) 100%)" }}>
         <FloatingOrb className="w-[400px] h-[400px] bg-primary/[0.03] blur-[80px] -top-20 left-1/4" delay={3} />
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
