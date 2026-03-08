@@ -60,6 +60,8 @@ import UniversityReports from "./pages/UniversityReports";
 import UniversityAIInsights from "./pages/UniversityAIInsights";
 import UniversityRoles from "./pages/UniversityRoles";
 import { Loader2 } from "lucide-react";
+import Onboarding from "./pages/Onboarding";
+import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCourses from "./pages/AdminCourses";
