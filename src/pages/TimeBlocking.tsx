@@ -64,6 +64,7 @@ const TimeBlocking = () => {
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
   const [newBlock, setNewBlock] = useState({ title: "", startTime: "08:00", endTime: "09:00", category: "study" as BlockCategory });
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
