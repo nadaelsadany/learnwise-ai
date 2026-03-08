@@ -570,6 +570,14 @@ const TimeBlocking = () => {
             </Card>
           )}
 
+          {/* Achievement Badges */}
+          <AchievementBadges
+            streak={streak}
+            totalWeeklyHours={weeklyChartData.reduce((s, d) => s + d.hours, 0)}
+            todayBlockCount={todayBlocks.length}
+            totalBlocks={blocks.length}
+          />
+
           {/* Tips */}
           <Card className="border-primary/15 bg-gradient-to-r from-primary/5 to-accent/5">
             <CardContent className="p-5">
