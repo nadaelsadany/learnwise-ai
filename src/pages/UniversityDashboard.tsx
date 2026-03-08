@@ -21,6 +21,10 @@ import {
     BarChart2,
     Star,
     ChevronRight,
+    Brain,
+    AlertTriangle,
+    Lightbulb,
+    Target,
 } from "lucide-react";
 import {
     Dialog,
@@ -341,6 +345,47 @@ const UniversityDashboard = () => {
                                     </Button>
                                 </CardContent>
                             </Card>
+                        </div>
+                    </div>
+
+                    {/* AI Academic Insights */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-bold flex items-center gap-2">
+                                <Brain className="w-5 h-5 text-primary" /> AI Academic Insights
+                            </h2>
+                            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary" onClick={() => navigate("/university/ai-insights")}>
+                                View All <ChevronRight className="w-3 h-3 ml-1" />
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {[
+                                { title: "High Drop-off in Physics 201", desc: "42% of students drop off after Week 4. Consider supplementary materials.", icon: AlertTriangle, type: "warning" as const },
+                                { title: "Struggling Student Cluster", desc: "18 students across 3 departments show declining grades. Early intervention recommended.", icon: Target, type: "action" as const },
+                                { title: "Optimal Study Patterns", desc: "Students studying 9-11 AM perform 23% better on quizzes. Share this insight.", icon: Lightbulb, type: "info" as const },
+                            ].map((insight) => {
+                                const colors = {
+                                    warning: { bg: "bg-amber-500/10 border-amber-200", text: "text-amber-500" },
+                                    action: { bg: "bg-destructive/10 border-destructive/20", text: "text-destructive" },
+                                    info: { bg: "bg-primary/10 border-primary/20", text: "text-primary" },
+                                };
+                                const c = colors[insight.type];
+                                return (
+                                    <Card key={insight.title} className={cn("border transition-all hover:shadow-md cursor-pointer", c.bg)} onClick={() => navigate("/university/ai-insights")}>
+                                        <CardContent className="p-4">
+                                            <div className="flex items-start gap-3">
+                                                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", c.bg)}>
+                                                    <insight.icon className={cn("w-4 h-4", c.text)} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-xs mb-1">{insight.title}</p>
+                                                    <p className="text-xs text-muted-foreground line-clamp-2">{insight.desc}</p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
