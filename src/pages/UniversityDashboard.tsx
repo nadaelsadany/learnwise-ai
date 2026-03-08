@@ -21,6 +21,10 @@ import {
     BarChart2,
     Star,
     ChevronRight,
+    Brain,
+    AlertTriangle,
+    Lightbulb,
+    Target,
 } from "lucide-react";
 import {
     Dialog,
