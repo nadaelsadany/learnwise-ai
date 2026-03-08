@@ -42,8 +42,23 @@ const priorityBadge: Record<string, string> = {
 
 const StudentNotifications = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { notifications, loading, unreadCount, markRead, markAllRead, pushEnabled, requestPushPermission } = useSmartNotifications();
+
+  const filteredNotifications = filter === "all"
+    ? notifications
+    : notifications.filter(n => n.type === filter);
+
+  const filterOptions = [
+    { value: "all", label: "All" },
+    { value: "flashcards_due", label: "Flashcards" },
+    { value: "streak_risk", label: "Streaks" },
+    { value: "goal_unmet", label: "Goals" },
+    { value: "focus_drop", label: "Focus" },
+    { value: "study_reminder", label: "Reminders" },
+    { value: "achievement", label: "Achievements" },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -86,6 +101,21 @@ const StudentNotifications = () => {
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Filter Chips */}
+          <div className="flex gap-2 flex-wrap">
+            {filterOptions.map(opt => (
+              <Button
+                key={opt.value}
+                variant={filter === opt.value ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => setFilter(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
           </div>
 
           {notifications.length === 0 && !loading ? (
