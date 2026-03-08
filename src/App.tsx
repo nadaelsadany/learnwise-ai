@@ -88,7 +88,7 @@ const RoleBasedRedirect = () => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/landing" replace />;
   }
 
   // Redirect based on role
