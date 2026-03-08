@@ -252,7 +252,7 @@ const UniversityDashboard = () => {
                             </div>
                             <div className="space-y-3">
                                 {departments.map((dept, i) => (
-                                    <Card key={dept.name} className="border-border/50 hover:border-primary/30 transition-all duration-200 hover:shadow-md group cursor-pointer">
+                                    <Card key={dept.name} className="border-border/50 hover:border-primary/30 transition-all duration-200 hover:shadow-md group cursor-pointer" onClick={() => navigate("/university/departments")}>
                                         <CardContent className="p-4">
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(

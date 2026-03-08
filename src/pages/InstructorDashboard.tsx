@@ -133,7 +133,7 @@ const InstructorDashboard = () => {
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up" style={{ animationDelay: "100ms" }}>
         <StatsCard icon={BookOpen} title="Total Courses" value={courses.length} variant="default" onClick={() => navigate("/instructor/courses")} />
         <StatsCard icon={Users} title="Total Students" value={stats.totalStudents} variant="primary" onClick={() => navigate("/instructor/students")} />
-        <StatsCard icon={CheckCircle} title="Completion Rate" value={`${stats.completionRate}%`} variant="success" />
+        <StatsCard icon={CheckCircle} title="Completion Rate" value={`${stats.completionRate}%`} variant="success" onClick={() => navigate("/instructor/analytics")} />
         <StatsCard icon={BarChart3} title="Avg Quiz Score" value={`${stats.avgQuizScore}%`} variant="warning" onClick={() => navigate("/instructor/quizzes")} />
       </section>
 
