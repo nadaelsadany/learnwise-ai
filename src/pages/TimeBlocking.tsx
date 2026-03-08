@@ -1,18 +1,20 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, GripVertical, Clock, CalendarDays, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
+import { format, addDays, startOfWeek, isToday, isSameDay } from "date-fns";
 
 type BlockCategory = "study" | "break" | "review" | "practice" | "personal";
 
@@ -22,33 +24,30 @@ interface TimeBlock {
   startTime: string;
   endTime: string;
   category: BlockCategory;
+  date: string; // YYYY-MM-DD
 }
 
 const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-const categoryColors: Record<BlockCategory, string> = {
-  study: "bg-primary/15 border-primary/30 text-primary",
-  break: "bg-success/15 border-success/30 text-success",
-  review: "bg-accent/15 border-accent/30 text-accent",
-  practice: "bg-warning/15 border-warning/30 text-warning-foreground",
-  personal: "bg-muted border-border text-muted-foreground",
-};
-
-const categoryLabels: Record<BlockCategory, string> = {
-  study: "Study", break: "Break", review: "Review", practice: "Practice", personal: "Personal",
+const categoryConfig: Record<BlockCategory, { label: string; bg: string; border: string; text: string; dot: string }> = {
+  study: { label: "Study", bg: "bg-primary/10", border: "border-primary/25", text: "text-primary", dot: "bg-primary" },
+  break: { label: "Break", bg: "bg-success/10", border: "border-success/25", text: "text-success", dot: "bg-success" },
+  review: { label: "Review", bg: "bg-accent/10", border: "border-accent/25", text: "text-accent", dot: "bg-accent" },
+  practice: { label: "Practice", bg: "bg-warning/10", border: "border-warning/25", text: "text-warning-foreground", dot: "bg-warning" },
+  personal: { label: "Personal", bg: "bg-muted", border: "border-border", text: "text-muted-foreground", dot: "bg-muted-foreground" },
 };
 
 const hours = Array.from({ length: 16 }, (_, i) => `${(i + 6).toString().padStart(2, "0")}:00`);
 
 const defaultBlocks: TimeBlock[] = [
-  { id: "d1", title: "Morning Review – Flashcards", startTime: "07:00", endTime: "07:30", category: "review" },
-  { id: "d2", title: "Deep Study – Test Design", startTime: "08:00", endTime: "09:30", category: "study" },
-  { id: "d3", title: "Break & Walk", startTime: "09:30", endTime: "10:00", category: "break" },
-  { id: "d4", title: "Practice Questions", startTime: "10:00", endTime: "11:00", category: "practice" },
-  { id: "d5", title: "Lunch Break", startTime: "12:00", endTime: "13:00", category: "personal" },
-  { id: "d6", title: "AI Tutor Session", startTime: "14:00", endTime: "15:00", category: "study" },
-  { id: "d7", title: "Mock Exam Practice", startTime: "15:30", endTime: "17:00", category: "practice" },
-  { id: "d8", title: "Evening Review", startTime: "19:00", endTime: "19:30", category: "review" },
+  { id: "d1", title: "Morning Review – Flashcards", startTime: "07:00", endTime: "07:30", category: "review", date: new Date().toISOString().split("T")[0] },
+  { id: "d2", title: "Deep Study – Test Design", startTime: "08:00", endTime: "09:30", category: "study", date: new Date().toISOString().split("T")[0] },
+  { id: "d3", title: "Break & Walk", startTime: "09:30", endTime: "10:00", category: "break", date: new Date().toISOString().split("T")[0] },
+  { id: "d4", title: "Practice Questions", startTime: "10:00", endTime: "11:00", category: "practice", date: new Date().toISOString().split("T")[0] },
+  { id: "d5", title: "Lunch Break", startTime: "12:00", endTime: "13:00", category: "personal", date: new Date().toISOString().split("T")[0] },
+  { id: "d6", title: "AI Tutor Session", startTime: "14:00", endTime: "15:00", category: "study", date: new Date().toISOString().split("T")[0] },
+  { id: "d7", title: "Mock Exam Practice", startTime: "15:30", endTime: "17:00", category: "practice", date: new Date().toISOString().split("T")[0] },
+  { id: "d8", title: "Evening Review", startTime: "19:00", endTime: "19:30", category: "review", date: new Date().toISOString().split("T")[0] },
 ];
 
 const TimeBlocking = () => {
@@ -57,45 +56,52 @@ const TimeBlocking = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeBlock, setActiveBlock] = useState<TimeBlock | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<"day" | "week">("day");
   const [newBlock, setNewBlock] = useState({ title: "", startTime: "08:00", endTime: "09:00", category: "study" as BlockCategory });
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
-  // Load blocks
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // Load blocks for the visible range
   useEffect(() => {
     const load = async () => {
       if (isMock) { setBlocks(defaultBlocks); setLoading(false); return; }
-      const today = new Date().toISOString().split("T")[0];
+      const rangeStart = format(weekStart, "yyyy-MM-dd");
+      const rangeEnd = format(addDays(weekStart, 6), "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("time_blocks")
         .select("*")
         .eq("student_id", user!.id)
-        .eq("block_date", today)
+        .gte("block_date", rangeStart)
+        .lte("block_date", rangeEnd)
         .order("start_time");
       if (error) { console.error(error); setBlocks(defaultBlocks); }
       else if (data.length === 0) { setBlocks(defaultBlocks); }
-      else { setBlocks(data.map((r: any) => ({ id: r.id, title: r.title, startTime: r.start_time, endTime: r.end_time, category: r.category as BlockCategory }))); }
+      else { setBlocks(data.map((r: any) => ({ id: r.id, title: r.title, startTime: r.start_time, endTime: r.end_time, category: r.category as BlockCategory, date: r.block_date }))); }
       setLoading(false);
     };
     load();
-  }, [user, isMock]);
+  }, [user, isMock, weekStart.toISOString()]);
+
+  const blocksForDate = useCallback((dateStr: string) => blocks.filter((b) => b.date === dateStr), [blocks]);
+  const todayBlocks = blocksForDate(selectedDateStr);
 
   const addBlock = async () => {
     if (!newBlock.title || !newBlock.startTime || !newBlock.endTime) { toast.error("Fill all fields"); return; }
+    const dateStr = selectedDateStr;
     if (isMock) {
-      const block: TimeBlock = { id: Date.now().toString(), ...newBlock };
+      const block: TimeBlock = { id: Date.now().toString(), ...newBlock, date: dateStr };
       setBlocks((p) => [...p, block].sort((a, b) => a.startTime.localeCompare(b.startTime)));
     } else {
       const { data, error } = await supabase.from("time_blocks").insert({
-        student_id: user!.id,
-        title: newBlock.title,
-        start_time: newBlock.startTime,
-        end_time: newBlock.endTime,
-        category: newBlock.category,
-        block_date: new Date().toISOString().split("T")[0],
+        student_id: user!.id, title: newBlock.title, start_time: newBlock.startTime, end_time: newBlock.endTime, category: newBlock.category, block_date: dateStr,
       }).select().single();
       if (error) { toast.error("Failed to save"); return; }
-      setBlocks((p) => [...p, { id: data.id, title: data.title, startTime: data.start_time, endTime: data.end_time, category: data.category as BlockCategory }].sort((a, b) => a.startTime.localeCompare(b.startTime)));
+      setBlocks((p) => [...p, { id: data.id, title: data.title, startTime: data.start_time, endTime: data.end_time, category: data.category as BlockCategory, date: data.block_date }].sort((a, b) => a.startTime.localeCompare(b.startTime)));
     }
     setNewBlock({ title: "", startTime: "08:00", endTime: "09:00", category: "study" });
     setDialogOpen(false);
@@ -104,9 +110,7 @@ const TimeBlocking = () => {
 
   const removeBlock = async (id: string) => {
     setBlocks((p) => p.filter((b) => b.id !== id));
-    if (!isMock && isValidUuid(id)) {
-      await supabase.from("time_blocks").delete().eq("id", id);
-    }
+    if (!isMock && isValidUuid(id)) { await supabase.from("time_blocks").delete().eq("id", id); }
     toast.success("Block removed");
   };
 
@@ -114,9 +118,10 @@ const TimeBlocking = () => {
   useEffect(() => {
     const check = () => {
       const now = new Date();
+      const todayStr = format(now, "yyyy-MM-dd");
       const nowMin = now.getHours() * 60 + now.getMinutes();
       const active = blocks.find((b) => {
-        if (b.category === "break" || b.category === "personal") return false;
+        if (b.date !== todayStr || b.category === "break" || b.category === "personal") return false;
         const [sh, sm] = b.startTime.split(":").map(Number);
         const [eh, em] = b.endTime.split(":").map(Number);
         return nowMin >= sh * 60 + sm && nowMin < eh * 60 + em;
@@ -128,19 +133,17 @@ const TimeBlocking = () => {
     return () => clearInterval(interval);
   }, [blocks]);
 
-  const totalStudyMinutes = useMemo(() =>
-    blocks.filter((b) => b.category !== "break" && b.category !== "personal")
-      .reduce((acc, b) => {
-        const [sh, sm] = b.startTime.split(":").map(Number);
-        const [eh, em] = b.endTime.split(":").map(Number);
-        return acc + (eh * 60 + em - (sh * 60 + sm));
-      }, 0), [blocks]);
-
-  const getBlockHeight = (b: TimeBlock) => {
-    const [sh, sm] = b.startTime.split(":").map(Number);
-    const [eh, em] = b.endTime.split(":").map(Number);
-    return Math.max((eh * 60 + em - (sh * 60 + sm)) * 1.2, 48);
+  const getMinutes = (start: string, end: string) => {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    return eh * 60 + em - (sh * 60 + sm);
   };
+
+  const totalStudyMinutes = useMemo(() =>
+    todayBlocks.filter((b) => b.category !== "break" && b.category !== "personal")
+      .reduce((acc, b) => acc + getMinutes(b.startTime, b.endTime), 0), [todayBlocks]);
+
+  const getBlockHeight = (b: TimeBlock) => Math.max(getMinutes(b.startTime, b.endTime) * 1.2, 40);
   const getBlockTop = (b: TimeBlock) => {
     const [sh, sm] = b.startTime.split(":").map(Number);
     return (sh - 6) * 72 + sm * 1.2;
@@ -160,124 +163,269 @@ const TimeBlocking = () => {
       <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" mobileSidebar={<ApplicantSidebarContent onItemClick={() => {}} />} />
 
       <main className={cn("pt-20 pb-10 px-4 sm:px-6 transition-all duration-300", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64", "ml-0")}>
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <CalendarDays className="w-7 h-7 text-primary" /> Time Blocking
-              </h1>
-              <p className="text-muted-foreground text-sm mt-1">Schedule your day into focused blocks to maximize productivity.</p>
-            </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="w-4 h-4" /> Add Block</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Add Time Block</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <Input placeholder="Block title" value={newBlock.title} onChange={(e) => setNewBlock({ ...newBlock, title: e.target.value })} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Start</label>
-                      <Input type="time" value={newBlock.startTime} onChange={(e) => setNewBlock({ ...newBlock, startTime: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">End</label>
-                      <Input type="time" value={newBlock.endTime} onChange={(e) => setNewBlock({ ...newBlock, endTime: e.target.value })} />
-                    </div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Hero Header */}
+          <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-background border border-primary/10 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/15">
+                    <CalendarDays className="w-6 h-6 text-primary" />
                   </div>
-                  <Select value={newBlock.category} onValueChange={(v) => setNewBlock({ ...newBlock, category: v as BlockCategory })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={addBlock} className="w-full">Add Block</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                  Time Blocking
+                </h1>
+                <p className="text-muted-foreground text-sm mt-2 max-w-md">Schedule focused blocks to maximize your productivity and study performance.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "week")}>
+                  <TabsList className="h-9">
+                    <TabsTrigger value="day" className="gap-1.5 text-xs px-3"><Calendar className="w-3.5 h-3.5" />Day</TabsTrigger>
+                    <TabsTrigger value="week" className="gap-1.5 text-xs px-3"><LayoutGrid className="w-3.5 h-3.5" />Week</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2 shadow-md"><Plus className="w-4 h-4" /> Add Block</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Add Time Block</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <Input placeholder="Block title" value={newBlock.title} onChange={(e) => setNewBlock({ ...newBlock, title: e.target.value })} />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">Start</label>
+                          <Input type="time" value={newBlock.startTime} onChange={(e) => setNewBlock({ ...newBlock, startTime: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">End</label>
+                          <Input type="time" value={newBlock.endTime} onChange={(e) => setNewBlock({ ...newBlock, endTime: e.target.value })} />
+                        </div>
+                      </div>
+                      <Select value={newBlock.category} onValueChange={(v) => setNewBlock({ ...newBlock, category: v as BlockCategory })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(categoryConfig).map(([k, c]) => (
+                            <SelectItem key={k} value={k}>
+                              <span className="flex items-center gap-2"><span className={cn("w-2 h-2 rounded-full", c.dot)} />{c.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addBlock} className="w-full">Add Block</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
           </div>
 
-          {/* Stats + Pomodoro */}
+          {/* Date Navigation */}
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="icon" onClick={() => setSelectedDate((d) => addDays(d, viewMode === "week" ? -7 : -1))}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <div className="text-center">
+              <p className="text-sm font-semibold">
+                {viewMode === "day"
+                  ? format(selectedDate, "EEEE, MMMM d, yyyy")
+                  : `${format(weekStart, "MMM d")} – ${format(addDays(weekStart, 6), "MMM d, yyyy")}`}
+              </p>
+              {!isToday(selectedDate) && viewMode === "day" && (
+                <button onClick={() => setSelectedDate(new Date())} className="text-xs text-primary hover:underline mt-0.5">Go to today</button>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setSelectedDate((d) => addDays(d, viewMode === "week" ? 7 : 1))}>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Stats Row + Pomodoro */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="p-4 text-center">
-                <p className="text-xs text-muted-foreground">Total Blocks</p>
-                <p className="text-2xl font-bold">{blocks.length}</p>
-              </Card>
-              <Card className="p-4 text-center">
-                <p className="text-xs text-muted-foreground">Study Time</p>
-                <p className="text-2xl font-bold text-primary">{Math.floor(totalStudyMinutes / 60)}h {totalStudyMinutes % 60}m</p>
-              </Card>
-              <Card className="p-4 text-center">
-                <p className="text-xs text-muted-foreground">Breaks</p>
-                <p className="text-2xl font-bold text-success">{blocks.filter((b) => b.category === "break").length}</p>
-              </Card>
-              <Card className="p-4 text-center">
-                <p className="text-xs text-muted-foreground">Focus Ratio</p>
-                <p className="text-2xl font-bold text-accent">
-                  {blocks.length > 0 ? Math.round((blocks.filter((b) => b.category === "study" || b.category === "practice").length / blocks.length) * 100) : 0}%
-                </p>
-              </Card>
+            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
+                { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
+                { label: "Breaks", value: todayBlocks.filter((b) => b.category === "break").length, color: "text-success" },
+                { label: "Focus Ratio", value: todayBlocks.length > 0 ? `${Math.round((todayBlocks.filter((b) => b.category === "study" || b.category === "practice").length / todayBlocks.length) * 100)}%` : "0%", color: "text-accent" },
+              ].map((stat) => (
+                <Card key={stat.label} className="overflow-hidden">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</p>
+                    <p className={cn("text-2xl font-bold mt-1", stat.color)}>{stat.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
             <PomodoroTimer activeBlockTitle={activeBlock?.title || null} />
           </div>
 
-          {/* Timeline */}
-          <Card className="p-6 overflow-hidden">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-muted-foreground" /> Today's Schedule
-            </h2>
-            <div className="relative" style={{ height: `${16 * 72}px` }}>
-              {hours.map((hour, i) => (
-                <div key={hour} className="absolute left-0 right-0 flex items-start" style={{ top: `${i * 72}px` }}>
-                  <span className="text-xs text-muted-foreground w-14 flex-shrink-0 -mt-2">{hour}</span>
-                  <div className="flex-1 border-t border-border/40" />
-                </div>
-              ))}
-              {blocks.map((block) => (
-                <div
-                  key={block.id}
-                  className={cn(
-                    "absolute left-16 right-4 rounded-xl border px-3 py-2 flex items-start justify-between gap-2 transition-all hover:shadow-md cursor-default group",
-                    categoryColors[block.category],
-                    activeBlock?.id === block.id && "ring-2 ring-primary shadow-lg"
-                  )}
-                  style={{ top: `${getBlockTop(block)}px`, height: `${getBlockHeight(block)}px`, minHeight: "48px" }}
-                >
-                  <div className="flex items-start gap-2 min-w-0">
-                    <GripVertical className="w-4 h-4 mt-0.5 opacity-30 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{block.title}</p>
-                      <p className="text-xs opacity-70">{block.startTime} – {block.endTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {activeBlock?.id === block.id && <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0 animate-pulse">LIVE</Badge>}
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{categoryLabels[block.category]}</Badge>
-                    <button onClick={() => removeBlock(block.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10">
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {/* Category Legend */}
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(categoryConfig).map(([key, c]) => (
+              <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className={cn("w-2.5 h-2.5 rounded-full", c.dot)} />
+                {c.label}
+              </div>
+            ))}
+          </div>
 
-          <Card className="p-5 border-primary/20 bg-primary/5">
-            <h3 className="font-semibold text-sm mb-2">💡 Time Blocking Tips</h3>
-            <ul className="text-sm text-muted-foreground space-y-1.5">
-              <li>• <strong>Batch similar tasks</strong> – group all review activities together for deeper focus.</li>
-              <li>• <strong>Include breaks</strong> – the Pomodoro technique suggests 25 min work / 5 min break cycles.</li>
-              <li>• <strong>Protect deep work</strong> – schedule your hardest study in your peak energy hours.</li>
-              <li>• <strong>Be realistic</strong> – buffer 10-15 min between blocks for transitions.</li>
-            </ul>
+          {/* Day View */}
+          {viewMode === "day" && (
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  {isToday(selectedDate) ? "Today's Schedule" : format(selectedDate, "EEEE's Schedule")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <DayTimeline
+                  blocks={todayBlocks}
+                  activeBlock={activeBlock}
+                  onRemove={removeBlock}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Week View */}
+          {viewMode === "week" && (
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+                  Weekly Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-7 gap-2">
+                  {weekDays.map((day) => {
+                    const dateStr = format(day, "yyyy-MM-dd");
+                    const dayBlocks = blocksForDate(dateStr);
+                    const isSel = isSameDay(day, selectedDate);
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => { setSelectedDate(day); setViewMode("day"); }}
+                        className={cn(
+                          "rounded-xl border p-3 text-left transition-all hover:shadow-md min-h-[200px] flex flex-col",
+                          isSel ? "border-primary/40 bg-primary/5 shadow-sm" : "border-border/50 hover:border-primary/20",
+                          isToday(day) && "ring-1 ring-primary/30"
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] font-medium text-muted-foreground">{format(day, "EEE")}</span>
+                          <span className={cn(
+                            "text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full",
+                            isToday(day) ? "bg-primary text-primary-foreground" : ""
+                          )}>
+                            {format(day, "d")}
+                          </span>
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          {dayBlocks.slice(0, 5).map((block) => (
+                            <div
+                              key={block.id}
+                              className={cn(
+                                "rounded-md px-1.5 py-0.5 text-[10px] font-medium truncate border",
+                                categoryConfig[block.category].bg,
+                                categoryConfig[block.category].border,
+                                categoryConfig[block.category].text
+                              )}
+                            >
+                              {block.title}
+                            </div>
+                          ))}
+                          {dayBlocks.length > 5 && (
+                            <p className="text-[10px] text-muted-foreground">+{dayBlocks.length - 5} more</p>
+                          )}
+                          {dayBlocks.length === 0 && (
+                            <p className="text-[10px] text-muted-foreground/50 italic mt-4 text-center">No blocks</p>
+                          )}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-border/30">
+                          <p className="text-[10px] text-muted-foreground">{dayBlocks.length} blocks</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tips */}
+          <Card className="border-primary/15 bg-gradient-to-r from-primary/5 to-accent/5">
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">💡 Time Blocking Tips</h3>
+              <ul className="text-sm text-muted-foreground space-y-1.5">
+                <li>• <strong>Batch similar tasks</strong> – group all review activities together for deeper focus.</li>
+                <li>• <strong>Include breaks</strong> – the Pomodoro technique suggests 25 min work / 5 min break cycles.</li>
+                <li>• <strong>Protect deep work</strong> – schedule your hardest study in your peak energy hours.</li>
+                <li>• <strong>Be realistic</strong> – buffer 10-15 min between blocks for transitions.</li>
+              </ul>
+            </CardContent>
           </Card>
         </div>
       </main>
     </div>
   );
 };
+
+// --- Day Timeline Component ---
+function DayTimeline({ blocks, activeBlock, onRemove }: { blocks: TimeBlock[]; activeBlock: TimeBlock | null; onRemove: (id: string) => void }) {
+  const getBlockHeight = (b: TimeBlock) => {
+    const [sh, sm] = b.startTime.split(":").map(Number);
+    const [eh, em] = b.endTime.split(":").map(Number);
+    return Math.max((eh * 60 + em - (sh * 60 + sm)) * 1.2, 40);
+  };
+  const getBlockTop = (b: TimeBlock) => {
+    const [sh, sm] = b.startTime.split(":").map(Number);
+    return (sh - 6) * 72 + sm * 1.2;
+  };
+
+  return (
+    <div className="relative" style={{ height: `${16 * 72}px` }}>
+      {hours.map((hour, i) => (
+        <div key={hour} className="absolute left-0 right-0 flex items-start" style={{ top: `${i * 72}px` }}>
+          <span className="text-[11px] text-muted-foreground w-14 flex-shrink-0 -mt-2 font-medium">{hour}</span>
+          <div className="flex-1 border-t border-border/30" />
+        </div>
+      ))}
+      {blocks.map((block) => {
+        const cfg = categoryConfig[block.category];
+        const isActive = activeBlock?.id === block.id;
+        return (
+          <div
+            key={block.id}
+            className={cn(
+              "absolute left-16 right-4 rounded-xl border px-3 py-2 flex items-start justify-between gap-2 transition-all hover:shadow-lg cursor-default group",
+              cfg.bg, cfg.border,
+              isActive && "ring-2 ring-primary shadow-lg scale-[1.01]"
+            )}
+            style={{ top: `${getBlockTop(block)}px`, height: `${getBlockHeight(block)}px`, minHeight: "40px" }}
+          >
+            <div className="flex items-start gap-2 min-w-0">
+              <span className={cn("w-1.5 h-full rounded-full absolute left-0 top-0 bottom-0", cfg.dot)} />
+              <div className="min-w-0 pl-1">
+                <p className={cn("text-sm font-semibold truncate", cfg.text)}>{block.title}</p>
+                <p className="text-[11px] text-muted-foreground">{block.startTime} – {block.endTime}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {isActive && (
+                <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 animate-pulse shadow-sm">LIVE</Badge>
+              )}
+              <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", cfg.text, cfg.border)}>{cfg.label}</Badge>
+              <button onClick={() => onRemove(block.id)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-destructive/10">
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default TimeBlocking;

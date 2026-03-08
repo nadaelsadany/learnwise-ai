@@ -3,13 +3,13 @@ import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/A
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Brain, RotateCcw, CheckCircle2, XCircle, Clock, Layers, TrendingUp, Zap, Plus, Loader2 } from "lucide-react";
+import { Brain, RotateCcw, CheckCircle2, XCircle, Clock, Layers, TrendingUp, Zap, Plus, Loader2, Sparkles, BookOpen, Target } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +39,13 @@ const defaultCards: ReviewCard[] = [
   { id: "d6", question: "What is a test oracle?", answer: "A source to determine expected results to compare with the actual result of the software under test.", topic: "Fundamentals", interval: 1, easeFactor: 2.5, repetitions: 0, nextReview: new Date(), lastReviewed: null },
 ];
 
+const difficultyConfig = {
+  again: { label: "Again", icon: XCircle, color: "border-destructive/30 text-destructive hover:bg-destructive/10", interval: "1d" },
+  hard: { label: "Hard", icon: RotateCcw, color: "border-warning/30 text-warning-foreground hover:bg-warning/10", interval: "" },
+  good: { label: "Good", icon: CheckCircle2, color: "border-success/30 text-success hover:bg-success/10", interval: "" },
+  easy: { label: "Easy", icon: Zap, color: "border-primary/30 text-primary hover:bg-primary/10", interval: "" },
+};
+
 const SpacedRepetition = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [cards, setCards] = useState<ReviewCard[]>([]);
@@ -52,15 +59,10 @@ const SpacedRepetition = () => {
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
-  // Load cards
   useEffect(() => {
     const load = async () => {
       if (isMock) { setCards(defaultCards); setLoading(false); return; }
-      const { data, error } = await supabase
-        .from("sr_cards")
-        .select("*")
-        .eq("student_id", user!.id)
-        .order("next_review");
+      const { data, error } = await supabase.from("sr_cards").select("*").eq("student_id", user!.id).order("next_review");
       if (error) { console.error(error); setCards(defaultCards); }
       else if (data.length === 0) { setCards(defaultCards); }
       else {
@@ -89,24 +91,23 @@ const SpacedRepetition = () => {
     return { interval, easeFactor, repetitions, nextReview: new Date(Date.now() + interval * 86400000), lastReviewed: new Date() };
   };
 
+  const getIntervalLabel = (card: ReviewCard, difficulty: Difficulty) => {
+    const result = calculateNextInterval({ ...card }, difficulty);
+    return `${result.interval}d`;
+  };
+
   const handleRate = async (difficulty: Difficulty) => {
     if (!currentCard) return;
     const updates = calculateNextInterval(currentCard, difficulty);
     setCards((prev) => prev.map((c) => (c.id === currentCard.id ? { ...c, ...updates } : c)));
     setSessionStats((prev) => ({ ...prev, reviewed: prev.reviewed + 1, [difficulty]: prev[difficulty] + 1 }));
     setShowAnswer(false);
-
-    // Persist to DB
     if (!isMock && isValidUuid(currentCard.id)) {
       await supabase.from("sr_cards").update({
-        interval_days: updates.interval,
-        ease_factor: updates.easeFactor,
-        repetitions: updates.repetitions,
-        next_review: updates.nextReview.toISOString(),
-        last_reviewed: updates.lastReviewed!.toISOString(),
+        interval_days: updates.interval, ease_factor: updates.easeFactor, repetitions: updates.repetitions,
+        next_review: updates.nextReview.toISOString(), last_reviewed: updates.lastReviewed!.toISOString(),
       }).eq("id", currentCard.id);
     }
-
     if (currentIndex + 1 >= dueCards.length) {
       setIsReviewing(false);
       toast.success(`Session complete! Reviewed ${sessionStats.reviewed + 1} cards.`);
@@ -117,8 +118,7 @@ const SpacedRepetition = () => {
 
   const startSession = () => {
     if (dueCards.length === 0) { toast.info("No cards due for review!"); return; }
-    setCurrentIndex(0);
-    setShowAnswer(false);
+    setCurrentIndex(0); setShowAnswer(false);
     setSessionStats({ reviewed: 0, again: 0, hard: 0, good: 0, easy: 0 });
     setIsReviewing(true);
   };
@@ -145,6 +145,8 @@ const SpacedRepetition = () => {
 
   const masteredCards = cards.filter((c) => c.repetitions >= 3);
   const learningCards = cards.filter((c) => c.repetitions > 0 && c.repetitions < 3);
+  const newCards = cards.filter((c) => c.repetitions === 0);
+  const retentionRate = cards.length > 0 ? Math.round((masteredCards.length / cards.length) * 100) : 0;
 
   if (loading) {
     return (
@@ -161,149 +163,186 @@ const SpacedRepetition = () => {
 
       <main className={cn("pt-20 pb-10 px-4 sm:px-6 transition-all duration-300", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64", "ml-0")}>
         <div className="max-w-5xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Brain className="w-7 h-7 text-accent" /> Spaced Repetition
-              </h1>
-              <p className="text-muted-foreground text-sm mt-1">Review cards at optimal intervals to maximize long-term retention.</p>
-            </div>
-            <div className="flex gap-2">
-              <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Add Card</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Add Review Card</DialogTitle></DialogHeader>
-                  <div className="space-y-4 pt-2">
-                    <Input placeholder="Topic (e.g. Test Design)" value={newCard.topic} onChange={(e) => setNewCard({ ...newCard, topic: e.target.value })} />
-                    <Textarea placeholder="Question" value={newCard.question} onChange={(e) => setNewCard({ ...newCard, question: e.target.value })} />
-                    <Textarea placeholder="Answer" value={newCard.answer} onChange={(e) => setNewCard({ ...newCard, answer: e.target.value })} />
-                    <Button onClick={addCard} className="w-full">Add Card</Button>
+          {/* Hero Header */}
+          <div className="rounded-2xl bg-gradient-to-br from-accent/10 via-primary/5 to-background border border-accent/10 p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-accent/15">
+                    <Brain className="w-6 h-6 text-accent" />
                   </div>
-                </DialogContent>
-              </Dialog>
-              <Button onClick={startSession} className="gap-2" disabled={isReviewing}>
-                <Zap className="w-4 h-4" /> Start Review ({dueCards.length} due)
-              </Button>
+                  Spaced Repetition
+                </h1>
+                <p className="text-muted-foreground text-sm mt-2 max-w-md">Master your knowledge with scientifically-proven interval-based review.</p>
+              </div>
+              <div className="flex gap-2">
+                <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Add Card</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Add Review Card</DialogTitle></DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <Input placeholder="Topic (e.g. Test Design)" value={newCard.topic} onChange={(e) => setNewCard({ ...newCard, topic: e.target.value })} />
+                      <Textarea placeholder="Question" value={newCard.question} onChange={(e) => setNewCard({ ...newCard, question: e.target.value })} rows={3} />
+                      <Textarea placeholder="Answer" value={newCard.answer} onChange={(e) => setNewCard({ ...newCard, answer: e.target.value })} rows={3} />
+                      <Button onClick={addCard} className="w-full">Add Card</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button onClick={startSession} className="gap-2 shadow-md" disabled={isReviewing}>
+                  <Zap className="w-4 h-4" /> Start Review ({dueCards.length} due)
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="p-4 text-center">
-              <Layers className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Total Cards</p>
-              <p className="text-2xl font-bold">{cards.length}</p>
-            </Card>
-            <Card className="p-4 text-center">
-              <Clock className="w-5 h-5 mx-auto mb-1 text-warning-foreground" />
-              <p className="text-xs text-muted-foreground">Due Today</p>
-              <p className="text-2xl font-bold text-primary">{dueCards.length}</p>
-            </Card>
-            <Card className="p-4 text-center">
-              <TrendingUp className="w-5 h-5 mx-auto mb-1 text-success" />
-              <p className="text-xs text-muted-foreground">Learning</p>
-              <p className="text-2xl font-bold text-success">{learningCards.length}</p>
-            </Card>
-            <Card className="p-4 text-center">
-              <CheckCircle2 className="w-5 h-5 mx-auto mb-1 text-accent" />
-              <p className="text-xs text-muted-foreground">Mastered</p>
-              <p className="text-2xl font-bold text-accent">{masteredCards.length}</p>
-            </Card>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {[
+              { icon: Layers, label: "Total Cards", value: cards.length, color: "text-foreground", iconColor: "text-muted-foreground" },
+              { icon: Clock, label: "Due Today", value: dueCards.length, color: "text-primary", iconColor: "text-primary" },
+              { icon: BookOpen, label: "New", value: newCards.length, color: "text-warning-foreground", iconColor: "text-warning" },
+              { icon: TrendingUp, label: "Learning", value: learningCards.length, color: "text-success", iconColor: "text-success" },
+              { icon: Target, label: "Mastered", value: masteredCards.length, color: "text-accent", iconColor: "text-accent" },
+            ].map((stat) => (
+              <Card key={stat.label} className="overflow-hidden">
+                <CardContent className="p-4 text-center">
+                  <stat.icon className={cn("w-5 h-5 mx-auto mb-1.5", stat.iconColor)} />
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</p>
+                  <p className={cn("text-2xl font-bold mt-0.5", stat.color)}>{stat.value}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Review Card */}
+          {/* Retention Progress */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" /> Retention Rate
+                </span>
+                <span className="text-sm font-bold text-accent">{retentionRate}%</span>
+              </div>
+              <Progress value={retentionRate} className="h-2" />
+              <p className="text-[11px] text-muted-foreground mt-1.5">{masteredCards.length} of {cards.length} cards mastered (3+ successful reviews)</p>
+            </CardContent>
+          </Card>
+
+          {/* Review Session */}
           {isReviewing && currentCard ? (
-            <Card className="p-8 max-w-2xl mx-auto">
-              <div className="flex items-center justify-between mb-4">
-                <Badge variant="outline">{currentCard.topic}</Badge>
-                <span className="text-xs text-muted-foreground">{currentIndex + 1} / {dueCards.length}</span>
-              </div>
-              <Progress value={((currentIndex + 1) / dueCards.length) * 100} className="mb-6 h-1.5" />
-              <div className="text-center space-y-6">
-                <p className="text-lg font-medium leading-relaxed">{currentCard.question}</p>
-                {showAnswer ? (
-                  <>
-                    <div className="border-t border-border pt-6">
-                      <p className="text-muted-foreground leading-relaxed">{currentCard.answer}</p>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 pt-4">
-                      <Button variant="outline" onClick={() => handleRate("again")} className="flex flex-col gap-0.5 h-auto py-3 border-destructive/30 text-destructive hover:bg-destructive/10">
-                        <XCircle className="w-4 h-4" /><span className="text-xs">Again</span><span className="text-[10px] opacity-60">1d</span>
-                      </Button>
-                      <Button variant="outline" onClick={() => handleRate("hard")} className="flex flex-col gap-0.5 h-auto py-3 border-warning/30 text-warning-foreground hover:bg-warning/10">
-                        <RotateCcw className="w-4 h-4" /><span className="text-xs">Hard</span><span className="text-[10px] opacity-60">{Math.max(1, Math.round(currentCard.interval * 1.2))}d</span>
-                      </Button>
-                      <Button variant="outline" onClick={() => handleRate("good")} className="flex flex-col gap-0.5 h-auto py-3 border-success/30 text-success hover:bg-success/10">
-                        <CheckCircle2 className="w-4 h-4" /><span className="text-xs">Good</span>
-                        <span className="text-[10px] opacity-60">{currentCard.repetitions === 0 ? 1 : currentCard.repetitions === 1 ? 4 : Math.round(currentCard.interval * currentCard.easeFactor)}d</span>
-                      </Button>
-                      <Button variant="outline" onClick={() => handleRate("easy")} className="flex flex-col gap-0.5 h-auto py-3 border-primary/30 text-primary hover:bg-primary/10">
-                        <Zap className="w-4 h-4" /><span className="text-xs">Easy</span>
-                        <span className="text-[10px] opacity-60">{currentCard.repetitions === 0 ? 4 : Math.round(currentCard.interval * currentCard.easeFactor * 1.3)}d</span>
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <Button onClick={() => setShowAnswer(true)} size="lg" className="mt-4">Show Answer</Button>
-                )}
-              </div>
+            <Card className="overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-primary via-accent to-success" style={{ width: `${((currentIndex + 1) / dueCards.length) * 100}%`, transition: "width 0.3s ease" }} />
+              <CardContent className="p-6 sm:p-8 max-w-2xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <Badge variant="outline" className="text-xs border-accent/30 text-accent">{currentCard.topic}</Badge>
+                  <span className="text-xs text-muted-foreground font-medium">{currentIndex + 1} / {dueCards.length}</span>
+                </div>
+                <div className="text-center space-y-6">
+                  <div className="py-4">
+                    <p className="text-lg sm:text-xl font-semibold leading-relaxed">{currentCard.question}</p>
+                  </div>
+                  {showAnswer ? (
+                    <>
+                      <div className="border-t border-border pt-6 pb-2">
+                        <p className="text-muted-foreground leading-relaxed">{currentCard.answer}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">How well did you remember?</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {(["again", "hard", "good", "easy"] as Difficulty[]).map((d) => {
+                          const cfg = difficultyConfig[d];
+                          const Icon = cfg.icon;
+                          return (
+                            <Button key={d} variant="outline" onClick={() => handleRate(d)} className={cn("flex flex-col gap-1 h-auto py-3", cfg.color)}>
+                              <Icon className="w-4 h-4" />
+                              <span className="text-xs font-semibold">{cfg.label}</span>
+                              <span className="text-[10px] opacity-60">{getIntervalLabel(currentCard, d)}</span>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <Button onClick={() => setShowAnswer(true)} size="lg" className="mt-4 shadow-md gap-2">
+                      <BookOpen className="w-4 h-4" /> Show Answer
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           ) : sessionStats.reviewed > 0 ? (
-            <Card className="p-8 max-w-2xl mx-auto text-center">
-              <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-3" />
-              <h2 className="text-xl font-bold mb-2">Session Complete!</h2>
-              <p className="text-muted-foreground mb-4">You reviewed {sessionStats.reviewed} cards</p>
-              <div className="flex justify-center gap-4 text-sm">
-                <span className="text-destructive">Again: {sessionStats.again}</span>
-                <span className="text-warning-foreground">Hard: {sessionStats.hard}</span>
-                <span className="text-success">Good: {sessionStats.good}</span>
-                <span className="text-primary">Easy: {sessionStats.easy}</span>
-              </div>
-              <Button onClick={startSession} className="mt-6 gap-2" disabled={dueCards.length === 0}>
-                <RotateCcw className="w-4 h-4" /> Review Again ({dueCards.length} due)
-              </Button>
+            <Card className="overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-success to-primary w-full" />
+              <CardContent className="p-8 max-w-2xl mx-auto text-center">
+                <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-success" />
+                </div>
+                <h2 className="text-xl font-bold mb-2">Session Complete!</h2>
+                <p className="text-muted-foreground mb-6">You reviewed {sessionStats.reviewed} cards</p>
+                <div className="flex justify-center gap-6 text-sm mb-6">
+                  <div className="text-center"><p className="text-lg font-bold text-destructive">{sessionStats.again}</p><p className="text-[11px] text-muted-foreground">Again</p></div>
+                  <div className="text-center"><p className="text-lg font-bold text-warning-foreground">{sessionStats.hard}</p><p className="text-[11px] text-muted-foreground">Hard</p></div>
+                  <div className="text-center"><p className="text-lg font-bold text-success">{sessionStats.good}</p><p className="text-[11px] text-muted-foreground">Good</p></div>
+                  <div className="text-center"><p className="text-lg font-bold text-primary">{sessionStats.easy}</p><p className="text-[11px] text-muted-foreground">Easy</p></div>
+                </div>
+                <Button onClick={startSession} className="gap-2" disabled={dueCards.length === 0}>
+                  <RotateCcw className="w-4 h-4" /> Review Again ({dueCards.length} due)
+                </Button>
+              </CardContent>
             </Card>
           ) : null}
 
           {/* All Cards */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">All Cards</h2>
-            <div className="space-y-2">
-              {cards.map((card) => {
-                const isDue = card.nextReview <= new Date();
-                return (
-                  <div key={card.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{card.question}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px]">{card.topic}</Badge>
-                        <span className="text-[10px] text-muted-foreground">{card.repetitions === 0 ? "New" : `${card.repetitions} reviews`}</span>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground" /> All Cards
+                <Badge variant="secondary" className="ml-auto text-[11px]">{cards.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="space-y-2">
+                {cards.map((card) => {
+                  const isDue = card.nextReview <= new Date();
+                  const statusColor = card.repetitions >= 3 ? "bg-accent" : card.repetitions > 0 ? "bg-success" : "bg-muted-foreground";
+                  return (
+                    <div key={card.id} className="flex items-center gap-3 p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors group">
+                      <span className={cn("w-2 h-2 rounded-full flex-shrink-0", statusColor)} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{card.question}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{card.topic}</Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            {card.repetitions === 0 ? "New" : card.repetitions >= 3 ? "Mastered" : `${card.repetitions} reviews`}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                       {isDue ? (
-                        <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px]">Due</Badge>
+                        <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] flex-shrink-0">Due</Badge>
                       ) : (
-                        <span className="text-[10px] text-muted-foreground">Next: {Math.ceil((card.nextReview.getTime() - Date.now()) / 86400000)}d</span>
+                        <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                          Next: {Math.ceil((card.nextReview.getTime() - Date.now()) / 86400000)}d
+                        </span>
                       )}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </CardContent>
           </Card>
 
-          <Card className="p-5 border-accent/20 bg-accent/5">
-            <h3 className="font-semibold text-sm mb-2">🧠 How Spaced Repetition Works</h3>
-            <ul className="text-sm text-muted-foreground space-y-1.5">
-              <li>• Cards you find <strong>easy</strong> appear less frequently (longer intervals).</li>
-              <li>• Cards you struggle with (<strong>again/hard</strong>) reset to shorter intervals.</li>
-              <li>• The algorithm adapts to your performance using the <strong>SM-2 method</strong>.</li>
-              <li>• Review daily for best results – consistency beats volume.</li>
-            </ul>
+          {/* Tips */}
+          <Card className="border-accent/15 bg-gradient-to-r from-accent/5 to-primary/5">
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">🧠 How Spaced Repetition Works</h3>
+              <ul className="text-sm text-muted-foreground space-y-1.5">
+                <li>• Cards you find <strong>easy</strong> appear less frequently (longer intervals).</li>
+                <li>• Cards you struggle with (<strong>again/hard</strong>) reset to shorter intervals.</li>
+                <li>• The algorithm adapts to your performance using the <strong>SM-2 method</strong>.</li>
+                <li>• Review daily for best results – consistency beats volume.</li>
+              </ul>
+            </CardContent>
           </Card>
         </div>
       </main>
