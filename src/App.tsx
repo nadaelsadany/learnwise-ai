@@ -461,6 +461,78 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/university/terms"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAcademicTerms />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/sections"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversitySections />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/enrollment"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityEnrollment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/exams"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAnnouncements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/content"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityContentLibrary />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/reports"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityReports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/ai-insights"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityAIInsights />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/university/roles"
+        element={
+          <ProtectedRoute allowedRoles={["university"]}>
+            <UniversityRoles />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/university/*"
         element={
           <ProtectedRoute allowedRoles={["university"]}>
