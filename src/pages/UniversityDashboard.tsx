@@ -222,10 +222,18 @@ const UniversityDashboard = () => {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Total Students" value={stats.totalStudents} sub="Enrolled this semester" icon={GraduationCap} trend={{ value: 12, positive: true }} color="primary" />
-                        <StatCard title="Instructors" value={stats.activeInstructors} sub="Across all departments" icon={Users} trend={{ value: 5, positive: true }} color="accent" />
-                        <StatCard title="Active Courses" value={stats.totalCourses} sub="Published & running" icon={BookOpen} trend={{ value: 8, positive: true }} color="emerald" />
-                        <StatCard title="Avg Completion" value={`${stats.avgCompletion}%`} sub="Student course completion" icon={TrendingUp} trend={{ value: 3, positive: true }} color="amber" />
+                        <div onClick={() => navigate("/university/students")} className="cursor-pointer">
+                            <StatCard title="Total Students" value={stats.totalStudents} sub="Enrolled this semester" icon={GraduationCap} trend={{ value: 12, positive: true }} color="primary" />
+                        </div>
+                        <div onClick={() => navigate("/university/instructors")} className="cursor-pointer">
+                            <StatCard title="Instructors" value={stats.activeInstructors} sub="Across all departments" icon={Users} trend={{ value: 5, positive: true }} color="accent" />
+                        </div>
+                        <div onClick={() => navigate("/university/courses")} className="cursor-pointer">
+                            <StatCard title="Active Courses" value={stats.totalCourses} sub="Published & running" icon={BookOpen} trend={{ value: 8, positive: true }} color="emerald" />
+                        </div>
+                        <div onClick={() => navigate("/university/analytics")} className="cursor-pointer">
+                            <StatCard title="Avg Completion" value={`${stats.avgCompletion}%`} sub="Student course completion" icon={TrendingUp} trend={{ value: 3, positive: true }} color="amber" />
+                        </div>
                     </div>
 
                     {/* Main Grid */}
@@ -238,13 +246,13 @@ const UniversityDashboard = () => {
                                     <BarChart2 className="w-5 h-5 text-primary" />
                                     Department Performance
                                 </h2>
-                                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">
+                                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary" onClick={() => navigate("/university/departments")}>
                                     View All <ChevronRight className="w-3 h-3 ml-1" />
                                 </Button>
                             </div>
                             <div className="space-y-3">
                                 {departments.map((dept, i) => (
-                                    <Card key={dept.name} className="border-border/50 hover:border-primary/30 transition-all duration-200 hover:shadow-md group cursor-pointer">
+                                    <Card key={dept.name} className="border-border/50 hover:border-primary/30 transition-all duration-200 hover:shadow-md group cursor-pointer" onClick={() => navigate("/university/departments")}>
                                         <CardContent className="p-4">
                                             <div className="flex items-center gap-4">
                                                 <div className={cn(
@@ -326,7 +334,7 @@ const UniversityDashboard = () => {
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     {recentActivity.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-3 group cursor-pointer">
+                                        <div key={i} className="flex items-start gap-3 group cursor-pointer hover:bg-muted/50 rounded-lg p-1 -m-1 transition-colors" onClick={() => navigate(item.type === "warn" ? "/university/ai-insights" : "/university/analytics")}>
                                             <div className={cn(
                                                 "w-2 h-2 rounded-full mt-1.5 shrink-0",
                                                 item.type === "success" && "bg-emerald-500",

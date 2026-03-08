@@ -42,8 +42,23 @@ const priorityBadge: Record<string, string> = {
 
 const StudentNotifications = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
   const navigate = useNavigate();
   const { notifications, loading, unreadCount, markRead, markAllRead, pushEnabled, requestPushPermission } = useSmartNotifications();
+
+  const filteredNotifications = filter === "all"
+    ? notifications
+    : notifications.filter(n => n.type === filter);
+
+  const filterOptions = [
+    { value: "all", label: "All" },
+    { value: "flashcards_due", label: "Flashcards" },
+    { value: "streak_risk", label: "Streaks" },
+    { value: "goal_unmet", label: "Goals" },
+    { value: "focus_drop", label: "Focus" },
+    { value: "study_reminder", label: "Reminders" },
+    { value: "achievement", label: "Achievements" },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -88,17 +103,42 @@ const StudentNotifications = () => {
             </div>
           </div>
 
-          {notifications.length === 0 && !loading ? (
+          {/* Filter Chips */}
+          <div className="flex gap-2 flex-wrap">
+            {filterOptions.map(opt => (
+              <Button
+                key={opt.value}
+                variant={filter === opt.value ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => setFilter(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+
+          {filteredNotifications.length === 0 && !loading ? (
             <Card>
               <CardContent className="p-12 text-center">
                 <Bell className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-                <p className="text-muted-foreground">No notifications right now</p>
-                <p className="text-xs text-muted-foreground mt-1">Smart alerts will appear based on your study activity</p>
+                <p className="text-muted-foreground font-medium">
+                  {filter === "all" ? "No notifications right now" : `No ${filter.replace('_', ' ')} notifications`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {filter === "all"
+                    ? "Smart alerts will appear based on your study activity"
+                    : "Try a different filter or check back later"
+                  }
+                </p>
+                <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate("/")}>
+                  Back to Dashboard
+                </Button>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {notifications.map((n) => {
+              {filteredNotifications.map((n) => {
                 const Icon = iconMap[n.type] || Bell;
                 const color = colorMap[n.type] || "text-primary";
                 return (

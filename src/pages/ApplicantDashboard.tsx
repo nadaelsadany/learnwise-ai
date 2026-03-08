@@ -67,7 +67,7 @@ const ApplicantDashboard = () => {
                 <p className="text-muted-foreground">Ready to continue your learning journey?</p>
               </div>
               {levelInfo && (
-                <div className="hidden sm:flex items-center gap-3 bg-card border border-border/50 rounded-xl px-4 py-2.5 shadow-sm">
+                <div className="hidden sm:flex items-center gap-3 bg-card border border-border/50 rounded-xl px-4 py-2.5 shadow-sm cursor-pointer hover:border-primary/30 transition-all" onClick={() => navigate('/achievements')}>
                   <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
                     <Star className="w-4 h-4 text-primary-foreground" />
                   </div>
@@ -149,7 +149,7 @@ const ApplicantDashboard = () => {
             {/* Left Column */}
             <div className="lg:col-span-2 space-y-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-2xl bg-card border border-border/50 shadow-card p-6 flex flex-col items-center justify-center">
+                <div className="rounded-2xl bg-card border border-border/50 shadow-card p-6 flex flex-col items-center justify-center cursor-pointer hover:shadow-elevated transition-all" onClick={() => navigate("/analytics")}>
                   <p className="text-sm text-muted-foreground mb-2">Exam Readiness</p>
                   <ReadinessGauge percentage={readinessPercentage} />
                   <p className="text-sm text-muted-foreground mt-2">Overall Progress</p>
