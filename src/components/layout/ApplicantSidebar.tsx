@@ -14,6 +14,8 @@ import {
   CalendarDays,
   RotateCcw,
   Award,
+  Bell,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,8 @@ const navItems: NavItem[] = [
   { icon: CalendarDays, label: "Time Blocking", href: "/time-blocking" },
   { icon: RotateCcw, label: "Spaced Repetition", href: "/spaced-repetition" },
   { icon: Award, label: "Achievements", href: "/achievements" },
+  { icon: User, label: "My Profile", href: "/profile" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
 ];
 
 interface SidebarContentProps {
