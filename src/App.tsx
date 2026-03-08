@@ -275,6 +275,14 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/instructor/create-course"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <CreateCourse />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/instructor/analytics"
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
