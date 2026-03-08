@@ -143,7 +143,3 @@ export const useAchievements = () => {
 
   return { achievements, earned, locked, loading, stats, newlyUnlocked, dismissNewlyUnlocked };
 };
-
-function useCallback(arg0: () => void, arg1: never[]): void {
-  throw new Error('Function not implemented.');
-}
