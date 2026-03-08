@@ -222,7 +222,11 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden relative" style={{ background: "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--card)) 25%, hsl(var(--background)) 50%, hsl(var(--card)) 75%, hsl(var(--background)) 100%)" }}>
+      {/* Global mesh gradient overlay */}
+      <div className="fixed inset-0 pointer-events-none z-0" style={{
+        background: "radial-gradient(ellipse 80% 60% at 10% 20%, hsl(var(--primary) / 0.04) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 90% 60%, hsl(var(--accent) / 0.05) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 50% 90%, hsl(var(--success) / 0.03) 0%, transparent 60%)"
+      }} />
       {/* Navigation */}
       <motion.nav
         className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50"
