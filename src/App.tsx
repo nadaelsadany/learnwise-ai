@@ -109,9 +109,12 @@ const RoleBasedRedirect = () => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public route */}
+      {/* Public routes */}
       <Route path="/auth" element={<Auth />} />
+      <Route path="/onboarding" element={<Onboarding />} />
 
+      {/* Profile route - accessible by all authenticated users */}
+      <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       {/* Role-based home route */}
       <Route path="/" element={<RoleBasedRedirect />} />
 
