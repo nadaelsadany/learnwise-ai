@@ -322,6 +322,62 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/instructor/curriculum"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorCurriculum />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/assignments"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorAssignments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/quizzes"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorQuizzes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/discussions"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorDiscussions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorAnnouncements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/flashcards"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorFlashcards />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorLeaderboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/syllabus-upload"
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
