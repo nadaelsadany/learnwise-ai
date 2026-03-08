@@ -33,6 +33,7 @@ import TimeBlocking from "./pages/TimeBlocking";
 import SpacedRepetition from "./pages/SpacedRepetition";
 import LearningAnalytics from "./pages/LearningAnalytics";
 import AIStudyCoach from "./pages/AIStudyCoach";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 import UniversityDashboard from "./pages/UniversityDashboard";
 import UniversityDepartments from "./pages/UniversityDepartments";

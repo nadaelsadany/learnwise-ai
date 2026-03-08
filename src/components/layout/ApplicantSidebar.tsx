@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
   { icon: Brain, label: "AI Coach", href: "/ai-coach" },
   { icon: CalendarDays, label: "Time Blocking", href: "/time-blocking" },
   { icon: RotateCcw, label: "Spaced Repetition", href: "/spaced-repetition" },
+  { icon: Award, label: "Achievements", href: "/achievements" },
 ];
 
 interface SidebarContentProps {
