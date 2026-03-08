@@ -91,7 +91,7 @@ const Auth = () => {
         }
         toast({
           title: "Account created!",
-          description: "مرحباً بك في نافع. هيا نبدأ التعلم!",
+          description: "Welcome to Nafea. Let's start learning!",
         });
         navigate("/");
       }
