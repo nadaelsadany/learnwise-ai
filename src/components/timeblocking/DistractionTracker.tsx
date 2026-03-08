@@ -147,18 +147,8 @@ export function DistractionTracker({ sessionId }: DistractionTrackerProps) {
   );
 
   const totalTimeLost = todayDistractions.reduce((acc, d) => acc + d.duration_seconds, 0);
-  const mostCommonType = todayDistractions.length > 0
-    ? distractionTypes.find(
-        (t) => t.value === 
-          todayDistractions.reduce((acc, d) => {
-            acc[d.distraction_type] = (acc[d.distraction_type] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>)
-          |> ((counts: Record<string, number>) => Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0])
-      )
-    : null;
 
-  // Simpler most common calculation
+  // Calculate most common distraction type
   const typeCounts = todayDistractions.reduce((acc, d) => {
     acc[d.distraction_type] = (acc[d.distraction_type] || 0) + 1;
     return acc;

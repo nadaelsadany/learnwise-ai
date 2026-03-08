@@ -275,7 +275,7 @@ const LearningAnalytics = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="overflow-x-auto pb-4">
-                  <MasteryHeatmap data={heatmapData} />
+                  <StudyHeatmap data={heatmapData} />
                 </CardContent>
               </Card>
 
