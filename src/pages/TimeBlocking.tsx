@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarWidget } from "@/components/ui/calendar";
-import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame } from "lucide-react";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame, BarChart3, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
 type BlockCategory = "study" | "break" | "review" | "practice" | "personal";
 
