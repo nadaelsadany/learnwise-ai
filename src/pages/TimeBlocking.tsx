@@ -447,7 +447,49 @@ const TimeBlocking = () => {
             ))}
           </div>
 
-          {/* Day View */}
+          {/* Weekly Study Hours Chart */}
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                Weekly Study Hours
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyChartData} barSize={32}>
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} unit="h" width={35} />
+                    <RechartsTooltip
+                      cursor={{ fill: "hsl(var(--muted) / 0.3)", radius: 8 }}
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "0.75rem",
+                        fontSize: "12px",
+                        boxShadow: "var(--shadow-md)",
+                      }}
+                      formatter={(value: number) => [`${value}h`, "Study Time"]}
+                    />
+                    <Bar dataKey="hours" radius={[8, 8, 4, 4]}>
+                      {weeklyChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.isToday ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.35)"}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center mt-1">
+                Total: {weeklyChartData.reduce((s, d) => s + d.hours, 0).toFixed(1)}h this week
+              </p>
+            </CardContent>
+          </Card>
+
+
           {viewMode === "day" && (
             <Card className="overflow-hidden">
               <CardHeader className="pb-2">
