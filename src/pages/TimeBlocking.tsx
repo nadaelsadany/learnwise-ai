@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
+import { AchievementBadges } from "@/components/timeblocking/AchievementBadges";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -568,6 +569,14 @@ const TimeBlocking = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Achievement Badges */}
+          <AchievementBadges
+            streak={streak}
+            totalWeeklyHours={weeklyChartData.reduce((s, d) => s + d.hours, 0)}
+            todayBlockCount={todayBlocks.length}
+            totalBlocks={blocks.length}
+          />
 
           {/* Tips */}
           <Card className="border-primary/15 bg-gradient-to-r from-primary/5 to-accent/5">
