@@ -222,7 +222,11 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden relative" style={{ background: "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--card)) 25%, hsl(var(--background)) 50%, hsl(var(--card)) 75%, hsl(var(--background)) 100%)" }}>
+      {/* Global mesh gradient overlay */}
+      <div className="fixed inset-0 pointer-events-none z-0" style={{
+        background: "radial-gradient(ellipse 80% 60% at 10% 20%, hsl(var(--primary) / 0.04) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 90% 60%, hsl(var(--accent) / 0.05) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 50% 90%, hsl(var(--success) / 0.03) 0%, transparent 60%)"
+      }} />
       {/* Navigation */}
       <motion.nav
         className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50"
@@ -416,8 +420,8 @@ const Landing = () => {
       </section>
 
       {/* Stats Bar */}
-      <section className="py-8 px-6 border-y border-border/50 bg-card/50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.02] via-accent/[0.02] to-success/[0.02]" />
+      <section className="py-8 px-6 border-y border-border/30 relative overflow-hidden" style={{ background: "linear-gradient(90deg, hsl(var(--primary) / 0.05), hsl(var(--accent) / 0.04), hsl(var(--success) / 0.05))" }}>
+        <div className="absolute inset-0 backdrop-blur-sm" />
         <motion.div
           className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8"
           variants={staggerContainer}
@@ -435,7 +439,7 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 px-6 relative overflow-hidden">
+      <section id="features" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--accent) / 0.03) 0%, hsl(var(--card) / 0.5) 40%, hsl(var(--primary) / 0.02) 100%)" }}>
         <FloatingOrb className="w-[300px] h-[300px] bg-accent/[0.04] blur-[80px] top-20 -right-20" delay={1} />
         <div className="max-w-7xl mx-auto relative">
           <motion.div className="text-center mb-16 space-y-4" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
@@ -469,7 +473,7 @@ const Landing = () => {
       </section>
 
       {/* For Students */}
-      <section id="students" className="py-24 px-6 bg-muted/30 relative overflow-hidden">
+      <section id="students" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.03) 0%, hsl(var(--card) / 0.5) 50%, hsl(var(--accent) / 0.02) 100%)" }}>
         <FloatingOrb className="w-[400px] h-[400px] bg-primary/[0.03] blur-[80px] -top-20 left-1/4" delay={3} />
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -582,7 +586,7 @@ const Landing = () => {
       </section>
 
       {/* For Universities */}
-      <section id="universities" className="py-24 px-6 bg-muted/30 relative overflow-hidden">
+      <section id="universities" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--success) / 0.03) 0%, hsl(var(--card) / 0.5) 50%, hsl(var(--primary) / 0.02) 100%)" }}>
         <FloatingOrb className="w-[350px] h-[350px] bg-success/[0.04] blur-[80px] top-10 -left-20" delay={1.5} />
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -663,7 +667,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 bg-muted/30 relative overflow-hidden">
+      <section id="pricing" className="py-24 px-6 relative overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(var(--card) / 0.6) 0%, hsl(var(--primary) / 0.04) 50%, hsl(var(--card) / 0.4) 100%)" }}>
         <FloatingOrb className="w-[400px] h-[400px] bg-primary/[0.03] blur-[100px] -top-20 right-1/4" delay={2} />
         <div className="max-w-7xl mx-auto relative">
           <motion.div className="text-center mb-16 space-y-4" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
