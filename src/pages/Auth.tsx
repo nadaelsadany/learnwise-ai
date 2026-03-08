@@ -91,7 +91,7 @@ const Auth = () => {
         }
         toast({
           title: "Account created!",
-          description: "Welcome to LearnAI. Let's start learning!",
+          description: "مرحباً بك في نافع. هيا نبدأ التعلم!",
         });
         navigate("/");
       }
