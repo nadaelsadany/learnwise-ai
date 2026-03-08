@@ -464,6 +464,7 @@ const TimeBlocking = () => {
             <div className="space-y-4">
               <PomodoroTimer activeBlockTitle={activeBlock?.title || null} onSessionComplete={() => setCompletedPomodoros(p => p + 1)} />
               <FocusScoreCard completedPomodoros={completedPomodoros} totalStudyMinutes={totalStudyMinutes} totalBlocks={todayBlocks.length} />
+              <DistractionTracker />
             </div>
           </div>
 
