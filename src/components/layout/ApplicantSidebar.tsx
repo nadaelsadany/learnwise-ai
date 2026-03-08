@@ -14,16 +14,6 @@ import {
   CalendarDays,
   RotateCcw,
   Award,
-  Brain,
-  FileQuestion,
-  BarChart3,
-  Settings,
-  ChevronLeft,
-  Sparkles,
-  GraduationCap,
-  LogOut,
-  CalendarDays,
-  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
