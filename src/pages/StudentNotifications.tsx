@@ -138,7 +138,7 @@ const StudentNotifications = () => {
             </Card>
           ) : (
             <div className="space-y-3">
-              {notifications.map((n) => {
+              {filteredNotifications.map((n) => {
                 const Icon = iconMap[n.type] || Bell;
                 const color = colorMap[n.type] || "text-primary";
                 return (
