@@ -209,8 +209,15 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/achievements"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <Achievements />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Instructor routes */}
       <Route
         path="/instructor"
         element={
