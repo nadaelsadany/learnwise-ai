@@ -19,6 +19,7 @@ import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
 import { AchievementBadges } from "@/components/timeblocking/AchievementBadges";
 import { EnergyLevelSelector, type EnergyLevel } from "@/components/timeblocking/EnergyLevelSelector";
 import { FocusScoreCard } from "@/components/timeblocking/FocusScoreCard";
+import { DistractionTracker } from "@/components/timeblocking/DistractionTracker";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -463,6 +464,7 @@ const TimeBlocking = () => {
             <div className="space-y-4">
               <PomodoroTimer activeBlockTitle={activeBlock?.title || null} onSessionComplete={() => setCompletedPomodoros(p => p + 1)} />
               <FocusScoreCard completedPomodoros={completedPomodoros} totalStudyMinutes={totalStudyMinutes} totalBlocks={todayBlocks.length} />
+              <DistractionTracker />
             </div>
           </div>
 
