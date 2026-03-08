@@ -88,6 +88,39 @@ const TimeBlocking = () => {
     load();
   }, [user, isMock, weekStart.toISOString()]);
 
+  // Calculate streak
+  useEffect(() => {
+    const calcStreak = async () => {
+      if (isMock) {
+        setStreak(5); // Demo streak
+        return;
+      }
+      // Query distinct dates with blocks in the last 60 days
+      const today = new Date();
+      const lookback = format(subDays(today, 60), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("time_blocks")
+        .select("block_date")
+        .eq("student_id", user!.id)
+        .gte("block_date", lookback)
+        .order("block_date", { ascending: false });
+      if (error || !data) { setStreak(0); return; }
+      const uniqueDates = [...new Set(data.map((r: any) => r.block_date))].sort().reverse();
+      let count = 0;
+      let checkDate = format(today, "yyyy-MM-dd");
+      for (const d of uniqueDates) {
+        if (d === checkDate) {
+          count++;
+          checkDate = format(subDays(new Date(checkDate + "T12:00:00"), 1), "yyyy-MM-dd");
+        } else if (d < checkDate) {
+          break;
+        }
+      }
+      setStreak(count);
+    };
+    calcStreak();
+  }, [blocks, user, isMock]);
+
   const blocksForDate = useCallback((dateStr: string) => blocks.filter((b) => b.date === dateStr), [blocks]);
   const todayBlocks = blocksForDate(selectedDateStr);
 
