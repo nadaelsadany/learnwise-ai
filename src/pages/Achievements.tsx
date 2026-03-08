@@ -1,0 +1,149 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ApplicantSidebar, ApplicantSidebarContent } from "@/components/layout/ApplicantSidebar";
+import { Header } from "@/components/layout/Header";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Award, Trophy, Flame, BookOpen, Target, Zap, Lock } from "lucide-react";
+import { useAchievements } from "@/hooks/useAchievements";
+import { AchievementUnlockToast } from "@/components/gamification/AchievementUnlockToast";
+
+const tierStyles = {
+  bronze: { bg: "bg-orange-500/10", border: "border-orange-500/30", text: "text-orange-600" },
+  silver: { bg: "bg-slate-400/10", border: "border-slate-400/30", text: "text-slate-500" },
+  gold: { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-500" },
+  platinum: { bg: "bg-violet-500/10", border: "border-violet-500/30", text: "text-violet-500" },
+};
+
+const categoryIcons = {
+  streak: Flame,
+  study: BookOpen,
+  mastery: Trophy,
+  productivity: Target,
+};
+
+const Achievements = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const { achievements, earned, locked, loading, stats, newlyUnlocked, dismissNewlyUnlocked } = useAchievements();
+
+  const categories = ['all', 'streak', 'study', 'mastery', 'productivity'] as const;
+
+  const filtered = activeTab === 'all'
+    ? achievements
+    : achievements.filter(a => a.category === activeTab);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <ApplicantSidebar onCollapse={setSidebarCollapsed} />
+      <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" mobileSidebar={<ApplicantSidebarContent onItemClick={() => {}} />} />
+
+      <AchievementUnlockToast
+        achievements={achievements.filter(a => newlyUnlocked.includes(a.id))}
+        onDismiss={dismissNewlyUnlocked}
+      />
+
+      <main className={cn(
+        "pt-20 pb-8 px-4 sm:px-6 transition-all duration-300",
+        sidebarCollapsed ? "lg:ml-20" : "lg:ml-64", "ml-0"
+      )}>
+        <div className="max-w-5xl mx-auto space-y-6">
+          <section className="animate-slide-up">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                <Award className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Achievements</h1>
+                <p className="text-muted-foreground text-sm">{earned.length} of {achievements.length} unlocked</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Overall progress */}
+          <Card className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium">Overall Progress</p>
+                <Badge variant="secondary">{Math.round((earned.length / achievements.length) * 100)}%</Badge>
+              </div>
+              <Progress value={(earned.length / achievements.length) * 100} className="h-3" />
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                {(['bronze', 'silver', 'gold', 'platinum'] as const).map(tier => {
+                  const count = earned.filter(a => a.tier === tier).length;
+                  const total = achievements.filter(a => a.tier === tier).length;
+                  const style = tierStyles[tier];
+                  return (
+                    <div key={tier} className={cn("rounded-xl p-3 text-center border", style.bg, style.border)}>
+                      <p className={cn("text-lg font-bold", style.text)}>{count}/{total}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{tier}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-5 w-full max-w-lg">
+              {categories.map(cat => (
+                <TabsTrigger key={cat} value={cat} className="capitalize text-xs">{cat}</TabsTrigger>
+              ))}
+            </TabsList>
+
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((a) => {
+                const style = tierStyles[a.tier];
+                return (
+                  <Card
+                    key={a.id}
+                    className={cn(
+                      "transition-all duration-300 overflow-hidden",
+                      a.unlocked
+                        ? cn("border", style.border, "hover:shadow-md")
+                        : "opacity-60 border-border/40"
+                    )}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0",
+                          a.unlocked ? style.bg : "bg-muted"
+                        )}>
+                          {a.unlocked ? a.icon : <Lock className="w-5 h-5 text-muted-foreground" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold truncate">{a.title}</p>
+                            <Badge variant="outline" className={cn("text-[10px] shrink-0 capitalize", style.text)}>
+                              {a.tier}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{a.description}</p>
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] text-muted-foreground">{a.requirement}</span>
+                              <span className="text-[10px] font-medium">{a.progress}%</span>
+                            </div>
+                            <Progress value={a.progress} className="h-1.5" />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </Tabs>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Achievements;
