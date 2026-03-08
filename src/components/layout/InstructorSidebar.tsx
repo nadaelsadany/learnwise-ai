@@ -65,8 +65,8 @@ export const InstructorSidebarContent = ({ collapsed, onItemClick, className }: 
         </div>
         {!collapsed && (
           <div className="animate-fade-in text-left">
-            <h1 className="font-bold text-lg">LearnAI</h1>
-            <p className="text-xs text-muted-foreground">Instructor Portal</p>
+            <h1 className="font-bold text-lg">نافع</h1>
+            <p className="text-xs text-muted-foreground">بوابة المعلم</p>
           </div>
         )}
       </div>

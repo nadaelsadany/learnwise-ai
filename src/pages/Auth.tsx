@@ -108,8 +108,8 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary shadow-glow-primary mb-4">
             <GraduationCap className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold">LearnAI</h1>
-          <p className="text-muted-foreground">Smart Learning Platform</p>
+          <h1 className="text-2xl font-bold">نافع</h1>
+          <p className="text-muted-foreground">منصة التعلم الذكي</p>
         </div>
 
         <Card className="border-border/50 shadow-soft">

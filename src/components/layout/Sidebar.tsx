@@ -60,8 +60,8 @@ export const Sidebar = ({ onCollapse }: SidebarProps) => {
         </div>
         {!collapsed && (
           <div className="animate-fade-in">
-            <h1 className="font-bold text-lg">LearnAI</h1>
-            <p className="text-xs text-muted-foreground">Smart Learning</p>
+            <h1 className="font-bold text-lg">نافع</h1>
+            <p className="text-xs text-muted-foreground">التعلم الذكي</p>
           </div>
         )}
       </div>
