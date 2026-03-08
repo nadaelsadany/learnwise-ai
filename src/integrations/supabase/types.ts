@@ -97,6 +97,47 @@ export type Database = {
         }
         Relationships: []
       }
+      distractions: {
+        Row: {
+          created_at: string
+          description: string | null
+          distraction_type: string
+          duration_seconds: number | null
+          id: string
+          logged_at: string
+          session_id: string | null
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          distraction_type?: string
+          duration_seconds?: number | null
+          id?: string
+          logged_at?: string
+          session_id?: string | null
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          distraction_type?: string
+          duration_seconds?: number | null
+          id?: string
+          logged_at?: string
+          session_id?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distractions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           completed_at: string | null
