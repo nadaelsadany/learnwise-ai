@@ -19,6 +19,13 @@ import InstructorAnalytics from "./pages/InstructorAnalytics";
 import InstructorSettings from "./pages/InstructorSettings";
 import InstructorContent from "./pages/InstructorContent";
 import InstructorNotifications from "./pages/InstructorNotifications";
+import InstructorCurriculum from "./pages/InstructorCurriculum";
+import InstructorAssignments from "./pages/InstructorAssignments";
+import InstructorQuizzes from "./pages/InstructorQuizzes";
+import InstructorDiscussions from "./pages/InstructorDiscussions";
+import InstructorAnnouncements from "./pages/InstructorAnnouncements";
+import InstructorFlashcards from "./pages/InstructorFlashcards";
+import InstructorLeaderboard from "./pages/InstructorLeaderboard";
 import StudentNotifications from "./pages/StudentNotifications";
 import StudentAITutor from "./pages/StudentAITutor";
 import StudentSettings from "./pages/StudentSettings";
@@ -311,6 +318,62 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
             <AllStudents />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/curriculum"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorCurriculum />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/assignments"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorAssignments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/quizzes"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorQuizzes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/discussions"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorDiscussions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorAnnouncements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/flashcards"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorFlashcards />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["instructor"]}>
+            <InstructorLeaderboard />
           </ProtectedRoute>
         }
       />
