@@ -24,7 +24,7 @@ export function useExamTimer({
     const [timeRemaining, setTimeRemaining] = useState(initialTimeSeconds);
     const [isRunning, setIsRunning] = useState(true);
     const [isPaused, setIsPaused] = useState(false);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const onTimeUpRef = useRef(onTimeUp);
 
     // Keep the callback reference fresh

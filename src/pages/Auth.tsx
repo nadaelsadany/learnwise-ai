@@ -242,30 +242,7 @@ const Auth = () => {
                         </div>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setSelectedRole("admin")}
-                        className={cn(
-                          "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                          selectedRole === "admin"
-                            ? "border-rose-500 bg-rose-500/5 shadow-soft"
-                            : "border-border/50 hover:border-rose-400/50"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center",
-                          selectedRole === "admin" ? "bg-rose-500 text-white" : "bg-muted"
-                        )}>
-                          <Shield className={cn(
-                            "w-6 h-6",
-                            selectedRole === "admin" ? "text-white" : "text-muted-foreground"
-                          )} />
-                        </div>
-                        <div className="text-center">
-                          <p className="font-medium text-sm">Admin</p>
-                          <p className="text-xs text-muted-foreground">HR / L&D</p>
-                        </div>
-                      </button>
+                      {/* Admin signup removed - admin accounts are created by system administrators */}
                     </div>
                   </div>
 

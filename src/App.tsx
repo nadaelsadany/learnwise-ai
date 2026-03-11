@@ -335,14 +335,6 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/instructor"
-        element={
-          <ProtectedRoute allowedRoles={["instructor"]}>
-            <InstructorDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/instructor/students"
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
@@ -406,14 +398,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/syllabus-upload"
-        element={
-          <ProtectedRoute allowedRoles={["instructor"]}>
-            <SyllabusUpload />
-          </ProtectedRoute>
-        }
-      />
+      {/* duplicate removed */}
 
       <Route
         path="/university"

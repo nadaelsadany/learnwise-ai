@@ -77,7 +77,7 @@ export const Header = ({
           variant="ghost"
           size="icon"
           className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-          onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'Admin' ? '/admin' : '/notifications')}
+          onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'University' ? '/university/announcements' : userRole === 'Admin' ? '/admin' : '/notifications')}
         >
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive border-2 border-background" />
@@ -103,11 +103,11 @@ export const Header = ({
               <User className="w-4 h-4 mr-2" />
               My Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
+            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'University' ? '/university/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'Admin' ? '/admin' : '/notifications')}>
+            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'University' ? '/university/announcements' : userRole === 'Admin' ? '/admin' : '/notifications')}>
               <Bell className="w-4 h-4 mr-2" />
               Notifications
             </DropdownMenuItem>
