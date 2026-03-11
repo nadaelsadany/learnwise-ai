@@ -107,7 +107,7 @@ export const Header = ({
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'Admin' ? '/admin' : '/notifications')}>
+            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'University' ? '/university/announcements' : userRole === 'Admin' ? '/admin' : '/notifications')}>
               <Bell className="w-4 h-4 mr-2" />
               Notifications
             </DropdownMenuItem>
