@@ -335,14 +335,6 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/instructor"
-        element={
-          <ProtectedRoute allowedRoles={["instructor"]}>
-            <InstructorDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/instructor/students"
         element={
           <ProtectedRoute allowedRoles={["instructor"]}>
