@@ -29,7 +29,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: BookOpen, label: "Browse Courses", href: "/catalog" },
   { icon: GraduationCap, label: "My Courses", href: "/courses" },
   { icon: Brain, label: "Flashcards", href: "/flashcards" },

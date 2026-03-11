@@ -398,14 +398,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/syllabus-upload"
-        element={
-          <ProtectedRoute allowedRoles={["instructor"]}>
-            <SyllabusUpload />
-          </ProtectedRoute>
-        }
-      />
+      {/* duplicate removed */}
 
       <Route
         path="/university"
