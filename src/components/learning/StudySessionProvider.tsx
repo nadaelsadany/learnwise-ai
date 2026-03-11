@@ -22,7 +22,7 @@ export const StudySessionProvider = ({ children }: { children: React.ReactNode }
     const [isTracking, setIsTracking] = useState(false);
     const [sessionDuration, setSessionDuration] = useState(0); // in seconds
 
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastSyncRef = useRef<Date>(new Date());
 
     // Timer effect

@@ -13,7 +13,7 @@ export const useVoiceRecognition = () => {
     const animationFrameRef = useRef<number | null>(null);
     const { toast } = useToast();
 
-    const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const stopListening = useCallback(() => {
         console.log("Stopping voice recognition...");
