@@ -77,7 +77,7 @@ export const Header = ({
           variant="ghost"
           size="icon"
           className="relative hover:bg-primary/10 hover:text-primary transition-colors"
-          onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'Admin' ? '/admin' : '/notifications')}
+          onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'University' ? '/university/announcements' : userRole === 'Admin' ? '/admin' : '/notifications')}
         >
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive border-2 border-background" />
