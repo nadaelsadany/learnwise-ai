@@ -103,7 +103,7 @@ export const Header = ({
               <User className="w-4 h-4 mr-2" />
               My Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
+            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'University' ? '/university/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </DropdownMenuItem>
