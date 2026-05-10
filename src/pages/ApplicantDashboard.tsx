@@ -9,7 +9,6 @@ import { CourseCard } from "@/components/dashboard/CourseCard";
 import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
 import { TodaysPlan } from "@/components/dashboard/TodaysPlan";
 import { WeaknessAnalysis } from "@/components/dashboard/WeaknessAnalysis";
-import { AIChatBar } from "@/components/dashboard/AIChatBar";
 import { StudyCoachWidget } from "@/components/dashboard/StudyCoachWidget";
 import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 import { useCourses } from "@/hooks/useCourses";
@@ -78,12 +77,6 @@ const ApplicantDashboard = () => {
                       <span className="text-[10px] text-muted-foreground">{totalXP} XP</span>
                     </div>
                   </div>
-                  {unreadCount > 0 && (
-                    <Button variant="ghost" size="icon" className="relative ml-1" onClick={() => navigate('/notifications')}>
-                      <Bell className="w-4 h-4" />
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">{unreadCount}</span>
-                    </Button>
-                  )}
                 </div>
               )}
             </div>
@@ -222,8 +215,6 @@ const ApplicantDashboard = () => {
         </div>
       </main>
 
-      <AIChatBar onSend={(msg) => navigate(`/ai-tutor?q=${encodeURIComponent(msg)}`)} />
-      <FloatingCoachButton />
     </div>
   );
 };

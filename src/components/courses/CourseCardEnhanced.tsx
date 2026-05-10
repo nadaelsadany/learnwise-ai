@@ -1,4 +1,4 @@
-import { BookOpen, Clock, Star, Users, Sparkles } from "lucide-react";
+import { BookOpen, Clock, Star, Users, Sparkles, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,16 @@ import { Course, levelLabels } from "./types";
 interface CourseCardEnhancedProps {
     course: Course;
     variant?: "default" | "featured" | "compact";
+    isLocked?: boolean;
+    lockMessage?: string;
     onClick?: () => void;
 }
 
 export function CourseCardEnhanced({
     course,
     variant = "default",
+    isLocked,
+    lockMessage,
     onClick,
 }: CourseCardEnhancedProps) {
     const getLevelColor = (level: string) => {
@@ -26,12 +30,25 @@ export function CourseCardEnhanced({
 
     return (
         <div
-            onClick={onClick}
+            onClick={() => !isLocked && onClick?.()}
             className={cn(
                 "group relative overflow-hidden rounded-2xl bg-card border border-border/50 shadow-soft transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 cursor-pointer",
-                variant === "featured" && "md:col-span-2 lg:col-span-2"
+                variant === "featured" && "md:col-span-2 lg:col-span-2",
+                isLocked && "cursor-not-allowed hover:translate-y-0"
             )}
         >
+            {/* Locked Overlay */}
+            {isLocked && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-[2px] text-center p-6 animate-fade-in">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3 shadow-inner">
+                        <Lock className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-bold text-foreground mb-1">Course Locked</p>
+                    <p className="text-xs text-muted-foreground max-w-[200px]">
+                        {lockMessage || "Complete prerequisites to unlock this course."}
+                    </p>
+                </div>
+            )}
             {/* Image/Gradient Header */}
             <div className={cn(
                 "relative h-36 overflow-hidden",

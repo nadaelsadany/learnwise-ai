@@ -69,6 +69,9 @@ import AdminCourses from "./pages/AdminCourses";
 import AdminEnrollments from "./pages/AdminEnrollments";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminSettings from "./pages/AdminSettings";
+import Reporting from "./pages/Reporting";
+import Learning from "./pages/Learning";
+import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 
 const queryClient = new QueryClient();
 
@@ -108,7 +111,8 @@ const StudentDashboardRoute = () => {
 
 const AppRoutes = () => {
   return (
-    <Routes>
+    <>
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingOrDashboard />} />
       <Route path="/landing" element={<Landing />} />
@@ -246,6 +250,22 @@ const AppRoutes = () => {
         }
       />
 
+      <Route
+        path="/reporting"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <Reporting />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/learning"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <Learning />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/instructor"
         element={
@@ -590,6 +610,8 @@ const AppRoutes = () => {
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+    <FloatingCoachButton />
+    </>
   );
 };
 

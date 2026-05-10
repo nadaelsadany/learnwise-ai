@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -8,6 +8,7 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
+  ChevronDown,
   Sparkles,
   GraduationCap,
   LogOut,
@@ -16,32 +17,71 @@ import {
   Award,
   Bell,
   User,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-interface NavItem {
-  icon: React.ElementType;
+interface NavSubItem {
   label: string;
-  href: string;
-  badge?: string;
+  href?: string;
+  action?: string;
+  icon: React.ElementType;
 }
 
-const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: BookOpen, label: "Browse Courses", href: "/catalog" },
-  { icon: GraduationCap, label: "My Courses", href: "/courses" },
-  { icon: Brain, label: "Flashcards", href: "/flashcards" },
-  { icon: FileQuestion, label: "Mock Exams", href: "/mock-exam" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: Sparkles, label: "AI Tutor", href: "/ai-tutor" },
-  { icon: Brain, label: "AI Coach", href: "/ai-coach" },
-  { icon: CalendarDays, label: "Time Blocking", href: "/time-blocking" },
-  { icon: RotateCcw, label: "Spaced Repetition", href: "/spaced-repetition" },
-  { icon: Award, label: "Achievements", href: "/achievements" },
-  { icon: User, label: "My Profile", href: "/profile" },
-  { icon: Bell, label: "Notifications", href: "/notifications" },
+interface NavGroup {
+  icon: React.ElementType;
+  label: string;
+  href?: string;
+  badge?: string;
+  subItems?: NavSubItem[];
+}
+
+const navItems: NavGroup[] = [
+  { 
+    icon: LayoutDashboard, 
+    label: "Overview", 
+    subItems: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Analytics", href: "/analytics", icon: BarChart3 },
+      { label: "Achievements", href: "/achievements", icon: Award },
+    ] 
+  },
+  { 
+    icon: BookOpen, 
+    label: "Learning", 
+    href: "/learning"
+  },
+  { 
+    icon: Brain, 
+    label: "Practice", 
+    subItems: [
+      { label: "Flashcards", href: "/flashcards", icon: Brain },
+      { label: "Mock Exams", href: "/mock-exam", icon: FileQuestion },
+      { label: "Spaced Repetition", href: "/spaced-repetition", icon: RotateCcw },
+      { label: "Time Blocking", href: "/time-blocking", icon: CalendarDays },
+    ] 
+  },
+  { 
+    icon: Sparkles, 
+    label: "AI Coach", 
+    subItems: [
+      { label: "AI Tutor", href: "/ai-tutor", icon: Sparkles },
+      { label: "AI Coach", href: "/ai-coach", icon: Brain },
+    ] 
+  },
+  { icon: FileText, label: "Reporting", href: "/reporting" },
+  { 
+    icon: User, 
+    label: "Account", 
+    subItems: [
+      { label: "My Profile", href: "/profile", icon: User },
+      { label: "Notifications", href: "/notifications", icon: Bell },
+      { label: "Settings", href: "/settings", icon: Settings },
+      { label: "Sign Out", action: "sign-out", icon: LogOut },
+    ] 
+  },
 ];
 
 interface SidebarContentProps {
@@ -54,6 +94,16 @@ export const ApplicantSidebarContent = ({ collapsed, onItemClick, className }: S
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Automatically expand groups that contain the active route
+  useEffect(() => {
+    navItems.forEach(group => {
+      if (group.subItems?.some(sub => sub.href === location.pathname)) {
+        setExpandedItems(prev => prev.includes(group.label) ? prev : [...prev, group.label]);
+      }
+    });
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -63,6 +113,14 @@ export const ApplicantSidebarContent = ({ collapsed, onItemClick, className }: S
   const handleNavigate = (path: string) => {
     navigate(path);
     onItemClick?.();
+  };
+
+  const toggleExpand = (label: string) => {
+    setExpandedItems(prev => 
+      prev.includes(label) 
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
   };
 
   return (
@@ -81,70 +139,85 @@ export const ApplicantSidebarContent = ({ collapsed, onItemClick, className }: S
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.href;
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
+        {navItems.map((group) => {
+          const isGroupActive = group.href === location.pathname || 
+                                group.subItems?.some(sub => sub.href === location.pathname);
+          const isExpanded = expandedItems.includes(group.label);
+
           return (
-            <button
-              key={item.href}
-              onClick={() => handleNavigate(item.href)}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-soft"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+            <div key={group.label} className="space-y-1">
+              <button
+                onClick={() => {
+                  if (group.subItems) {
+                    toggleExpand(group.label);
+                  } else if (group.href) {
+                    handleNavigate(group.href);
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group/item relative",
+                  group.href === location.pathname
+                    ? "bg-primary text-primary-foreground shadow-soft"
+                    : isGroupActive && !isExpanded && !collapsed
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <group.icon className={cn(
+                  "w-5 h-5 flex-shrink-0 transition-transform",
+                  !isGroupActive && "group-hover/item:scale-110"
+                )} />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left text-sm font-medium animate-fade-in">
+                      {group.label}
+                    </span>
+                    {group.subItems && (
+                      <ChevronDown className={cn(
+                        "w-4 h-4 transition-transform duration-200",
+                        isExpanded ? "rotate-180" : ""
+                      )} />
+                    )}
+                  </>
+                )}
+                {collapsed && isGroupActive && (
+                  <div className="absolute left-0 w-1 h-6 bg-primary rounded-r-full" />
+                )}
+              </button>
+
+              {!collapsed && group.subItems && isExpanded && (
+                <div className="ml-4 pl-4 border-l border-border/50 space-y-1 animate-accordion-down">
+                  {group.subItems.map((sub) => {
+                    const isSubActive = location.pathname === sub.href;
+                    return (
+                      <button
+                        key={sub.label}
+                        onClick={() => {
+                          if (sub.action === "sign-out") {
+                            handleSignOut();
+                          } else if (sub.href) {
+                            handleNavigate(sub.href);
+                          }
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm",
+                          isSubActive
+                            ? "text-primary font-semibold bg-primary/5"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        <sub.icon className="w-4 h-4" />
+                        <span>{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            >
-              <item.icon className={cn(
-                "w-5 h-5 flex-shrink-0 transition-transform",
-                !isActive && "group-hover:scale-110"
-              )} />
-              {!collapsed && (
-                <span className="flex-1 text-left text-sm font-medium animate-fade-in">
-                  {item.label}
-                </span>
-              )}
-              {!collapsed && item.badge && (
-                <span className={cn(
-                  "px-2 py-0.5 text-xs rounded-full animate-fade-in",
-                  isActive
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-primary/10 text-primary"
-                )}>
-                  {item.badge}
-                </span>
-              )}
-            </button>
+            </div>
           );
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="p-3 border-t border-border/50 space-y-1">
-        <button
-          onClick={() => handleNavigate("/settings")}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-muted text-muted-foreground hover:text-foreground"
-        >
-          <Settings className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && (
-            <span className="flex-1 text-left text-sm font-medium animate-fade-in">
-              Settings
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && (
-            <span className="flex-1 text-left text-sm font-medium animate-fade-in">
-              Sign Out
-            </span>
-          )}
-        </button>
-      </div>
     </div>
   );
 };
@@ -186,3 +259,4 @@ export const ApplicantSidebar = ({ onCollapse }: SidebarProps) => {
     </aside>
   );
 };
+
