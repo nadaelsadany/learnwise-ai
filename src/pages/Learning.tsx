@@ -134,7 +134,7 @@ const Learning = () => {
                               lessons: 12,
                               rating: 4.9,
                               studentsEnrolled: 1540,
-                              tags: [course.level, "Official"],
+                              tags: [course.level],
                               category: "certification",
                               progress: course.status === 'completed' ? 100 : course.status === 'in-progress' ? 35 : 0
                             } as any}
@@ -163,7 +163,7 @@ const Learning = () => {
                   <p className="text-sm text-muted-foreground">Organization-assigned development tracks</p>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Official</Badge>
+
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -178,8 +178,9 @@ const Learning = () => {
                   <div className="flex flex-col h-full gap-4">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <h3 className="font-bold text-lg">{path.name}</h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{path.objective}</p>
+                        <h3 className="font-bold text-lg leading-tight">{path.name}</h3>
+                        <p className="text-[11px] font-medium text-muted-foreground/80">Assigned by Nafea</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mt-1">{path.objective}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-black text-primary">{path.progress}%</p>

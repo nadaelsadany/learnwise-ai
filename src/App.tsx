@@ -36,6 +36,7 @@ import MockExamRunner from "./pages/MockExamRunner";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import LessonPlayer from "./pages/LessonPlayer";
+import CourseDiscussions from "./pages/CourseDiscussions";
 import Flashcards from "./pages/Flashcards";
 import TimeBlocking from "./pages/TimeBlocking";
 import SpacedRepetition from "./pages/SpacedRepetition";
@@ -71,6 +72,8 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminSettings from "./pages/AdminSettings";
 import Reporting from "./pages/Reporting";
 import Learning from "./pages/Learning";
+import Discussions from "./pages/Discussions";
+import InstructorProfile from "./pages/InstructorProfile";
 import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 
 const queryClient = new QueryClient();
@@ -158,6 +161,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <LessonPlayer />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/courses/:courseId/discussions"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <CourseDiscussions />
           </ProtectedRoute>
         }
       />
@@ -263,6 +274,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <Learning />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/discussions"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <Discussions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor-profile/:instructorId"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <InstructorProfile />
           </ProtectedRoute>
         }
       />

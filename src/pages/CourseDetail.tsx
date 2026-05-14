@@ -22,11 +22,24 @@ import {
     Play,
     Target,
     AlertCircle,
-    Upload,
     CalendarDays,
     Paperclip,
-    GraduationCap
+    GraduationCap,
+    MessageSquare,
+    Send,
+    Reply
 } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const CourseDetail = () => {
     const { courseId } = useParams<{ courseId: string }>();
@@ -39,6 +52,16 @@ const CourseDetail = () => {
 
     const { getCourseById, enrollInCourse } = useCourses();
     const { fetchCurriculum } = useCourseEditor();
+    
+    const [selectedThread, setSelectedThread] = useState<any>(null);
+    const [isAskModalOpen, setIsAskModalOpen] = useState(false);
+    const [newQuestion, setNewQuestion] = useState({ title: "", content: "" });
+
+    const pathName = useMemo(() => {
+        if (['c1', 'c2', 'c3', 'c4', 'c5', 'c6'].includes(courseId || "")) return "Junior QA Engineer Path";
+        if (['a1', 'a2', 'a3'].includes(courseId || "")) return "Automated Testing Specialist";
+        return null;
+    }, [courseId]);
 
     useEffect(() => {
         const loadCourse = async () => {
@@ -48,7 +71,15 @@ const CourseDetail = () => {
             // 1. Try mock data first (for legacy compatibility)
             const mock = getCourseWithChapters(courseId, mockCourses);
             if (mock) {
-                setCourseData(mock);
+                setCourseData({
+                    ...mock,
+                    instructors: [
+                        { id: "inst-1", name: "Alex Thompson", role: "Lead Instructor" },
+                        { id: "inst-2", name: "Sarah Mitchell", role: "QA Expert" },
+                        { id: "inst-3", name: "James Wilson", role: "Automation Specialist" }
+                    ],
+                    communicationEnabled: true
+                } as any);
                 setLoading(false);
                 return;
             }
@@ -89,13 +120,12 @@ const CourseDetail = () => {
                     level: (course.level || "beginner") as any,
                     duration: `${course.duration_hours || 10} hours`,
                     lessons: mappedChapters.reduce((sum, ch) => sum + ch.lessons.length, 0),
-                    instructor: "Instructor", // Need to join with profiles
-                    rating: 4.5,
-                    studentsEnrolled: (course as any).enrollmentCount || 0,
-                    progress: (course as any).enrollment?.progress_percentage || 0,
-                    enrolled: !!(course as any).enrollment,
-                    tags: [],
-                    chapters: mappedChapters,
+                    instructors: [
+                        { id: "inst-1", name: "Alex Thompson", role: "Lead Instructor" },
+                        { id: "inst-2", name: "Sarah Mitchell", role: "QA Expert" },
+                        { id: "inst-3", name: "James Wilson", role: "Automation Specialist" }
+                    ],
+                    communicationEnabled: true,
                     objectives: ["Master the course content", "Complete all practical exercises"],
                     prerequisites: ["None required"],
                     attachmentUrl: course.attachment_url || undefined
@@ -144,8 +174,7 @@ const CourseDetail = () => {
     };
 
     const handleLessonClick = (lessonId: string) => {
-        // In a real app, this would navigate to the lesson viewer
-        console.log("Opening lesson:", lessonId);
+        navigate(`/courses/${courseId}/lessons/${lessonId}`);
     };
 
     const getLevelColor = (level: string) => {
@@ -239,6 +268,12 @@ const CourseDetail = () => {
                                     </Badge>
                                 </div>
                                 <h1 className="text-3xl font-bold text-white">{course.title}</h1>
+                                {pathName && (
+                                    <div className="mt-2 space-y-1 animate-fade-in">
+                                        <p className="text-white/90 text-sm font-medium">Part of: {pathName}</p>
+                                        <p className="text-white/60 text-[11px] font-medium uppercase tracking-wider">Assigned by Nafea</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -295,40 +330,27 @@ const CourseDetail = () => {
 
                             {/* Action Buttons */}
                             <div className="flex items-center gap-4">
-                                {course.enrolled ? (
-                                    nextLesson && (
-                                        <Button
-                                            size="lg"
-                                            className="gap-2"
-                                            onClick={() => {
-                                                navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
-                                            }}
-                                        >
-                                            <Play className="w-5 h-5" />
-                                            Continue: {nextLesson.lesson.title}
-                                        </Button>
-                                    )
-                                ) : (
-                                    <Button
-                                        size="lg"
-                                        className="gap-2"
-                                        onClick={handleEnroll}
-                                        disabled={enrolling}
-                                    >
-                                        {enrolling ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : (
-                                            <GraduationCap className="w-5 h-5" />
-                                        )}
-                                        Enroll Now
-                                    </Button>
-                                )}
-                                <span className="text-sm text-muted-foreground">
-                                    {course.enrolled ? (
-                                        nextLesson ? `Chapter ${nextLesson.chapter.number} • ${nextLesson.lesson.duration}` : "Course completed"
+                                <Button
+                                    size="lg"
+                                    className="gap-2 px-8 shadow-glow-primary"
+                                    onClick={() => {
+                                        if (!course.enrolled) {
+                                            handleEnroll();
+                                        } else if (nextLesson) {
+                                            navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
+                                        }
+                                    }}
+                                    disabled={enrolling}
+                                >
+                                    {enrolling ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
                                     ) : (
-                                        "Enroll to start learning"
+                                        <Play className="w-5 h-5" />
                                     )}
+                                    {course.progress > 0 ? "Continue Learning" : "Start Course"}
+                                </Button>
+                                <span className="text-sm text-muted-foreground">
+                                    {nextLesson ? `Chapter ${nextLesson.chapter.number} • ${nextLesson.lesson.duration}` : "Course completed"}
                                 </span>
                             </div>
                         </div>
@@ -337,18 +359,186 @@ const CourseDetail = () => {
                     {/* Two Column Layout */}
                     <div className="grid lg:grid-cols-3 gap-6">
                         {/* Main Content - Chapters */}
-                        <div className="lg:col-span-2 space-y-4">
-                            <h2 className="text-xl font-semibold">Course Content</h2>
-                            <div className="space-y-3">
-                                {course.chapters.map((chapter) => (
-                                    <ChapterAccordion
-                                        key={chapter.id}
-                                        chapter={chapter}
-                                        isOpen={openChapterId === chapter.id}
-                                        onToggle={() => handleChapterToggle(chapter.id)}
-                                        onLessonClick={handleLessonClick}
-                                    />
-                                ))}
+                        <div className="lg:col-span-2 space-y-8">
+                            {/* Course Content */}
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-semibold">Course Content</h2>
+                                <div className="space-y-3">
+                                    {course.chapters.map((chapter) => (
+                                        <ChapterAccordion
+                                            key={chapter.id}
+                                            chapter={chapter}
+                                            isOpen={openChapterId === chapter.id}
+                                            onToggle={() => handleChapterToggle(chapter.id)}
+                                            onLessonClick={handleLessonClick}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Community Section */}
+                            <div className="space-y-4 pt-6 border-t border-border/50">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                                        <MessageSquare className="w-5 h-5 text-primary" />
+                                        Community Discussion
+                                    </h2>
+                                    
+                                    <Dialog open={isAskModalOpen} onOpenChange={setIsAskModalOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" size="sm" className="text-primary border-primary/20">
+                                                Ask a question
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[500px]">
+                                            <DialogHeader>
+                                                <DialogTitle>Ask a Question</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4 py-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Question Title</label>
+                                                    <Input 
+                                                        placeholder="What is your question about?" 
+                                                        value={newQuestion.title}
+                                                        onChange={(e) => setNewQuestion({...newQuestion, title: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Details</label>
+                                                    <Textarea 
+                                                        placeholder="Provide more context..." 
+                                                        rows={4}
+                                                        value={newQuestion.content}
+                                                        onChange={(e) => setNewQuestion({...newQuestion, content: e.target.value})}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button variant="outline" onClick={() => setIsAskModalOpen(false)}>Cancel</Button>
+                                                <Button onClick={() => setIsAskModalOpen(false)}>Post Question</Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {[
+                                        { 
+                                            id: 1, 
+                                            title: "Best practices for Playwright selectors?", 
+                                            author: "Sarah Connor", 
+                                            replies: [
+                                                { id: 101, user: "Alex Thompson", content: "I recommend using data-testid attributes whenever possible for stability.", role: "Instructor", time: "2h ago" },
+                                                { id: 102, user: "John Smith", content: "Thanks! What about CSS selectors?", role: "Student", time: "1h ago" }
+                                            ], 
+                                            instructorReplied: true 
+                                        },
+                                        { 
+                                            id: 2, 
+                                            title: "How to handle multi-tab testing?", 
+                                            author: "John Smith", 
+                                            replies: [
+                                                { id: 201, user: "Sarah Mitchell", content: "Use the browserContext.waitForEvent('page') method.", role: "Instructor", time: "5h ago" }
+                                            ], 
+                                            instructorReplied: true 
+                                        },
+                                        { 
+                                            id: 3, 
+                                            title: "CI/CD integration with GitHub Actions", 
+                                            author: "Kyle Reese", 
+                                            replies: [], 
+                                            instructorReplied: false 
+                                        }
+                                    ].map((thread) => (
+                                        <div 
+                                            key={thread.id} 
+                                            onClick={() => setSelectedThread(thread)}
+                                            className="p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all cursor-pointer group"
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <h3 className="font-medium group-hover:text-primary transition-colors">{thread.title}</h3>
+                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                        <span>By {thread.author}</span>
+                                                        <span>•</span>
+                                                        <span>{thread.replies.length} replies</span>
+                                                    </div>
+                                                </div>
+                                                {thread.instructorReplied && (
+                                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] py-0">
+                                                        Instructor Replied
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Thread Detail Dialog */}
+                                <Dialog open={!!selectedThread} onOpenChange={(open) => !open && setSelectedThread(null)}>
+                                    <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+                                        {selectedThread && (
+                                            <>
+                                                <DialogHeader>
+                                                    <DialogTitle>{selectedThread.title}</DialogTitle>
+                                                    <p className="text-xs text-muted-foreground">Started by {selectedThread.author}</p>
+                                                </DialogHeader>
+                                                
+                                                <div className="flex-1 overflow-y-auto py-6 space-y-6">
+                                                    {selectedThread.replies.length > 0 ? (
+                                                        selectedThread.replies.map((reply: any) => (
+                                                            <div key={reply.id} className={cn(
+                                                                "flex gap-4 p-4 rounded-xl",
+                                                                reply.role === "Instructor" ? "bg-primary/5 border border-primary/10" : "bg-muted/30"
+                                                            )}>
+                                                                <Avatar className="h-8 w-8">
+                                                                    <AvatarFallback className={reply.role === "Instructor" ? "bg-primary text-white" : ""}>
+                                                                        {reply.user[0]}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="space-y-1 flex-1">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-sm font-semibold">{reply.user}</span>
+                                                                            {reply.role === "Instructor" && (
+                                                                                <Badge className="bg-primary text-white text-[9px] h-4 px-1">Instructor</Badge>
+                                                                            )}
+                                                                        </div>
+                                                                        <span className="text-[10px] text-muted-foreground">{reply.time}</span>
+                                                                    </div>
+                                                                    <p className="text-sm text-foreground/80">{reply.content}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center py-8 text-muted-foreground italic text-sm">
+                                                            No replies yet. Be the first to help!
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="pt-4 border-t border-border/50">
+                                                    <div className="flex gap-3">
+                                                        <Textarea 
+                                                            placeholder="Write a reply..." 
+                                                            className="min-h-[80px] text-sm"
+                                                        />
+                                                        <Button size="icon" className="shrink-0 h-[80px] gradient-primary">
+                                                            <Send className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </DialogContent>
+                                </Dialog>
+                                <Button 
+                                    variant="ghost" 
+                                    className="w-full text-muted-foreground text-sm hover:text-primary mt-2" 
+                                    onClick={() => navigate(`/courses/${courseId}/discussions`)}
+                                >
+                                    View all questions
+                                </Button>
                             </div>
                         </div>
 
@@ -385,36 +575,45 @@ const CourseDetail = () => {
                                 </ul>
                             </div>
 
-                            {/* Instructor */}
+                            {/* Instructors */}
                             <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
-                                <h3 className="font-semibold mb-4">Instructor</h3>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold">
-                                        {course.instructor.split(" ").map(n => n[0]).join("")}
+                                <h3 className="font-semibold mb-4">Instructors</h3>
+                                <div className="space-y-4">
+                                    <div className="flex -space-x-3 overflow-hidden">
+                                        {(course as any).instructors?.slice(0, 3).map((inst: any, i: number) => (
+                                            <div 
+                                                key={inst.id}
+                                                className="inline-block h-12 w-12 rounded-full ring-2 ring-card bg-card cursor-pointer hover:ring-primary transition-all"
+                                                title={inst.name}
+                                                onClick={() => navigate(`/instructor-profile/${inst.id}`)}
+                                            >
+                                                <div className="h-full w-full rounded-full gradient-primary flex items-center justify-center text-white font-bold text-sm">
+                                                    {inst.name.split(" ").map((n: any) => n[0]).join("")}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {(course as any).instructors?.length > 3 && (
+                                            <div className="flex items-center justify-center h-12 w-12 rounded-full ring-2 ring-card bg-muted text-xs font-bold text-muted-foreground">
+                                                +{(course as any).instructors.length - 3}
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <p className="font-medium">{course.instructor}</p>
-                                        <p className="text-sm text-muted-foreground">Course Instructor</p>
+                                    <div className="space-y-1">
+                                        {(course as any).instructors?.slice(0, 3).map((inst: any) => (
+                                            <button 
+                                                key={inst.id}
+                                                onClick={() => navigate(`/instructor-profile/${inst.id}`)}
+                                                className="block text-sm font-medium hover:text-primary transition-colors text-left"
+                                            >
+                                                {inst.name}
+                                                <span className="text-[10px] text-muted-foreground ml-2 px-1.5 py-0.5 rounded bg-muted">
+                                                    {inst.role}
+                                                </span>
+                                            </button>
+                                        ))}
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Upload Syllabus CTA */}
-                            <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5">
-                                <h3 className="font-semibold flex items-center gap-2 mb-2">
-                                    <Upload className="w-5 h-5 text-primary" />
-                                    Add Your Own Course
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Upload a syllabus to create a personalized study plan.
-                                </p>
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() => navigate("/syllabus-upload")}
-                                >
-                                    Upload Syllabus
-                                </Button>
+                                </div>
                             </div>
 
                             {course.attachmentUrl && (
