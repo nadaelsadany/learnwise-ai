@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, CheckCircle2, XCircle, Info } from "lucide-react";
 
 interface QuestionCardProps {
     question: Question;
@@ -16,6 +16,7 @@ interface QuestionCardProps {
     isFirst: boolean;
     isLast: boolean;
     totalQuestions: number;
+    showCorrection?: boolean;
 }
 
 export function QuestionCard({
@@ -29,6 +30,7 @@ export function QuestionCard({
     isFirst,
     isLast,
     totalQuestions,
+    showCorrection = false,
 }: QuestionCardProps) {
     return (
         <div className="rounded-2xl bg-card border border-border/50 shadow-soft overflow-hidden animate-fade-in">
@@ -67,36 +69,74 @@ export function QuestionCard({
                     value={selectedAnswer}
                     onValueChange={onSelectAnswer}
                     className="space-y-3"
+                    disabled={showCorrection}
                 >
-                    {question.options.map((option) => (
-                        <Label
-                            key={option.id}
-                            htmlFor={option.id}
-                            className={cn(
-                                "flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
-                                "hover:bg-muted/50 hover:border-primary/30",
-                                selectedAnswer === option.id
-                                    ? "border-primary bg-primary/5 shadow-soft"
-                                    : "border-border/50"
-                            )}
-                        >
-                            <RadioGroupItem value={option.id} id={option.id} className="mt-0.5" />
-                            <div className="flex items-start gap-3 flex-1">
-                                <span
+                    {question.options.map((option) => {
+                        const isCorrect = option.id === question.correctAnswer;
+                        const isSelected = selectedAnswer === option.id;
+                        const isWrong = isSelected && !isCorrect;
+
+                        return (
+                            <div key={option.id} className="relative">
+                                <Label
+                                    htmlFor={option.id}
                                     className={cn(
-                                        "w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
-                                        selectedAnswer === option.id
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-muted text-muted-foreground"
+                                        "flex items-start gap-4 p-4 rounded-xl border-2 transition-all",
+                                        !showCorrection && "cursor-pointer hover:bg-muted/50 hover:border-primary/30",
+                                        isSelected && !showCorrection && "border-primary bg-primary/5 shadow-soft",
+                                        !isSelected && !showCorrection && "border-border/50",
+                                        showCorrection && isCorrect && "border-success bg-success/5",
+                                        showCorrection && isWrong && "border-destructive bg-destructive/5",
+                                        showCorrection && !isCorrect && !isWrong && "border-border/50 opacity-60"
                                     )}
                                 >
-                                    {option.label}
-                                </span>
-                                <span className="text-sm leading-relaxed pt-1">{option.text}</span>
+                                    <RadioGroupItem 
+                                        value={option.id} 
+                                        id={option.id} 
+                                        className={cn(
+                                            "mt-0.5",
+                                            showCorrection && "hidden"
+                                        )} 
+                                    />
+                                    <div className="flex items-start gap-3 flex-1">
+                                        <span
+                                            className={cn(
+                                                "w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
+                                                isSelected && !showCorrection && "bg-primary text-primary-foreground",
+                                                !isSelected && !showCorrection && "bg-muted text-muted-foreground",
+                                                showCorrection && isCorrect && "bg-success text-success-foreground",
+                                                showCorrection && isWrong && "bg-destructive text-destructive-foreground",
+                                                showCorrection && !isCorrect && !isWrong && "bg-muted text-muted-foreground"
+                                            )}
+                                        >
+                                            {option.label}
+                                        </span>
+                                        <span className="text-sm leading-relaxed pt-1">{option.text}</span>
+                                    </div>
+                                    
+                                    {showCorrection && isCorrect && (
+                                        <CheckCircle2 className="w-5 h-5 text-success shrink-0 ml-auto" />
+                                    )}
+                                    {showCorrection && isWrong && (
+                                        <XCircle className="w-5 h-5 text-destructive shrink-0 ml-auto" />
+                                    )}
+                                </Label>
                             </div>
-                        </Label>
-                    ))}
+                        );
+                    })}
                 </RadioGroup>
+
+                {showCorrection && question.explanation && (
+                    <div className="mt-8 p-5 rounded-2xl bg-primary/5 border border-primary/10 animate-slide-up">
+                        <div className="flex items-center gap-2 mb-3 text-primary">
+                            <Info className="w-4 h-4" />
+                            <h4 className="text-sm font-bold uppercase tracking-wider">Explanation</h4>
+                        </div>
+                        <p className="text-sm leading-relaxed text-foreground/80">
+                            {question.explanation}
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Navigation Footer */}

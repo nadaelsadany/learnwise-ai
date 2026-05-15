@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
 import { Header } from "@/components/layout/Header";
 import { cn } from "@/lib/utils";
@@ -15,9 +16,16 @@ import {
     mockQuestions,
     ExamResult,
 } from "@/components/exam";
-import { FileQuestion, Clock, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileQuestion, Clock, Target, ArrowLeft } from "lucide-react";
 
 const MockExamRunner = () => {
+    const { examId } = useParams();
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const mode = searchParams.get("mode");
+    const isReviewMode = mode === "review";
+
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showResults, setShowResults] = useState(false);
     const [examResult, setExamResult] = useState<ExamResult | null>(null);
@@ -44,6 +52,17 @@ const MockExamRunner = () => {
         config: mockExamConfig,
     });
 
+    // Simulate answers for review mode
+    useEffect(() => {
+        if (isReviewMode) {
+            mockQuestions.forEach((q, index) => {
+                // Mix of correct and some intentional mistakes for demo
+                const answer = index % 4 === 0 ? "a" : q.correctAnswer;
+                selectAnswer(q.id, answer);
+            });
+        }
+    }, [isReviewMode, selectAnswer]);
+
     const handleTimeUp = useCallback(() => {
         const result = calculateResults();
         setExamResult(result);
@@ -62,6 +81,7 @@ const MockExamRunner = () => {
     } = useExamTimer({
         initialTimeSeconds: mockExamConfig.timeLimitMinutes * 60,
         onTimeUp: handleTimeUp,
+        autoStart: !isReviewMode,
     });
 
     const handleSubmit = useCallback(() => {
@@ -108,6 +128,16 @@ const MockExamRunner = () => {
                 )}
             >
                 <div className="max-w-7xl mx-auto space-y-6">
+                    {/* Back Button */}
+                    <Button
+                        variant="ghost"
+                        onClick={() => navigate("/mock-exam")}
+                        className="gap-2 -ml-2 text-muted-foreground hover:text-primary"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Exams
+                    </Button>
+
                     {/* Exam Header */}
                     <section className="animate-slide-up">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -123,16 +153,16 @@ const MockExamRunner = () => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50">
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 border border-border/50">
                                     <Clock className="w-4 h-4 text-muted-foreground" />
                                     <span className="text-sm font-medium">
-                                        {mockExamConfig.timeLimitMinutes} min
+                                        {isReviewMode ? "Time Taken: 42:15" : `${mockExamConfig.timeLimitMinutes} min`}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50">
+                                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 border border-border/50">
                                     <Target className="w-4 h-4 text-muted-foreground" />
                                     <span className="text-sm font-medium">
-                                        Pass: {mockExamConfig.passingScore}%
+                                        {isReviewMode ? "Score: 78%" : `Pass: ${mockExamConfig.passingScore}%`}
                                     </span>
                                 </div>
                             </div>
@@ -146,17 +176,27 @@ const MockExamRunner = () => {
                             className="lg:col-span-3 space-y-4 animate-slide-up"
                             style={{ animationDelay: "100ms" }}
                         >
-                            <QuestionNavigation
+                             <QuestionNavigation
                                 questions={mockQuestions}
                                 currentIndex={currentQuestionIndex}
-                                getQuestionStatus={getQuestionStatus}
+                                getQuestionStatus={(id, idx) => {
+                                    if (isReviewMode) {
+                                        if (idx === currentQuestionIndex) return 'current';
+                                        const answer = session.answers[id];
+                                        const question = mockQuestions.find(q => q.id === id);
+                                        if (answer === question?.correctAnswer) return 'correct';
+                                        return 'incorrect';
+                                    }
+                                    return getQuestionStatus(id, idx);
+                                }}
                                 onQuestionClick={goToQuestion}
                             />
-                            <ExamProgressBar
-                                answeredCount={answeredCount}
-                                flaggedCount={flaggedCount}
+                             <ExamProgressBar
+                                answeredCount={isReviewMode ? 16 : answeredCount}
+                                flaggedCount={isReviewMode ? 4 : flaggedCount}
                                 totalQuestions={mockQuestions.length}
-                                progressPercentage={progressPercentage}
+                                progressPercentage={isReviewMode ? 78 : progressPercentage}
+                                isReviewMode={isReviewMode}
                             />
                         </div>
 
@@ -170,14 +210,15 @@ const MockExamRunner = () => {
                                 selectedAnswer={session.answers[currentQuestion.id]}
                                 isFlagged={isFlagged(currentQuestion.id)}
                                 onSelectAnswer={(optionId) =>
-                                    selectAnswer(currentQuestion.id, optionId)
+                                    !isReviewMode && selectAnswer(currentQuestion.id, optionId)
                                 }
-                                onToggleFlag={() => toggleFlag(currentQuestion.id)}
+                                onToggleFlag={() => !isReviewMode && toggleFlag(currentQuestion.id)}
                                 onPrevious={goToPrevious}
                                 onNext={goToNext}
                                 isFirst={currentQuestionIndex === 0}
                                 isLast={currentQuestionIndex === mockQuestions.length - 1}
                                 totalQuestions={mockQuestions.length}
+                                showCorrection={isReviewMode}
                             />
                         </div>
 
@@ -186,21 +227,25 @@ const MockExamRunner = () => {
                             className="lg:col-span-3 space-y-4 animate-slide-up"
                             style={{ animationDelay: "200ms" }}
                         >
-                            <ExamTimer
-                                formattedTime={formattedTime}
-                                percentageRemaining={percentageRemaining}
-                                urgencyLevel={urgencyLevel}
-                                isPaused={isPaused}
-                            />
-                            <ExamControls
+                            {!isReviewMode && (
+                                <ExamTimer
+                                    formattedTime={formattedTime}
+                                    percentageRemaining={percentageRemaining}
+                                    urgencyLevel={urgencyLevel}
+                                    isPaused={isPaused}
+                                />
+                            )}
+                             <ExamControls
                                 isPaused={isPaused}
                                 answeredCount={answeredCount}
                                 flaggedCount={flaggedCount}
                                 totalQuestions={mockQuestions.length}
                                 onPause={pause}
                                 onResume={resume}
-                                onSubmit={handleSubmit}
+                                onSubmit={isReviewMode ? () => navigate("/mock-exam") : handleSubmit}
                                 onReviewFlagged={handleReviewFlagged}
+                                submitLabel={isReviewMode ? "Exit Review" : "Finish Exam"}
+                                hideTimer={isReviewMode}
                             />
                         </div>
                     </div>

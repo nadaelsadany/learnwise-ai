@@ -6,6 +6,7 @@ export interface Question {
   correctAnswer: string;
   topic: string;
   points: number;
+  explanation?: string;
 }
 
 export interface QuestionOption {
@@ -56,4 +57,4 @@ export interface TopicResult {
   percentage: number;
 }
 
-export type QuestionStatus = 'unanswered' | 'answered' | 'flagged' | 'current';
+export type QuestionStatus = 'unanswered' | 'answered' | 'flagged' | 'current' | 'correct' | 'incorrect';

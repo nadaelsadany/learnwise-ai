@@ -46,7 +46,6 @@ const menuItems = [
     { icon: FileBarChart, label: "Reports", path: "/university/reports" },
     { icon: Brain, label: "AI Insights", path: "/university/ai-insights" },
     { icon: ShieldCheck, label: "Roles & Permissions", path: "/university/roles" },
-    { icon: Settings, label: "Settings", path: "/university/settings" },
 ];
 
 export const UniversitySidebarContent = ({ collapsed }: { collapsed: boolean }) => {

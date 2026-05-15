@@ -27,8 +27,19 @@ import {
     GraduationCap,
     MessageSquare,
     Send,
-    Reply
+    Reply,
+    Sparkles,
+    Brain,
+    FileQuestion,
+    X,
+    Shield,
+    Camera,
+    Upload,
+    FileText,
+    ExternalLink,
+    Timer
 } from "lucide-react";
+import { GenerationModal } from "@/components/courses/GenerationModal";
 import {
     Dialog,
     DialogContent,
@@ -39,12 +50,16 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const CourseDetail = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const navigate = useNavigate();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    
+    const isMockCourse = courseId ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId) : false;
+
     const [openChapterId, setOpenChapterId] = useState<string | null>(null);
     const [courseData, setCourseData] = useState<CourseWithChapters | null>(null);
     const [loading, setLoading] = useState(true);
@@ -56,6 +71,37 @@ const CourseDetail = () => {
     const [selectedThread, setSelectedThread] = useState<any>(null);
     const [isAskModalOpen, setIsAskModalOpen] = useState(false);
     const [newQuestion, setNewQuestion] = useState({ title: "", content: "" });
+
+    // AI Generation States
+    const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
+    const [isGenerationModalOpen, setIsGenerationModalOpen] = useState(false);
+    const [generationType, setGenerationType] = useState<"quiz" | "mock">("quiz");
+    
+    // Certification & Exam States
+    const [certificationMode, setCertificationMode] = useState<"internal" | "external" | "none">("internal");
+    const [examStatus, setExamStatus] = useState<"not_started" | "pending" | "approved" | "rejected">("not_started");
+    const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [externalExamDate, setExternalExamDate] = useState("May 29, 2024");
+
+    const toggleChapterSelection = (chapterId: string, selected: boolean) => {
+        setSelectedChapterIds(prev => 
+            selected ? [...prev, chapterId] : prev.filter(id => id !== chapterId)
+        );
+    };
+
+    const handleIndividualGenerate = (chapterId: string, type: "quiz" | "mock") => {
+        setSelectedChapterIds([chapterId]);
+        setGenerationType(type);
+        setIsGenerationModalOpen(true);
+    };
+
+    const selectedChaptersData = useMemo(() => {
+        if (!courseData) return [];
+        return courseData.chapters
+            .filter(ch => selectedChapterIds.includes(ch.id))
+            .map(ch => ({ id: ch.id, title: ch.title }));
+    }, [selectedChapterIds, courseData]);
 
     const pathName = useMemo(() => {
         if (['c1', 'c2', 'c3', 'c4', 'c5', 'c6'].includes(courseId || "")) return "Junior QA Engineer Path";
@@ -128,14 +174,26 @@ const CourseDetail = () => {
                     communicationEnabled: true,
                     objectives: ["Master the course content", "Complete all practical exercises"],
                     prerequisites: ["None required"],
-                    attachmentUrl: course.attachment_url || undefined
+                    attachmentUrl: course.attachment_url || undefined,
+                    chapters: mappedChapters,
+                    studentsEnrolled: 0, // Default for new DB courses
+                    rating: 0, // Default
+                    progress: 0, // Default
+                    enrolled: false // Default
                 });
             }
             setLoading(false);
         };
 
         loadCourse();
-    }, [courseId]);
+
+        // Simulate random certification mode for mock courses
+        if (isMockCourse) {
+            if (courseId === 'c1') setCertificationMode("external");
+            else if (courseId === 'c2') setCertificationMode("none");
+            else setCertificationMode("internal");
+        }
+    }, [courseId, isMockCourse]);
 
     if (loading) {
         return (
@@ -162,12 +220,12 @@ const CourseDetail = () => {
     }
 
     const course = courseData;
-    const totalLessons = course.chapters.reduce((sum, ch) => sum + ch.lessons.length, 0);
-    const completedLessons = course.chapters.reduce(
-        (sum, ch) => sum + ch.lessons.filter(l => l.isCompleted).length,
+    const totalLessons = (course.chapters || []).reduce((sum, ch) => sum + (ch.lessons || []).length, 0);
+    const completedLessons = (course.chapters || []).reduce(
+        (sum, ch) => sum + (ch.lessons || []).filter(l => l.isCompleted).length,
         0
     );
-    const completedChapters = course.chapters.filter(ch => ch.isCompleted).length;
+    const completedChapters = (course.chapters || []).filter(ch => ch.isCompleted).length;
 
     const handleChapterToggle = (chapterId: string) => {
         setOpenChapterId(prev => prev === chapterId ? null : chapterId);
@@ -188,9 +246,10 @@ const CourseDetail = () => {
 
     // Find the next incomplete lesson
     const getNextLesson = () => {
+        if (!course.chapters) return null;
         for (const chapter of course.chapters) {
             if (chapter.isLocked) continue;
-            const nextLesson = chapter.lessons.find(l => !l.isCompleted && !l.isLocked);
+            const nextLesson = (chapter.lessons || []).find(l => !l.isCompleted && !l.isLocked);
             if (nextLesson) return { chapter, lesson: nextLesson };
         }
         return null;
@@ -198,8 +257,7 @@ const CourseDetail = () => {
 
     const nextLesson = getNextLesson();
 
-    // Check if this is a mock course (non-UUID id)
-    const isMockCourse = courseId ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId) : false;
+
 
     const handleEnroll = async () => {
         if (!courseId) return;
@@ -320,11 +378,41 @@ const CourseDetail = () => {
                                     </span>
                                 </div>
                                 <Progress value={course.progress} className="h-3 mb-2" />
-                                <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center justify-between text-sm mb-4">
                                     <span className="text-muted-foreground">
-                                        {completedChapters} of {course.chapters.length} chapters done
+                                        {completedChapters} of {course.chapters?.length || 0} chapters done
                                     </span>
                                     <span className="font-semibold text-primary">{course.progress}%</span>
+                                </div>
+
+                                {/* Task 2: Completion Checklist */}
+                                <div className="pt-4 border-t border-border/20 space-y-3">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">To complete this course:</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            {course.progress === 100 ? (
+                                                <CheckCircle className="w-4 h-4 text-success" />
+                                            ) : (
+                                                <div className="w-4 h-4 rounded-full border-2 border-muted" />
+                                            )}
+                                            <span className={cn(course.progress === 100 ? "text-foreground" : "text-muted-foreground")}>
+                                                Complete all {totalLessons} lessons
+                                            </span>
+                                        </div>
+                                        
+                                        {certificationMode !== "none" && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                {examStatus === "approved" ? (
+                                                    <CheckCircle className="w-4 h-4 text-success" />
+                                                ) : (
+                                                    <div className="w-4 h-4 rounded-full border-2 border-muted" />
+                                                )}
+                                                <span className={cn(examStatus === "approved" ? "text-foreground" : "text-muted-foreground")}>
+                                                    {certificationMode === "internal" ? "Pass final course exam" : "Submit external certificate"}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -371,10 +459,60 @@ const CourseDetail = () => {
                                             isOpen={openChapterId === chapter.id}
                                             onToggle={() => handleChapterToggle(chapter.id)}
                                             onLessonClick={handleLessonClick}
+                                            isSelected={selectedChapterIds.includes(chapter.id)}
+                                            onSelect={(selected) => toggleChapterSelection(chapter.id, selected)}
+                                            onGenerate={(type) => handleIndividualGenerate(chapter.id, type)}
                                         />
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Floating Action Bar */}
+                            {selectedChapterIds.length > 0 && (
+                                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                                    <div className="bg-card/80 backdrop-blur-md border border-primary/20 shadow-glow-primary rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[400px]">
+                                        <div className="flex items-center gap-3 pr-6 border-r border-border/50">
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                                {selectedChapterIds.length}
+                                            </div>
+                                            <div className="text-sm">
+                                                <p className="font-semibold leading-none">Chapters</p>
+                                                <p className="text-xs text-muted-foreground mt-1">selected for AI</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <Button 
+                                                size="sm" 
+                                                className="gradient-primary shadow-glow-primary gap-2"
+                                                onClick={() => {
+                                                    setGenerationType("quiz");
+                                                    setIsGenerationModalOpen(true);
+                                                }}
+                                            >
+                                                <Sparkles className="w-4 h-4" />
+                                                Generate Practice
+                                            </Button>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-9 w-9 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                                onClick={() => setSelectedChapterIds([])}
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Generation Modal */}
+                            <GenerationModal 
+                                isOpen={isGenerationModalOpen}
+                                onClose={() => setIsGenerationModalOpen(false)}
+                                selectedChapters={selectedChaptersData}
+                                initialType={generationType}
+                            />
 
                             {/* Community Section */}
                             <div className="space-y-4 pt-6 border-t border-border/50">
@@ -544,6 +682,189 @@ const CourseDetail = () => {
 
                         {/* Sidebar */}
                         <div className="space-y-4">
+                            {/* Task 1: Certification Requirement Section */}
+                            <Card className="rounded-2xl bg-card border border-border/50 shadow-soft overflow-hidden">
+                                <div className="p-5 border-b border-border/50 bg-muted/30">
+                                    <h3 className="font-semibold flex items-center gap-2">
+                                        <GraduationCap className="w-5 h-5 text-primary" />
+                                        Certification Requirement
+                                    </h3>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    {certificationMode === "internal" && (
+                                        <>
+                                            <div className="space-y-3">
+                                                <div className="flex items-start gap-3 text-sm">
+                                                    <CheckCircle className={cn("w-4 h-4 shrink-0 mt-0.5", course.progress === 100 ? "text-success" : "text-muted-foreground/30")} />
+                                                    <span className={cn(course.progress === 100 ? "text-foreground" : "text-muted-foreground")}>Complete course modules</span>
+                                                </div>
+                                                <div className="flex items-start gap-3 text-sm">
+                                                    <CheckCircle className={cn("w-4 h-4 shrink-0 mt-0.5", examStatus === "approved" ? "text-success" : "text-muted-foreground/30")} />
+                                                    <span className={cn(examStatus === "approved" ? "text-foreground" : "text-muted-foreground")}>Pass final exam</span>
+                                                </div>
+                                            </div>
+                                            <Button 
+                                                className="w-full gap-2 gradient-primary shadow-glow-primary" 
+                                                disabled={course.progress < 100 || examStatus === "approved"}
+                                                onClick={() => setIsExamModalOpen(true)}
+                                            >
+                                                <FileQuestion className="w-4 h-4" />
+                                                {examStatus === "approved" ? "Exam Passed" : "Start Exam"}
+                                            </Button>
+                                            {course.progress < 100 && (
+                                                <p className="text-[10px] text-center text-muted-foreground">Complete all lessons to unlock the exam</p>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {certificationMode === "external" && (
+                                        <>
+                                            <div className="p-3 rounded-xl bg-muted/30 space-y-2 border border-border/50">
+                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Target Certification</p>
+                                                <p className="text-sm font-bold">ISTQB Foundation Level</p>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    <CalendarDays className="w-3.5 h-3.5" />
+                                                    Exam Date: {externalExamDate}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="text-muted-foreground">Submission Status</span>
+                                                    <Badge variant="outline" className={cn(
+                                                        "text-[10px] px-1.5 py-0",
+                                                        examStatus === "not_started" && "text-muted-foreground",
+                                                        examStatus === "pending" && "text-warning border-warning/30 bg-warning/5",
+                                                        examStatus === "approved" && "text-success border-success/30 bg-success/5",
+                                                        examStatus === "rejected" && "text-destructive border-destructive/30 bg-destructive/5"
+                                                    )}>
+                                                        {examStatus.replace("_", " ").toUpperCase()}
+                                                    </Badge>
+                                                </div>
+                                                <Button 
+                                                    variant="outline" 
+                                                    className="w-full gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                                                    onClick={() => setIsUploadModalOpen(true)}
+                                                    disabled={examStatus === "approved" || examStatus === "pending"}
+                                                >
+                                                    <Upload className="w-4 h-4" />
+                                                    Upload Result
+                                                </Button>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {certificationMode === "none" && (
+                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/20">
+                                            <CheckCircle className="w-5 h-5 text-success shrink-0" />
+                                            <p className="text-xs text-success font-medium">Complete all lessons to receive your certificate automatically.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+
+                            {/* Task 3: Internal Exam Instruction Modal */}
+                            <Dialog open={isExamModalOpen} onOpenChange={setIsExamModalOpen}>
+                                <DialogContent className="sm:max-w-[500px]">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2">
+                                            <Shield className="w-5 h-5 text-primary" />
+                                            Exam Instructions
+                                        </DialogTitle>
+                                    </DialogHeader>
+                                    <div className="py-6 space-y-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 text-center">
+                                                <Timer className="w-6 h-6 mx-auto mb-2 text-primary" />
+                                                <p className="text-xs text-muted-foreground">Duration</p>
+                                                <p className="text-lg font-bold">60 Mins</p>
+                                            </div>
+                                            <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 text-center">
+                                                <Target className="w-6 h-6 mx-auto mb-2 text-success" />
+                                                <p className="text-xs text-muted-foreground">Passing Score</p>
+                                                <p className="text-lg font-bold">75%</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="flex items-start gap-3 p-4 rounded-xl bg-warning/5 border border-warning/20">
+                                                <Camera className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                                                <div className="space-y-1">
+                                                    <p className="text-sm font-semibold text-warning-foreground">Camera Requirement</p>
+                                                    <p className="text-xs text-warning-foreground/80">Active webcam monitoring is required throughout the exam duration.</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Anti-Cheating Rules:</p>
+                                                <ul className="space-y-2">
+                                                    {[
+                                                        "Do not switch tabs or minimize the browser window.",
+                                                        "No secondary devices are allowed in the room.",
+                                                        "Ensure your face is clearly visible at all times.",
+                                                        "The exam session is recorded for review."
+                                                    ].map((rule, i) => (
+                                                        <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                                            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-destructive/60" />
+                                                            {rule}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="ghost" onClick={() => setIsExamModalOpen(false)}>Cancel</Button>
+                                        <Button className="gradient-primary px-8" onClick={() => {
+                                            setIsExamModalOpen(false);
+                                            // Mock passing the exam
+                                            setExamStatus("approved");
+                                        }}>
+                                            I Understand, Start Exam
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+
+                            {/* Task 4: External Exam Upload Modal */}
+                            <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+                                <DialogContent className="sm:max-w-[450px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Upload Certification Result</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="py-8 space-y-6">
+                                        <div className="border-2 border-dashed border-border/50 rounded-2xl p-10 text-center hover:border-primary/30 transition-colors cursor-pointer group">
+                                            <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                                <Upload className="w-6 h-6 text-primary" />
+                                            </div>
+                                            <p className="text-sm font-medium mb-1">Click to upload or drag & drop</p>
+                                            <p className="text-xs text-muted-foreground">PDF, JPG or PNG (max. 5MB)</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/50">
+                                                <FileText className="w-5 h-5 text-muted-foreground" />
+                                                <div className="flex-1">
+                                                    <p className="text-xs font-medium">istqb_foundation_certificate.pdf</p>
+                                                    <Progress value={100} className="h-1 mt-1.5" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="ghost" onClick={() => setIsUploadModalOpen(false)}>Cancel</Button>
+                                        <Button className="gradient-primary" onClick={() => {
+                                            setIsUploadModalOpen(false);
+                                            setExamStatus("pending");
+                                            setTimeout(() => {
+                                                setExamStatus("approved");
+                                            }, 3000);
+                                        }}>
+                                            Submit for Verification
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                             {/* Objectives */}
                             <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
                                 <h3 className="font-semibold flex items-center gap-2 mb-4">

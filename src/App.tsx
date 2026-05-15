@@ -29,10 +29,12 @@ import InstructorFlashcards from "./pages/InstructorFlashcards";
 import InstructorLeaderboard from "./pages/InstructorLeaderboard";
 import StudentNotifications from "./pages/StudentNotifications";
 import StudentAITutor from "./pages/StudentAITutor";
+import InstructorChat from "./pages/InstructorChat";
 import StudentSettings from "./pages/StudentSettings";
 import CourseCatalog from "./pages/CourseCatalog";
 import SyllabusUpload from "./pages/SyllabusUpload";
 import MockExamRunner from "./pages/MockExamRunner";
+import MockExamList from "./pages/MockExamList";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import LessonPlayer from "./pages/LessonPlayer";
@@ -128,7 +130,7 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["applicant"]}><ApplicantDashboard /></ProtectedRoute>} />
 
       {/* Profile route - accessible by all authenticated users */}
-      <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      <Route path="/profile" element={<Navigate to="/settings" replace />} />
       {/* Legacy root redirect - handled by / above */}
 
       {/* Applicant routes */}
@@ -182,6 +184,14 @@ const AppRoutes = () => {
       />
       <Route
         path="/mock-exam"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <MockExamList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mock-exam/:examId"
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <MockExamRunner />
@@ -241,6 +251,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["applicant"]}>
             <LearningAnalytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instructor-chat"
+        element={
+          <ProtectedRoute allowedRoles={["applicant"]}>
+            <InstructorChat />
           </ProtectedRoute>
         }
       />

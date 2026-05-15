@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { mockCourses } from '@/components/courses/mockCourseData';
 
 export interface Course {
   id: string;
@@ -45,6 +46,28 @@ export const useCourses = () => {
 
   const fetchPublishedCourses = async () => {
     setLoading(true);
+    
+    // Provide mock data for demo users or if in demo mode
+    if (isMockUser || !user || !isValidUuid(user.id)) {
+      const mockPublished = mockCourses.map(c => ({
+        ...c,
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        category: c.category,
+        level: c.level,
+        duration_hours: parseInt(c.duration?.split(' ')[0] || '0'),
+        image_url: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
+        status: 'published' as const,
+        is_featured: c.isFeatured || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+      setCourses(mockPublished as CourseWithEnrollment[]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: coursesData, error } = await supabase
         .from('courses')
@@ -83,8 +106,25 @@ export const useCourses = () => {
   const fetchInstructorCourses = async () => {
     if (!user || role !== 'instructor') return;
 
-    // Mock users can't query DB
+    // Provide mock data for demo instructors
     if (isMockUser || !isValidUuid(user.id)) {
+      const mockInstructorCourses = mockCourses.slice(0, 3).map(c => ({
+        ...c,
+        id: c.id,
+        instructor_id: user.id,
+        title: c.title,
+        description: c.description,
+        category: c.category,
+        level: c.level,
+        duration_hours: parseInt(c.duration?.split(' ')[0] || '0'),
+        image_url: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
+        status: 'published' as const,
+        is_featured: c.isFeatured || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        enrollmentCount: Math.floor(Math.random() * 100) + 10,
+      }));
+      setCourses(mockInstructorCourses as CourseWithEnrollment[]);
       setLoading(false);
       return;
     }
@@ -123,16 +163,29 @@ export const useCourses = () => {
       setLoading(false);
     }
   };
-
   const fetchEnrolledCourses = async () => {
     if (!user || role !== 'applicant') return;
-    // Mock users can't query DB
+    
+    setLoading(true);
+    
+    // Provide mock data for demo users
     if (isMockUser || !isValidUuid(user.id)) {
+      const demoEnrolled = mockCourses.filter(c => (c.progress !== undefined && c.progress > 0) || c.id === 'c1' || c.id === 'c2').map(c => ({
+        ...c,
+        enrollment: {
+          id: `mock-enroll-${c.id}`,
+          student_id: user.id,
+          course_id: c.id,
+          enrolled_at: new Date().toISOString(),
+          completed_at: c.progress === 100 ? new Date().toISOString() : null,
+          progress_percentage: c.progress || 0,
+        }
+      }));
+      setCourses(demoEnrolled as CourseWithEnrollment[]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
     try {
       const { data: enrollments, error: enrollError } = await supabase
         .from('enrollments')
@@ -174,6 +227,20 @@ export const useCourses = () => {
         variant: 'destructive',
       });
       return { error: new Error('Not authenticated') };
+    }
+
+    // Handle mock user enrollment
+    if (isMockUser || !isValidUuid(user.id)) {
+      toast({
+        title: 'Enrolled! (Demo)',
+        description: 'You have successfully enrolled in this course (Mock Mode)',
+      });
+      
+      // Simulate adding to enrolled courses by refreshing
+      await fetchEnrolledCourses();
+      await fetchPublishedCourses();
+      
+      return { error: null };
     }
 
     try {

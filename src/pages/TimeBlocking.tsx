@@ -11,15 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarWidget } from "@/components/ui/calendar";
-import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, Copy, GripVertical, Flame, BarChart3, Bell, Sparkles, Wand2 } from "lucide-react";
+import { Plus, Trash2, Clock, CalendarDays, Loader2, ChevronLeft, ChevronRight, LayoutGrid, Calendar, GripVertical, Flame, BarChart3, Wand2, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PomodoroTimer } from "@/components/timeblocking/PomodoroTimer";
 import { AchievementBadges } from "@/components/timeblocking/AchievementBadges";
 import { EnergyLevelSelector, type EnergyLevel } from "@/components/timeblocking/EnergyLevelSelector";
-import { FocusScoreCard } from "@/components/timeblocking/FocusScoreCard";
-import { DistractionTracker } from "@/components/timeblocking/DistractionTracker";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format, addDays, subDays, startOfWeek, isToday, isSameDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -73,6 +72,7 @@ const TimeBlocking = () => {
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>("morning");
   const [isGenerating, setIsGenerating] = useState(false);
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const { user } = useAuth();
   const isMock = !user?.id || !isValidUuid(user.id);
 
@@ -146,7 +146,7 @@ const TimeBlocking = () => {
     if (!isMock && isValidUuid(id)) { await supabase.from("time_blocks").delete().eq("id", id); }
     toast.success("Block removed");
   };
-
+ 
   const duplicateDay = async () => {
     if (!copyTargetDate) { toast.error("Select a target date"); return; }
     const targetStr = format(copyTargetDate, "yyyy-MM-dd");
@@ -171,6 +171,8 @@ const TimeBlocking = () => {
     setCopyTargetDate(undefined);
     toast.success(`Copied ${newBlocks.length} blocks to ${format(copyTargetDate, "MMM d")}`);
   };
+
+
 
   // AI Schedule Generator
   const generateAISchedule = async () => {
@@ -346,32 +348,6 @@ const TimeBlocking = () => {
                   {isGenerating ? "Generating..." : "AI Schedule"}
                 </Button>
 
-                {/* Copy Day Dialog */}
-                <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="gap-2" disabled={todayBlocks.length === 0}>
-                      <Copy className="w-4 h-4" /> Copy Day
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Copy Day's Blocks</DialogTitle></DialogHeader>
-                    <p className="text-sm text-muted-foreground">
-                      Copy all {todayBlocks.length} blocks from <strong>{format(selectedDate, "MMM d")}</strong> to another day:
-                    </p>
-                    <div className="flex justify-center pt-2">
-                      <CalendarWidget mode="single" selected={copyTargetDate} onSelect={setCopyTargetDate} disabled={(date) => isSameDay(date, selectedDate)} className="p-3 pointer-events-auto" />
-                    </div>
-                    {copyTargetDate && (
-                      <p className="text-sm text-center text-muted-foreground">
-                        Target: <strong className="text-foreground">{format(copyTargetDate, "EEEE, MMM d")}</strong>
-                      </p>
-                    )}
-                    <Button onClick={duplicateDay} className="w-full" disabled={!copyTargetDate}>
-                      Copy {todayBlocks.length} Blocks
-                    </Button>
-                  </DialogContent>
-                </Dialog>
-
                 {/* Add Block Dialog */}
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
@@ -409,6 +385,36 @@ const TimeBlocking = () => {
             </div>
           </div>
 
+          {/* Task 2: Single Collapsible 'Daily Insights' */}
+          <Collapsible open={insightsOpen} onOpenChange={setInsightsOpen} className="space-y-2">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 rounded-xl border border-border/50">
+                <span className="flex items-center gap-2 font-semibold">
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                  Daily Insights
+                </span>
+                {insightsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="animate-in slide-in-from-top-2 duration-300">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                {[
+                  { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
+                  { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
+                  { label: "Focus Ratio", value: todayBlocks.length > 0 ? `${Math.round((todayBlocks.filter((b) => b.category === "study" || b.category === "practice").length / todayBlocks.length) * 100)}%` : "0%", color: "text-accent" },
+                  { label: "Streak", value: `${streak} ${streak === 1 ? 'day' : 'days'}`, color: "text-warning" },
+                ].map((stat) => (
+                  <Card key={stat.label} className="overflow-hidden bg-background">
+                    <CardContent className="p-4 text-center">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</p>
+                      <p className={cn("text-xl font-bold mt-1", stat.color)}>{stat.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           {/* Date Navigation */}
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="icon" onClick={() => setSelectedDate((d) => addDays(d, viewMode === "week" ? -7 : -1))}>
@@ -429,44 +435,81 @@ const TimeBlocking = () => {
             </Button>
           </div>
 
-          {/* Stats Row + Energy + Pomodoro + Focus */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {[
-                  { label: "Total Blocks", value: todayBlocks.length, color: "text-foreground" },
-                  { label: "Study Time", value: `${Math.floor(totalStudyMinutes / 60)}h ${totalStudyMinutes % 60}m`, color: "text-primary" },
-                  { label: "Breaks", value: todayBlocks.filter((b) => b.category === "break").length, color: "text-success" },
-                  { label: "Focus Ratio", value: todayBlocks.length > 0 ? `${Math.round((todayBlocks.filter((b) => b.category === "study" || b.category === "practice").length / todayBlocks.length) * 100)}%` : "0%", color: "text-accent" },
-                ].map((stat) => (
-                  <Card key={stat.label} className="overflow-hidden">
-                    <CardContent className="p-4 text-center">
-                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</p>
-                      <p className={cn("text-2xl font-bold mt-1", stat.color)}>{stat.value}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-                {/* Streak Card */}
-                <Card className={cn("overflow-hidden border", streak >= 7 ? "border-warning/40 bg-gradient-to-br from-warning/10 to-warning/5" : streak >= 3 ? "border-primary/30 bg-gradient-to-br from-primary/5 to-transparent" : "")}>
-                  <CardContent className="p-4 text-center">
-                    <Flame className={cn("w-5 h-5 mx-auto mb-0.5", streak >= 7 ? "text-warning" : streak >= 3 ? "text-primary" : "text-muted-foreground")} />
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Streak</p>
-                    <p className={cn("text-2xl font-bold mt-0.5", streak >= 7 ? "text-warning-foreground" : streak >= 3 ? "text-primary" : "text-foreground")}>
-                      {streak} {streak === 1 ? "day" : "days"}
-                    </p>
-                    {streak >= 3 && <p className="text-[10px] text-muted-foreground mt-0.5">🔥 Keep it going!</p>}
-                  </CardContent>
-                </Card>
-              </div>
-              {/* Energy Level Selector */}
-              <EnergyLevelSelector value={energyLevel} onChange={setEnergyLevel} />
-            </div>
-            <div className="space-y-4">
-              <PomodoroTimer activeBlockTitle={activeBlock?.title || null} onSessionComplete={() => setCompletedPomodoros(p => p + 1)} />
-              <FocusScoreCard completedPomodoros={completedPomodoros} totalStudyMinutes={totalStudyMinutes} totalBlocks={todayBlocks.length} />
-              <DistractionTracker />
-            </div>
-          </div>
+          {/* Task 1: Primary Today's Schedule */}
+          {viewMode === "day" && (
+            <Card className="overflow-hidden border-primary/20 shadow-glow">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    {isToday(selectedDate) ? "Today's Schedule" : format(selectedDate, "EEEE's Schedule")}
+                  </CardTitle>
+                  <div className="flex items-center gap-4">
+                    {/* Duplicate Day Feature */}
+                    <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="ghost" className="gap-2 text-xs text-muted-foreground hover:text-primary" disabled={todayBlocks.length === 0}>
+                          <Copy className="w-3.5 h-3.5" /> Repeat Day
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader><DialogTitle>Repeat Schedule to Another Day</DialogTitle></DialogHeader>
+                        <div className="py-4 space-y-4">
+                          <p className="text-sm text-muted-foreground">Select a date to copy all {todayBlocks.length} blocks from {format(selectedDate, "MMM d")}.</p>
+                          <div className="border rounded-xl p-2 bg-muted/20">
+                            <CalendarWidget
+                              mode="single"
+                              selected={copyTargetDate}
+                              onSelect={setCopyTargetDate}
+                              disabled={(date) => date < new Date() || isSameDay(date, selectedDate)}
+                              className="rounded-md border shadow-none"
+                            />
+                          </div>
+                          <Button onClick={duplicateDay} className="w-full gradient-primary shadow-glow-primary">
+                            Confirm and Copy
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    {/* Task 4: Conditionally show Pomodoro when active block is study/practice */}
+                    {activeBlock && (activeBlock.category === 'study' || activeBlock.category === 'practice') && (
+                      <div className="animate-in fade-in zoom-in duration-300">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="gap-2 text-xs border-primary/30">
+                              <Flame className="w-3.5 h-3.5 text-primary" /> Active Session
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-md">
+                            <DialogHeader><DialogTitle>Focus Session: {activeBlock.title}</DialogTitle></DialogHeader>
+                            <PomodoroTimer activeBlockTitle={activeBlock.title} onSessionComplete={() => setCompletedPomodoros(p => p + 1)} />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-muted-foreground hidden sm:block">Drag blocks to swap time slots</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <DayTimeline
+                  blocks={todayBlocks}
+                  activeBlock={activeBlock}
+                  onRemove={removeBlock}
+                  draggedBlockId={draggedBlockId}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+
+
+          {/* Energy Level integrated into main flow */}
+          <EnergyLevelSelector value={energyLevel} onChange={setEnergyLevel} />
 
           {/* Category Legend */}
           <div className="flex flex-wrap gap-3">
@@ -516,30 +559,7 @@ const TimeBlocking = () => {
             </CardContent>
           </Card>
 
-          {viewMode === "day" && (
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    {isToday(selectedDate) ? "Today's Schedule" : format(selectedDate, "EEEE's Schedule")}
-                  </CardTitle>
-                  <p className="text-[11px] text-muted-foreground">Drag blocks to swap time slots</p>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <DayTimeline
-                  blocks={todayBlocks}
-                  activeBlock={activeBlock}
-                  onRemove={removeBlock}
-                  draggedBlockId={draggedBlockId}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                />
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Week View */}
           {viewMode === "week" && (

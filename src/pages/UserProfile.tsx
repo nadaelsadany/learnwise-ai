@@ -7,20 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  User, Mail, Building2, BookOpen, Clock, Flame, Trophy, Target,
-  Brain, Award, Star, Zap, GraduationCap, TrendingUp
+  Mail, Building2, BookOpen, Clock, Flame, Target,
+  Brain, TrendingUp
 } from "lucide-react";
-
-const achievements = [
-  { name: "First Steps", desc: "Complete your first lesson", icon: Star, earned: true, color: "text-amber-500" },
-  { name: "Streak Starter", desc: "Maintain a 7-day streak", icon: Flame, earned: true, color: "text-orange-500" },
-  { name: "Quiz Master", desc: "Score 90%+ on 5 quizzes", icon: Zap, earned: true, color: "text-primary" },
-  { name: "Knowledge Seeker", desc: "Complete 10 lessons", icon: Brain, earned: true, color: "text-accent" },
-  { name: "Study Marathon", desc: "Study for 50+ hours total", icon: Clock, earned: false, color: "text-muted-foreground" },
-  { name: "Course Champion", desc: "Complete a full course", icon: GraduationCap, earned: false, color: "text-muted-foreground" },
-  { name: "Top Performer", desc: "Reach the leaderboard top 10", icon: Trophy, earned: false, color: "text-muted-foreground" },
-  { name: "Flashcard Pro", desc: "Master 100 flashcards", icon: Target, earned: false, color: "text-muted-foreground" },
-];
 
 const stats = [
   { label: "Total Study Hours", value: "48.5h", icon: Clock, color: "bg-primary/10 text-primary" },
@@ -28,7 +17,6 @@ const stats = [
   { label: "Completed Courses", value: "2", icon: BookOpen, color: "bg-success/10 text-success" },
   { label: "Quiz Success Rate", value: "78%", icon: Target, color: "bg-accent/10 text-accent" },
   { label: "Flashcard Mastery", value: "156 cards", icon: Brain, color: "bg-primary/10 text-primary" },
-  { label: "Achievements", value: "4 / 8", icon: Trophy, color: "bg-amber-500/10 text-amber-500" },
 ];
 
 const UserProfile = () => {
@@ -100,26 +88,7 @@ const UserProfile = () => {
             </div>
           </div>
 
-          {/* Achievements */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-500" /> Achievements
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {achievements.map(a => (
-                <Card key={a.name} className={cn(!a.earned && "opacity-50")}>
-                  <CardContent className="p-4 text-center">
-                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2", a.earned ? "bg-amber-500/10" : "bg-muted")}>
-                      <a.icon className={cn("w-6 h-6", a.color)} />
-                    </div>
-                    <p className="font-medium text-sm">{a.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{a.desc}</p>
-                    {a.earned && <Badge className="mt-2 bg-success/10 text-success border-success/20 text-[10px]">Earned</Badge>}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+
         </div>
       </main>
     </div>

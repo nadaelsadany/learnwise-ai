@@ -208,9 +208,6 @@ const Learning = () => {
               ))}
             </div>
           </section>
-        </>
-      )}
-
           {/* SECTION 2: Personal Learning (AI-assisted) */}
           <section className="space-y-6 animate-slide-up" style={{ animationDelay: "200ms" }}>
             <div className="flex items-center gap-3">
@@ -314,10 +311,12 @@ const Learning = () => {
               )}
             </div>
           </section>
-        </div>
-      </main>
+        </>
+      )}
     </div>
-  );
+  </main>
+</div>
+);
 };
 
 // Internal Badge component if not exported

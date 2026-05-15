@@ -99,17 +99,9 @@ export const Header = ({
           <DropdownMenuContent align="end" className="w-56 mt-2">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/profile')}>
-              <User className="w-4 h-4 mr-2" />
-              My Profile
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/settings' : userRole === 'University' ? '/university/settings' : userRole === 'Admin' ? '/admin/settings' : '/settings')}>
               <Settings className="w-4 h-4 mr-2" />
               Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(userRole === 'Instructor' ? '/instructor/notifications' : userRole === 'University' ? '/university/announcements' : userRole === 'Admin' ? '/admin' : '/notifications')}>
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">

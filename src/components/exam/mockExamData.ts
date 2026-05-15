@@ -30,7 +30,8 @@ export const mockQuestions: Question[] = [
         ],
         correctAnswer: "c",
         topic: "Fundamentals of Testing",
-        points: 1
+        points: 1,
+        explanation: "While finding and preventing defects are important, the ultimate goal of testing in a professional context is to provide stakeholders with confidence in the level of quality of the system."
     },
     {
         id: "q2",
@@ -44,7 +45,8 @@ export const mockQuestions: Question[] = [
         ],
         correctAnswer: "b",
         topic: "Fundamentals of Testing",
-        points: 1
+        points: 1,
+        explanation: "Verification focuses on whether the system is built according to the specified requirements ('Are we building the product right?'), while Validation focuses on whether the system meets the actual user needs ('Are we building the right product?')."
     },
     {
         id: "q3",
@@ -58,7 +60,8 @@ export const mockQuestions: Question[] = [
         ],
         correctAnswer: "b",
         topic: "Testing Throughout the SDLC",
-        points: 1
+        points: 1,
+        explanation: "Integration testing is specifically designed to uncover defects in the interfaces and interactions between integrated components or systems."
     },
     {
         id: "q4",
@@ -72,7 +75,8 @@ export const mockQuestions: Question[] = [
         ],
         correctAnswer: "b",
         topic: "Testing Throughout the SDLC",
-        points: 1
+        points: 1,
+        explanation: "Regression testing is performed to confirm that a recent code change has not adversely affected existing features that were previously working correctly."
     },
     {
         id: "q5",
@@ -86,7 +90,8 @@ export const mockQuestions: Question[] = [
         ],
         correctAnswer: "b",
         topic: "Static Testing",
-        points: 1
+        points: 1,
+        explanation: "Static testing involves examining the code or documentation without actually executing the software. Reviews, walkthroughs, and inspections are primary examples."
     },
     {
         id: "q6",
@@ -100,7 +105,8 @@ export const mockQuestions: Question[] = [
         ],
         correctAnswer: "b",
         topic: "Test Design Techniques",
-        points: 1
+        points: 1,
+        explanation: "Equivalence partitioning requires testing at least one value from each identified partition: one invalid partition below the range (<1), one valid partition within the range (1-100), and one invalid partition above the range (>100)."
     },
     {
         id: "q7",

@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { useStudyCoach } from "@/hooks/useStudyCoach";
+import { useAIChat } from "@/hooks/useAIChat";
 import { useNavigate } from "react-router-dom";
 
 export const FloatingCoachButton = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const { messages, isLoading, sendMessage, studentData } = useStudyCoach();
+  const { messages, isLoading, sendMessage } = useAIChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -51,12 +51,12 @@ export const FloatingCoachButton = () => {
                 <Brain className="w-4 h-4 text-primary-foreground" />
               </div>
               <div>
-                <p className="text-sm font-semibold">AI Study Coach</p>
-                <p className="text-xs text-muted-foreground">Your learning mentor</p>
+              <p className="text-sm font-semibold">AI Personal Tutor</p>
+              <p className="text-xs text-muted-foreground">Your chat-first learning companion</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/ai-coach')} className="text-xs text-primary">
-              Full View
+            <Button variant="ghost" size="sm" onClick={() => navigate('/ai-tutor')} className="text-xs text-primary">
+              Full Chat
             </Button>
           </div>
 

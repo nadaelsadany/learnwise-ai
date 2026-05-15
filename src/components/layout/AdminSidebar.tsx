@@ -27,7 +27,6 @@ const menuItems = [
     { icon: BookOpen, label: "Courses", path: "/admin/courses" },
     { icon: ListChecks, label: "Enrollments", path: "/admin/enrollments" },
     { icon: BarChart2, label: "Analytics", path: "/admin/analytics" },
-    { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
 
 export const AdminSidebarContent = ({ collapsed }: { collapsed: boolean }) => {

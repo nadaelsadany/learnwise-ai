@@ -9,7 +9,6 @@ import { CourseCard } from "@/components/dashboard/CourseCard";
 import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
 import { TodaysPlan } from "@/components/dashboard/TodaysPlan";
 import { WeaknessAnalysis } from "@/components/dashboard/WeaknessAnalysis";
-import { StudyCoachWidget } from "@/components/dashboard/StudyCoachWidget";
 import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 import { useCourses } from "@/hooks/useCourses";
 import { useProgress } from "@/hooks/useProgress";
@@ -20,7 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Flame, Target, Clock, Trophy, Loader2, Brain, RotateCcw, Star, Bell, Award, Zap } from "lucide-react";
+import { Flame, Target, Clock, Trophy, Loader2, Star, Bell, Award, Zap } from "lucide-react";
 
 const ApplicantDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -121,19 +120,11 @@ const ApplicantDashboard = () => {
           {/* Quick Action Chips */}
           {studentData && (
             <section className="flex gap-2 flex-wrap animate-slide-up" style={{ animationDelay: "150ms" }}>
-              {studentData.flashcardsDue > 0 && (
-                <Button variant="outline" size="sm" className="gap-1.5 border-rose-500/30 text-rose-600 hover:bg-rose-500/5" onClick={() => navigate('/spaced-repetition')}>
-                  <RotateCcw className="w-3.5 h-3.5" /> {studentData.flashcardsDue} cards due
-                </Button>
-              )}
               {studentData.timeBlocksToday === 0 && (
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/time-blocking')}>
                   <Clock className="w-3.5 h-3.5" /> Plan today
                 </Button>
               )}
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/ai-coach')}>
-                <Brain className="w-3.5 h-3.5" /> Ask AI Coach
-              </Button>
             </section>
           )}
 
@@ -176,7 +167,6 @@ const ApplicantDashboard = () => {
             {/* Right Column */}
             <div className="space-y-6 animate-slide-up" style={{ animationDelay: "300ms" }}>
               <TodaysPlan items={todaysPlanItems} onToggleComplete={handleTogglePlanItem} />
-              <StudyCoachWidget />
 
               {/* Notification Alerts */}
               {notifications.filter(n => !n.read && n.priority === 'high').length > 0 && (

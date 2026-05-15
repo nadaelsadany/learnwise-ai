@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Question, QuestionStatus } from "./types";
-import { Flag, Check } from "lucide-react";
+import { Flag, Check, X } from "lucide-react";
 
 interface QuestionNavigationProps {
     questions: Question[];
@@ -19,6 +19,10 @@ export function QuestionNavigation({
         switch (status) {
             case "current":
                 return "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background shadow-glow-primary";
+            case "correct":
+                return "bg-success text-success-foreground border-success shadow-[0_0_10px_rgba(34,197,94,0.3)]";
+            case "incorrect":
+                return "bg-destructive text-destructive-foreground border-destructive shadow-[0_0_10px_rgba(239,68,68,0.3)]";
             case "answered":
                 return "bg-success/20 text-success border-success/30 hover:bg-success/30";
             case "flagged":
@@ -29,11 +33,14 @@ export function QuestionNavigation({
     };
 
     const getStatusIcon = (status: QuestionStatus) => {
-        if (status === "answered") {
-            return <Check className="w-3 h-3 absolute -top-1 -right-1 bg-success text-white rounded-full p-0.5" />;
+        if (status === "answered" || status === "correct") {
+            return <Check className="w-3 h-3 absolute -top-1 -right-1 bg-success text-white rounded-full p-0.5 border border-white" />;
+        }
+        if (status === "incorrect") {
+            return <X className="w-3 h-3 absolute -top-1 -right-1 bg-destructive text-white rounded-full p-0.5 border border-white" />;
         }
         if (status === "flagged") {
-            return <Flag className="w-3 h-3 absolute -top-1 -right-1 bg-warning text-white rounded-full p-0.5" />;
+            return <Flag className="w-3 h-3 absolute -top-1 -right-1 bg-warning text-white rounded-full p-0.5 border border-white" />;
         }
         return null;
     };
@@ -77,8 +84,12 @@ export function QuestionNavigation({
                         <span className="text-muted-foreground">Answered</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-warning/20 border border-warning/30" />
-                        <span className="text-muted-foreground">Flagged</span>
+                        <div className="w-4 h-4 rounded bg-success border border-success" />
+                        <span className="text-muted-foreground">Correct</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded bg-destructive border border-destructive" />
+                        <span className="text-muted-foreground">Incorrect</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded bg-muted/50" />

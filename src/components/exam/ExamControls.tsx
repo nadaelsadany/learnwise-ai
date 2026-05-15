@@ -21,6 +21,8 @@ interface ExamControlsProps {
     onResume: () => void;
     onSubmit: () => void;
     onReviewFlagged: () => void;
+    submitLabel?: string;
+    hideTimer?: boolean;
 }
 
 export function ExamControls({
@@ -32,6 +34,8 @@ export function ExamControls({
     onResume,
     onSubmit,
     onReviewFlagged,
+    submitLabel = "Submit Exam",
+    hideTimer = false,
 }: ExamControlsProps) {
     const unansweredCount = totalQuestions - answeredCount;
 
@@ -40,23 +44,25 @@ export function ExamControls({
             <h3 className="text-sm font-semibold mb-3">Exam Controls</h3>
 
             {/* Pause/Resume Button */}
-            <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={isPaused ? onResume : onPause}
-            >
-                {isPaused ? (
-                    <>
-                        <Play className="w-4 h-4" />
-                        Resume Exam
-                    </>
-                ) : (
-                    <>
-                        <Pause className="w-4 h-4" />
-                        Pause Exam
-                    </>
-                )}
-            </Button>
+            {!hideTimer && (
+                <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={isPaused ? onResume : onPause}
+                >
+                    {isPaused ? (
+                        <>
+                            <Play className="w-4 h-4" />
+                            Resume Exam
+                        </>
+                    ) : (
+                        <>
+                            <Pause className="w-4 h-4" />
+                            Pause Exam
+                        </>
+                    )}
+                </Button>
+            )}
 
             {/* Review Flagged Button */}
             {flaggedCount > 0 && (
@@ -71,47 +77,54 @@ export function ExamControls({
             )}
 
             {/* Submit Button with Confirmation */}
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="gradient" className="w-full gap-2">
-                        <Send className="w-4 h-4" />
-                        Submit Exam
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Submit Exam?</AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-3">
-                            <p>Are you sure you want to submit your exam?</p>
-                            <div className="rounded-lg bg-muted p-3 space-y-1">
-                                <p className="text-sm">
-                                    <span className="font-medium text-success">Answered:</span>{" "}
-                                    {answeredCount} / {totalQuestions}
+            {hideTimer ? (
+                <Button variant="gradient" className="w-full gap-2" onClick={onSubmit}>
+                    <Send className="w-4 h-4" />
+                    {submitLabel}
+                </Button>
+            ) : (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="gradient" className="w-full gap-2">
+                            <Send className="w-4 h-4" />
+                            {submitLabel}
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Submit Exam?</AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-3">
+                                <p>Are you sure you want to submit your exam?</p>
+                                <div className="rounded-lg bg-muted p-3 space-y-1">
+                                    <p className="text-sm">
+                                        <span className="font-medium text-success">Answered:</span>{" "}
+                                        {answeredCount} / {totalQuestions}
+                                    </p>
+                                    {unansweredCount > 0 && (
+                                        <p className="text-sm text-warning">
+                                            ⚠️ You have {unansweredCount} unanswered question(s)
+                                        </p>
+                                    )}
+                                    {flaggedCount > 0 && (
+                                        <p className="text-sm text-muted-foreground">
+                                            📌 {flaggedCount} question(s) flagged for review
+                                        </p>
+                                    )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    This action cannot be undone.
                                 </p>
-                                {unansweredCount > 0 && (
-                                    <p className="text-sm text-warning">
-                                        ⚠️ You have {unansweredCount} unanswered question(s)
-                                    </p>
-                                )}
-                                {flaggedCount > 0 && (
-                                    <p className="text-sm text-muted-foreground">
-                                        📌 {flaggedCount} question(s) flagged for review
-                                    </p>
-                                )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                This action cannot be undone.
-                            </p>
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Continue Exam</AlertDialogCancel>
-                        <AlertDialogAction onClick={onSubmit} className="bg-primary">
-                            Submit Exam
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Continue Exam</AlertDialogCancel>
+                            <AlertDialogAction onClick={onSubmit} className="bg-primary">
+                                {submitLabel}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
     );
 }

@@ -8,20 +8,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+    StopCircle,
+    History,
+    PlusCircle,
+    Search,
+    MoreVertical,
+    MessageSquare,
     Sparkles,
     Send,
     Bot,
     User,
-    BookOpen,
-    Brain,
     Zap,
     Trash2,
     Mic,
     MicOff,
-    Volume2,
-    StopCircle
+    Volume2
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useAIChat } from "@/hooks/useAIChat";
 import { useVoiceRecognition } from "@/hooks/useVoiceRecognition";
 import { useToast } from "@/hooks/use-toast";
@@ -31,9 +34,17 @@ const StudentAITutor = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { messages, isLoading, sendMessage, clearHistory } = useAIChat();
     const [inputMessage, setInputMessage] = useState("");
-    const [activeTab, setActiveTab] = useState("chat");
     const [speakingId, setSpeakingId] = useState<string | null>(null);
     const [revealedTranscriptIds, setRevealedTranscriptIds] = useState<Set<string>>(new Set());
+
+    // Chat History States
+    const [conversations, setConversations] = useState([
+        { id: "1", title: "Quantum Physics Basics", date: "2 hours ago" },
+        { id: "2", title: "Calculus Study Plan", date: "Yesterday" },
+        { id: "3", title: "React Hook Debugging", date: "3 days ago" },
+    ]);
+    const [activeConversationId, setActiveConversationId] = useState("1");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const [isVoiceStarting, setIsVoiceStarting] = useState(false);
 
@@ -49,10 +60,8 @@ const StudentAITutor = () => {
             setTranscript("");
             setInputMessage("");
             startListening((text) => {
-                console.log("Voice callback triggered with text:", text);
                 if (text.trim()) {
-                    console.log("Sending message from voice recognition:", text, "for tab:", activeTab);
-                    sendMessage(text, activeTab);
+                    sendMessage(text, "chat");
                 }
                 setIsVoiceStarting(false);
             });
@@ -119,17 +128,17 @@ const StudentAITutor = () => {
         }
     }, [searchParams]);
 
-    const handleSendMessage = async () => {
-        if (!inputMessage.trim() || isLoading) return;
-        sendMessage(inputMessage, activeTab);
+    const handleSendMessage = async (text?: string) => {
+        const messageToSend = text || inputMessage;
+        if (!messageToSend.trim() || isLoading) return;
+        sendMessage(messageToSend, "chat");
         setInputMessage("");
     };
 
     const suggestedPrompts = [
         "Explain Quantum Entanglement",
-        "Create a study schedule for my Calculus exam",
+        "Create a study schedule",
         "Quiz me on React Hooks",
-        "Summarize the last lesson"
     ];
 
     return (
@@ -138,237 +147,233 @@ const StudentAITutor = () => {
             <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
 
             <main className={cn(
-                "pt-20 pb-8 px-6 transition-all duration-300",
+                "pt-16 transition-all duration-300 h-screen overflow-hidden",
                 sidebarCollapsed ? "ml-20" : "ml-64"
             )}>
-                <div className="max-w-5xl mx-auto space-y-6">
-                    <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-2">
-                            <Sparkles className="w-8 h-8 text-primary" />
-                            AI Personal Tutor
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Your personalized learning companion. Available 24/7.
-                        </p>
-                    </div>
-
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                        <TabsList className="grid grid-cols-3 w-full max-w-xl">
-                            <TabsTrigger value="chat" className="gap-2"><Bot className="w-4 h-4" /> Chat & Explain</TabsTrigger>
-                            <TabsTrigger value="study" className="gap-2"><BookOpen className="w-4 h-4" /> Study Plan</TabsTrigger>
-                            <TabsTrigger value="quiz" className="gap-2"><Brain className="w-4 h-4" /> Quiz Me</TabsTrigger>
-                        </TabsList>
-
-                        <div className="grid lg:grid-cols-4 gap-6">
-                            {/* Chat Area */}
-                            <Card className="lg:col-span-3 h-[600px] flex flex-col">
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <div>
-                                        <CardTitle>Conversation</CardTitle>
-                                        <CardDescription>
-                                            {activeTab === 'chat' && "Ask anything. I can explain concepts, debug code, or translate text."}
-                                            {activeTab === 'study' && "Let's build a personalized study schedule based on your goals."}
-                                            {activeTab === 'quiz' && "Test your knowledge with adaptive quizzes."}
-                                        </CardDescription>
-                                    </div>
-                                    <Button variant="ghost" size="sm" onClick={clearHistory} className="text-muted-foreground">
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Clear
-                                    </Button>
-                                </CardHeader>
-                                <CardContent className="flex-1 overflow-hidden p-0">
-                                    <ScrollArea className="h-full p-4">
-                                        <div className="space-y-4">
-                                            {messages.map((msg) => (
-                                                <div key={msg.id} className={cn(
-                                                    "flex gap-3 max-w-[80%]",
-                                                    msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
-                                                )}>
-                                                    <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                                                        msg.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted"
-                                                    )}>
-                                                        {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                                                    </div>
-
-                                                    {msg.role === 'assistant' ? (
-                                                        <div className="flex flex-col gap-2 w-full">
-                                                            <div className={cn(
-                                                                "rounded-2xl px-6 py-4 text-sm relative group/msg bg-muted border border-border/50 shadow-sm",
-                                                                "flex items-center gap-4 min-w-[200px]"
-                                                            )}>
-                                                                <button
-                                                                    onClick={() => speakMessage(msg.content, msg.id)}
-                                                                    className={cn(
-                                                                        "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                                                                        speakingId === msg.id ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary hover:bg-primary/20"
-                                                                    )}
-                                                                >
-                                                                    {speakingId === msg.id ? (
-                                                                        <StopCircle className="w-5 h-5" />
-                                                                    ) : (
-                                                                        <Volume2 className="w-5 h-5" />
-                                                                    )}
-                                                                </button>
-
-                                                                <div className="flex-1 flex flex-col">
-                                                                    <div className="flex items-center gap-1 h-8">
-                                                                        {[...Array(12)].map((_, i) => (
-                                                                            <div
-                                                                                key={i}
-                                                                                className={cn(
-                                                                                    "w-1 bg-primary/30 rounded-full transition-all duration-300",
-                                                                                    speakingId === msg.id ? "animate-voice-bar" : "h-1"
-                                                                                )}
-                                                                                style={{
-                                                                                    height: speakingId === msg.id ? `${Math.random() * 100}%` : '4px',
-                                                                                    animationDelay: `${i * 100}ms`
-                                                                                }}
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">AI Voice Response</span>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex justify-start">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="text-xs h-7 text-primary/70 hover:text-primary hover:bg-primary/10"
-                                                                    onClick={() => toggleReveal(msg.id)}
-                                                                >
-                                                                    {revealedTranscriptIds.has(msg.id) ? "Hide Transcript" : "Convert to Text"}
-                                                                </Button>
-                                                            </div>
-
-                                                            {revealedTranscriptIds.has(msg.id) && (
-                                                                <div className="bg-card border border-border/50 rounded-xl p-4 text-sm leading-relaxed animate-in fade-in slide-in-from-top-2">
-                                                                    {msg.content}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <div className={cn(
-                                                            "rounded-2xl px-4 py-2 text-sm",
-                                                            "bg-primary text-primary-foreground rounded-tr-none shadow-sm"
-                                                        )}>
-                                                            {msg.content}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {isLoading && (
-                                                <div className="flex gap-3 mr-auto max-w-[80%]">
-                                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                                                        <Bot className="w-4 h-4" />
-                                                    </div>
-                                                    <div className="bg-muted rounded-2xl rounded-tl-none px-4 py-2 flex items-center gap-1 shadow-sm">
-                                                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                        <span className="w-2 h-2 bg-foreground/30 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </ScrollArea>
-                                </CardContent>
-                                <CardFooter className="p-4 border-t flex flex-col gap-3">
-                                    {(isListening || isVoiceStarting) && (
-                                        <div className="w-full bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-start gap-3 animate-in fade-in zoom-in">
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                                <Mic className="w-4 h-4 text-primary animate-pulse" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-xs font-semibold text-primary mb-1 uppercase tracking-tighter">
-                                                    {isVoiceStarting ? "Initializing..." : "Transcribing..."}
-                                                </p>
-                                                <p className="text-sm text-foreground/80 italic">
-                                                    {isVoiceStarting ? "Please wait, mic is warming up..." : (transcript || "Speak now...")}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <form
-                                        className="flex w-full items-center gap-2"
-                                        onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-                                    >
-                                        <Input
-                                            placeholder={activeTab === 'quiz' ? "Answer here..." : "Type your question..."}
-                                            value={inputMessage}
-                                            onChange={(e) => setInputMessage(e.target.value)}
-                                            disabled={isLoading || isListening || isVoiceStarting}
-                                            className="rounded-xl"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className={cn(
-                                                "rounded-xl transition-all duration-75 min-w-[40px]",
-                                                (isListening || isVoiceStarting) ? "bg-destructive/10 text-destructive border border-destructive/20" : "bg-muted hover:bg-muted/80"
-                                            )}
-                                            style={isListening ? { transform: `scale(${1 + (volume / 100)})` } : {}}
-                                            onClick={handleToggleVoice}
-                                            disabled={isLoading || (isVoiceStarting && !isListening)}
-                                        >
-                                            {(isListening || isVoiceStarting) ? (
-                                                <MicOff className="w-4 h-4" />
-                                            ) : (
-                                                <Mic className="w-4 h-4" />
-                                            )}
-                                        </Button>
-                                        <Button type="submit" size="icon" disabled={!inputMessage.trim() || isLoading || isListening || isVoiceStarting} className="rounded-xl">
-                                            <Send className="w-4 h-4" />
-                                        </Button>
-                                    </form>
-                                </CardFooter>
-                            </Card>
-
-                            {/* Sidebar / Suggestions */}
-                            <div className="space-y-4">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-sm">Quick Actions</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        {suggestedPrompts.map((prompt, i) => (
-                                            <Button
-                                                key={i}
-                                                variant="outline"
-                                                className="w-full justify-start h-auto py-2 px-3 text-xs text-left whitespace-normal leading-snug"
-                                                onClick={() => {
-                                                    sendMessage(prompt, activeTab);
-                                                }}
-                                            >
-                                                <Zap className="w-3 h-3 mr-2 shrink-0 text-yellow-500" />
-                                                {prompt}
-                                            </Button>
-                                        ))}
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="bg-primary/5 border-primary/20">
-                                    <CardHeader>
-                                        <CardTitle className="text-sm flex items-center gap-2">
-                                            <Brain className="w-4 h-4 text-primary" />
-                                            Learning Stats
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Topics Mastered</span>
-                                            <span className="font-medium">12</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Questions Asked</span>
-                                            <span className="font-medium">45</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                <div className="flex h-full border-t border-border/50">
+                    {/* Task 3: Chat History Sidebar */}
+                    <div className="w-80 border-r border-border/50 bg-card/30 flex flex-col hidden md:flex">
+                        <div className="p-4 border-b border-border/50 space-y-4">
+                            <Button className="w-full justify-start gap-2 gradient-primary shadow-glow-primary h-11" onClick={() => clearHistory()}>
+                                <PlusCircle className="w-4 h-4" />
+                                New Chat
+                            </Button>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input 
+                                    placeholder="Search chats..." 
+                                    className="pl-9 h-10 bg-muted/30 border-none rounded-xl"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
                             </div>
                         </div>
-                    </Tabs>
+
+                        <ScrollArea className="flex-1">
+                            <div className="p-3 space-y-1">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-3 mb-2 mt-2">Recent Chats</p>
+                                {conversations.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())).map((chat) => (
+                                    <button
+                                        key={chat.id}
+                                        onClick={() => setActiveConversationId(chat.id)}
+                                        className={cn(
+                                            "w-full flex flex-col gap-0.5 p-3 rounded-xl transition-all text-left group",
+                                            activeConversationId === chat.id 
+                                                ? "bg-primary/10 text-primary" 
+                                                : "hover:bg-muted text-foreground"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold truncate flex-1">{chat.title}</span>
+                                            <MoreVertical className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground">{chat.date}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </div>
+
+                    {/* Task 4: Main Chat Area */}
+                    <div className="flex-1 flex flex-col relative bg-background">
+                        {/* Chat Header */}
+                        <div className="p-4 border-b border-border/50 flex items-center justify-between bg-background/50 backdrop-blur-sm z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary">
+                                    <Bot className="w-5 h-5 text-primary-foreground" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm font-bold">AI Personal Tutor</h2>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Online</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground"><History className="w-4 h-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => clearHistory()} className="rounded-full text-muted-foreground"><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                        </div>
+
+                        {/* Messages Area */}
+                        <ScrollArea className="flex-1">
+                            <div className="max-w-4xl mx-auto p-6 space-y-8">
+                                {messages.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+                                        <div className="w-20 h-20 rounded-3xl gradient-primary flex items-center justify-center shadow-glow-primary animate-bounce-slow">
+                                            <Sparkles className="w-10 h-10 text-primary-foreground" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-2xl font-bold">How can I help you learn today?</h3>
+                                            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">I'm your personal AI tutor, ready to explain concepts, build study plans, or quiz your knowledge.</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg pt-4">
+                                            {suggestedPrompts.map((prompt, i) => (
+                                                <Button 
+                                                    key={i} 
+                                                    variant="outline" 
+                                                    className="justify-start gap-3 h-auto py-4 px-5 rounded-2xl bg-card border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-sm font-medium group"
+                                                    onClick={() => handleSendMessage(prompt)}
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                        <MessageSquare className="w-4 h-4" />
+                                                    </div>
+                                                    {prompt}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {messages.map((msg) => (
+                                    <div key={msg.id} className={cn(
+                                        "flex gap-6 group animate-in fade-in slide-in-from-bottom-4 duration-500",
+                                        msg.role === 'user' ? "flex-row-reverse" : ""
+                                    )}>
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm",
+                                            msg.role === 'user' ? "bg-primary text-primary-foreground" : "bg-card border border-border/50"
+                                        )}>
+                                            {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5 text-primary" />}
+                                        </div>
+
+                                        <div className={cn(
+                                            "flex flex-col gap-3 max-w-[85%]",
+                                            msg.role === 'user' ? "items-end" : "items-start"
+                                        )}>
+                                            {msg.role === 'assistant' ? (
+                                                <div className="flex flex-col gap-3 w-full">
+                                                    <div className="bg-card border border-border/50 rounded-3xl p-6 shadow-soft leading-relaxed text-sm">
+                                                        {msg.content}
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className={cn(
+                                                                "h-8 rounded-xl gap-2 text-xs",
+                                                                speakingId === msg.id ? "text-primary bg-primary/10" : "text-muted-foreground"
+                                                            )}
+                                                            onClick={() => speakMessage(msg.content, msg.id)}
+                                                        >
+                                                            {speakingId === msg.id ? <StopCircle className="w-3.5 h-3.5 animate-pulse" /> : <Volume2 className="w-3.5 h-3.5" />}
+                                                            {speakingId === msg.id ? "Speaking..." : "Read Aloud"}
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" className="h-8 rounded-xl text-muted-foreground hover:text-primary gap-2 text-xs"><History className="w-3.5 h-3.5" /> Explain More</Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-primary text-primary-foreground rounded-3xl px-6 py-4 shadow-glow-primary text-sm font-medium leading-relaxed">
+                                                    {msg.content}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {isLoading && (
+                                    <div className="flex gap-6 animate-pulse">
+                                        <div className="w-10 h-10 rounded-2xl bg-card border border-border/50 flex items-center justify-center shrink-0">
+                                            <Bot className="w-5 h-5 text-muted-foreground" />
+                                        </div>
+                                        <div className="bg-card border border-border/50 rounded-3xl px-6 py-4 flex items-center gap-1.5 shadow-sm">
+                                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+
+                        {/* Input Area */}
+                        <div className="p-6 bg-gradient-to-t from-background via-background to-transparent pt-12">
+                            <div className="max-w-4xl mx-auto space-y-4">
+                                {/* Task 5: Smart Prompt Chips */}
+                                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                    {suggestedPrompts.map((prompt, i) => (
+                                        <Button 
+                                            key={i} 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="whitespace-nowrap rounded-full bg-card/50 border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all text-[11px] h-8 px-3 text-muted-foreground"
+                                            onClick={() => handleSendMessage(prompt)}
+                                        >
+                                            <Zap className="w-3 h-3 mr-1.5 text-yellow-500" />
+                                            {prompt}
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                <div className="relative group">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
+                                    <div className="relative bg-card border border-border/50 rounded-[2rem] p-2 flex items-center gap-2 shadow-xl">
+                                        {(isListening || isVoiceStarting) && (
+                                            <div className="absolute -top-12 left-0 right-0 flex justify-center animate-in slide-in-from-bottom-2">
+                                                <div className="bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-glow-primary flex items-center gap-2">
+                                                    <Mic className="w-3 h-3 animate-pulse" />
+                                                    {isVoiceStarting ? "Mic Warming Up..." : "Listening..."}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <Input
+                                            placeholder="Ask anything about your studies..."
+                                            value={inputMessage}
+                                            onChange={(e) => setInputMessage(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
+                                            disabled={isLoading || isListening || isVoiceStarting}
+                                            className="border-none bg-transparent focus-visible:ring-0 px-4 py-6 h-12 text-sm"
+                                        />
+                                        <div className="flex items-center gap-1.5 pr-2">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className={cn(
+                                                    "rounded-full transition-all duration-300 w-10 h-10",
+                                                    (isListening || isVoiceStarting) ? "bg-destructive text-destructive-foreground" : "hover:bg-primary/10 text-muted-foreground hover:text-primary"
+                                                )}
+                                                onClick={handleToggleVoice}
+                                            >
+                                                {(isListening || isVoiceStarting) ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                                            </Button>
+                                            <Button 
+                                                onClick={() => handleSendMessage()}
+                                                disabled={!inputMessage.trim() || isLoading}
+                                                size="icon" 
+                                                className="rounded-full w-10 h-10 gradient-primary shadow-glow-primary transition-transform hover:scale-105 active:scale-95"
+                                            >
+                                                <Send className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-center text-muted-foreground px-10">AI Tutor can provide insights on your courses, summarize lessons, and create adaptive quizzes. Check history to resume previous chats.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>

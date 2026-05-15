@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sun, Sunset, Moon } from "lucide-react";
+import { Sun, Sunset, Moon, Sparkles } from "lucide-react";
 
 export type EnergyLevel = "morning" | "afternoon" | "night" | "balanced";
 
@@ -19,7 +19,12 @@ export function EnergyLevelSelector({ value, onChange }: EnergyLevelSelectorProp
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">⚡ Peak Energy Time</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">⚡ Peak Energy Time</p>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-medium text-accent animate-pulse">
+            <Sparkles className="w-3 h-3" /> Powers AI Schedule
+          </div>
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {levels.map((level) => {
             const Icon = level.icon;

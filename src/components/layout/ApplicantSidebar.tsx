@@ -16,8 +16,9 @@ import {
   RotateCcw,
   Award,
   Bell,
-  User,
   FileText,
+  MessageSquare,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,13 +74,11 @@ const navItems: NavGroup[] = [
   },
   { icon: FileText, label: "Reporting", href: "/reporting" },
   { 
-    icon: User, 
-    label: "Account", 
+    icon: MessageSquare, 
+    label: "Communication", 
     subItems: [
-      { label: "My Profile", href: "/profile", icon: User },
-      { label: "Notifications", href: "/notifications", icon: Bell },
-      { label: "Settings", href: "/settings", icon: Settings },
-      { label: "Sign Out", action: "sign-out", icon: LogOut },
+      { label: "Instructor Chat", href: "/instructor-chat", icon: MessageSquare },
+      { label: "Course Discussions", href: "/discussions", icon: Users },
     ] 
   },
 ];
