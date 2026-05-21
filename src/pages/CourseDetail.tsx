@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ApplicantSidebar } from "@/components/layout/ApplicantSidebar";
+import { HRSidebar, HRSidebarContent } from "@/components/layout/HRSidebar";
 import { Header } from "@/components/layout/Header";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { mockCourses, categoryLabels, levelLabels } from "@/components/courses";
 import { getCourseWithChapters, CourseWithChapters } from "@/components/courses/courseChapters";
@@ -52,11 +54,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
 const CourseDetail = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const navigate = useNavigate();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const { role } = useAuth();
+    const { toast } = useToast();
+    const isHR = role === 'hr';
     
     const isMockCourse = courseId ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId) : false;
 
@@ -257,8 +263,6 @@ const CourseDetail = () => {
 
     const nextLesson = getNextLesson();
 
-
-
     const handleEnroll = async () => {
         if (!courseId) return;
         if (isMockCourse) {
@@ -283,8 +287,16 @@ const CourseDetail = () => {
 
     return (
         <div className="min-h-screen bg-background">
-            <ApplicantSidebar onCollapse={setSidebarCollapsed} />
-            <Header sidebarCollapsed={sidebarCollapsed} userRole="Student" />
+            {isHR ? (
+                <HRSidebar onCollapse={setSidebarCollapsed} />
+            ) : (
+                <ApplicantSidebar onCollapse={setSidebarCollapsed} />
+            )}
+            <Header 
+                sidebarCollapsed={sidebarCollapsed} 
+                userRole={isHR ? "HR Manager" : "Student"} 
+                mobileSidebar={isHR ? <HRSidebarContent collapsed={false} /> : undefined}
+            />
 
             <main
                 className={cn(
@@ -385,7 +397,7 @@ const CourseDetail = () => {
                                     <span className="font-semibold text-primary">{course.progress}%</span>
                                 </div>
 
-                                {/* Task 2: Completion Checklist */}
+                                {/* Checklist */}
                                 <div className="pt-4 border-t border-border/20 space-y-3">
                                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">To complete this course:</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -418,27 +430,43 @@ const CourseDetail = () => {
 
                             {/* Action Buttons */}
                             <div className="flex items-center gap-4">
-                                <Button
-                                    size="lg"
-                                    className="gap-2 px-8 shadow-glow-primary"
-                                    onClick={() => {
-                                        if (!course.enrolled) {
-                                            handleEnroll();
-                                        } else if (nextLesson) {
-                                            navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
-                                        }
-                                    }}
-                                    disabled={enrolling}
-                                >
-                                    {enrolling ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <Play className="w-5 h-5" />
-                                    )}
-                                    {course.progress > 0 ? "Continue Learning" : "Start Course"}
-                                </Button>
+                                {isHR ? (
+                                    <Button
+                                        size="lg"
+                                        className="gap-2 px-8 bg-indigo-600 hover:bg-indigo-700 shadow-glow-indigo text-white"
+                                        onClick={() => {
+                                            toast({
+                                                title: "Learning Assigned",
+                                                description: "Assignment flow initiated for this course.",
+                                            });
+                                        }}
+                                    >
+                                        <Users className="w-5 h-5" />
+                                        Assign to Employees
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="lg"
+                                        className="gap-2 px-8 shadow-glow-primary"
+                                        onClick={() => {
+                                            if (!course.enrolled) {
+                                                handleEnroll();
+                                            } else if (nextLesson) {
+                                                navigate(`/courses/${course.id}/lessons/${nextLesson.lesson.id}`);
+                                            }
+                                        }}
+                                        disabled={enrolling}
+                                    >
+                                        {enrolling ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <Play className="w-5 h-5" />
+                                        )}
+                                        {course.progress > 0 ? "Continue Learning" : "Start Course"}
+                                    </Button>
+                                )}
                                 <span className="text-sm text-muted-foreground">
-                                    {nextLesson ? `Chapter ${nextLesson.chapter.number} • ${nextLesson.lesson.duration}` : "Course completed"}
+                                    {isHR ? "Centralised training distribution" : (nextLesson ? `Chapter ${nextLesson.chapter.number} • ${nextLesson.lesson.duration}` : "Course completed")}
                                 </span>
                             </div>
                         </div>
@@ -448,7 +476,6 @@ const CourseDetail = () => {
                     <div className="grid lg:grid-cols-3 gap-6">
                         {/* Main Content - Chapters */}
                         <div className="lg:col-span-2 space-y-8">
-                            {/* Course Content */}
                             <div className="space-y-4">
                                 <h2 className="text-xl font-semibold">Course Content</h2>
                                 <div className="space-y-3">
@@ -612,7 +639,6 @@ const CourseDetail = () => {
                                     ))}
                                 </div>
 
-                                {/* Thread Detail Dialog */}
                                 <Dialog open={!!selectedThread} onOpenChange={(open) => !open && setSelectedThread(null)}>
                                     <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
                                         {selectedThread && (
@@ -682,88 +708,125 @@ const CourseDetail = () => {
 
                         {/* Sidebar */}
                         <div className="space-y-4">
-                            {/* Task 1: Certification Requirement Section */}
-                            <Card className="rounded-2xl bg-card border border-border/50 shadow-soft overflow-hidden">
-                                <div className="p-5 border-b border-border/50 bg-muted/30">
-                                    <h3 className="font-semibold flex items-center gap-2">
-                                        <GraduationCap className="w-5 h-5 text-primary" />
-                                        Certification Requirement
-                                    </h3>
-                                </div>
-                                <div className="p-5 space-y-4">
-                                    {certificationMode === "internal" && (
-                                        <>
-                                            <div className="space-y-3">
-                                                <div className="flex items-start gap-3 text-sm">
-                                                    <CheckCircle className={cn("w-4 h-4 shrink-0 mt-0.5", course.progress === 100 ? "text-success" : "text-muted-foreground/30")} />
-                                                    <span className={cn(course.progress === 100 ? "text-foreground" : "text-muted-foreground")}>Complete course modules</span>
+                            {/* HR Assigned Employees Section */}
+                            {isHR && (
+                                <Card className="rounded-2xl bg-card border border-border/50 shadow-soft overflow-hidden">
+                                    <div className="p-5 border-b border-border/50 bg-indigo-50/50">
+                                        <h3 className="font-semibold flex items-center gap-2 text-indigo-700">
+                                            <Users className="w-5 h-5" />
+                                            Assigned Employees
+                                        </h3>
+                                    </div>
+                                    <div className="p-5 space-y-4">
+                                        {[
+                                            { name: "Alex Johnson", progress: 82, status: "Active" },
+                                            { name: "Sarah Miller", progress: 45, status: "At Risk" },
+                                            { name: "Michael Chen", progress: 91, status: "Active" },
+                                        ].map((emp, i) => (
+                                            <div key={i} className="space-y-1.5">
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="font-bold">{emp.name}</span>
+                                                    <span className={cn(
+                                                        "font-bold",
+                                                        emp.status === "At Risk" ? "text-destructive" : "text-indigo-600"
+                                                    )}>{emp.progress}%</span>
                                                 </div>
-                                                <div className="flex items-start gap-3 text-sm">
-                                                    <CheckCircle className={cn("w-4 h-4 shrink-0 mt-0.5", examStatus === "approved" ? "text-success" : "text-muted-foreground/30")} />
-                                                    <span className={cn(examStatus === "approved" ? "text-foreground" : "text-muted-foreground")}>Pass final exam</span>
-                                                </div>
+                                                <Progress 
+                                                    value={emp.progress} 
+                                                    className={cn(
+                                                        "h-1.5",
+                                                        emp.status === "At Risk" ? "bg-destructive/10 overflow-hidden" : "bg-indigo-100"
+                                                    )} 
+                                                />
                                             </div>
-                                            <Button 
-                                                className="w-full gap-2 gradient-primary shadow-glow-primary" 
-                                                disabled={course.progress < 100 || examStatus === "approved"}
-                                                onClick={() => setIsExamModalOpen(true)}
-                                            >
-                                                <FileQuestion className="w-4 h-4" />
-                                                {examStatus === "approved" ? "Exam Passed" : "Start Exam"}
-                                            </Button>
-                                            {course.progress < 100 && (
-                                                <p className="text-[10px] text-center text-muted-foreground">Complete all lessons to unlock the exam</p>
-                                            )}
-                                        </>
-                                    )}
+                                        ))}
+                                        <Button variant="outline" className="w-full text-xs h-9 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                                            Manage Assignments
+                                        </Button>
+                                    </div>
+                                </Card>
+                            )}
 
-                                    {certificationMode === "external" && (
-                                        <>
-                                            <div className="p-3 rounded-xl bg-muted/30 space-y-2 border border-border/50">
-                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Target Certification</p>
-                                                <p className="text-sm font-bold">ISTQB Foundation Level</p>
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    <CalendarDays className="w-3.5 h-3.5" />
-                                                    Exam Date: {externalExamDate}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-muted-foreground">Submission Status</span>
-                                                    <Badge variant="outline" className={cn(
-                                                        "text-[10px] px-1.5 py-0",
-                                                        examStatus === "not_started" && "text-muted-foreground",
-                                                        examStatus === "pending" && "text-warning border-warning/30 bg-warning/5",
-                                                        examStatus === "approved" && "text-success border-success/30 bg-success/5",
-                                                        examStatus === "rejected" && "text-destructive border-destructive/30 bg-destructive/5"
-                                                    )}>
-                                                        {examStatus.replace("_", " ").toUpperCase()}
-                                                    </Badge>
+                            {/* Certification Requirement Section */}
+                            {!isHR && (
+                                <Card className="rounded-2xl bg-card border border-border/50 shadow-soft overflow-hidden">
+                                    <div className="p-5 border-b border-border/50 bg-muted/30">
+                                        <h3 className="font-semibold flex items-center gap-2">
+                                            <GraduationCap className="w-5 h-5 text-primary" />
+                                            Certification Requirement
+                                        </h3>
+                                    </div>
+                                    <div className="p-5 space-y-4">
+                                        {certificationMode === "internal" && (
+                                            <>
+                                                <div className="space-y-3">
+                                                    <div className="flex items-start gap-3 text-sm">
+                                                        <CheckCircle className={cn("w-4 h-4 shrink-0 mt-0.5", course.progress === 100 ? "text-success" : "text-muted-foreground/30")} />
+                                                        <span className={cn(course.progress === 100 ? "text-foreground" : "text-muted-foreground")}>Complete course modules</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-3 text-sm">
+                                                        <CheckCircle className={cn("w-4 h-4 shrink-0 mt-0.5", examStatus === "approved" ? "text-success" : "text-muted-foreground/30")} />
+                                                        <span className={cn(examStatus === "approved" ? "text-foreground" : "text-muted-foreground")}>Pass final exam</span>
+                                                    </div>
                                                 </div>
                                                 <Button 
-                                                    variant="outline" 
-                                                    className="w-full gap-2 border-primary/20 text-primary hover:bg-primary/5"
-                                                    onClick={() => setIsUploadModalOpen(true)}
-                                                    disabled={examStatus === "approved" || examStatus === "pending"}
+                                                    className="w-full gap-2 gradient-primary shadow-glow-primary" 
+                                                    disabled={course.progress < 100 || examStatus === "approved"}
+                                                    onClick={() => setIsExamModalOpen(true)}
                                                 >
-                                                    <Upload className="w-4 h-4" />
-                                                    Upload Result
+                                                    <FileQuestion className="w-4 h-4" />
+                                                    {examStatus === "approved" ? "Exam Passed" : "Start Exam"}
                                                 </Button>
+                                            </>
+                                        )}
+
+                                        {certificationMode === "external" && (
+                                            <>
+                                                <div className="p-3 rounded-xl bg-muted/30 space-y-2 border border-border/50">
+                                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Target Certification</p>
+                                                    <p className="text-sm font-bold">ISTQB Foundation Level</p>
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <CalendarDays className="w-3.5 h-3.5" />
+                                                        Exam Date: {externalExamDate}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <span className="text-muted-foreground">Submission Status</span>
+                                                        <Badge variant="outline" className={cn(
+                                                            "text-[10px] px-1.5 py-0",
+                                                            examStatus === "not_started" && "text-muted-foreground",
+                                                            examStatus === "pending" && "text-warning border-warning/30 bg-warning/5",
+                                                            examStatus === "approved" && "text-success border-success/30 bg-success/5",
+                                                            examStatus === "rejected" && "text-destructive border-destructive/30 bg-destructive/5"
+                                                        )}>
+                                                            {examStatus.replace("_", " ").toUpperCase()}
+                                                        </Badge>
+                                                    </div>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        className="w-full gap-2 border-primary/20 text-primary hover:bg-primary/5"
+                                                        onClick={() => setIsUploadModalOpen(true)}
+                                                        disabled={examStatus === "approved" || examStatus === "pending"}
+                                                    >
+                                                        <Upload className="w-4 h-4" />
+                                                        Upload Result
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {certificationMode === "none" && (
+                                            <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/20">
+                                                <CheckCircle className="w-5 h-5 text-success shrink-0" />
+                                                <p className="text-xs text-success font-medium">Complete all lessons to receive your certificate automatically.</p>
                                             </div>
-                                        </>
-                                    )}
+                                        )}
+                                    </div>
+                                </Card>
+                            )}
 
-                                    {certificationMode === "none" && (
-                                        <div className="flex items-center gap-3 p-4 rounded-xl bg-success/5 border border-success/20">
-                                            <CheckCircle className="w-5 h-5 text-success shrink-0" />
-                                            <p className="text-xs text-success font-medium">Complete all lessons to receive your certificate automatically.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </Card>
-
-                            {/* Task 3: Internal Exam Instruction Modal */}
                             <Dialog open={isExamModalOpen} onOpenChange={setIsExamModalOpen}>
                                 <DialogContent className="sm:max-w-[500px]">
                                     <DialogHeader>
@@ -817,7 +880,6 @@ const CourseDetail = () => {
                                         <Button variant="ghost" onClick={() => setIsExamModalOpen(false)}>Cancel</Button>
                                         <Button className="gradient-primary px-8" onClick={() => {
                                             setIsExamModalOpen(false);
-                                            // Mock passing the exam
                                             setExamStatus("approved");
                                         }}>
                                             I Understand, Start Exam
@@ -826,7 +888,6 @@ const CourseDetail = () => {
                                 </DialogContent>
                             </Dialog>
 
-                            {/* Task 4: External Exam Upload Modal */}
                             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
                                 <DialogContent className="sm:max-w-[450px]">
                                     <DialogHeader>
@@ -865,7 +926,7 @@ const CourseDetail = () => {
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                            {/* Objectives */}
+
                             <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
                                 <h3 className="font-semibold flex items-center gap-2 mb-4">
                                     <Target className="w-5 h-5 text-primary" />
@@ -881,7 +942,6 @@ const CourseDetail = () => {
                                 </ul>
                             </div>
 
-                            {/* Prerequisites */}
                             <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
                                 <h3 className="font-semibold flex items-center gap-2 mb-4">
                                     <AlertCircle className="w-5 h-5 text-warning" />
@@ -896,7 +956,6 @@ const CourseDetail = () => {
                                 </ul>
                             </div>
 
-                            {/* Instructors */}
                             <div className="rounded-2xl bg-card border border-border/50 shadow-soft p-5">
                                 <h3 className="font-semibold mb-4">Instructors</h3>
                                 <div className="space-y-4">
@@ -933,7 +992,6 @@ const CourseDetail = () => {
                                             </button>
                                         ))}
                                     </div>
-
                                 </div>
                             </div>
 

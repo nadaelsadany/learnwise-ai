@@ -11,7 +11,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthMode = "signin" | "signup";
-type AppRole = "applicant" | "instructor" | "university" | "admin";
+type AppRole = "applicant" | "instructor" | "university" | "admin" | "hr";
 
 const emailSchema = z.string().email("Please enter a valid email address");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -134,7 +134,7 @@ const Auth = () => {
                     {[
                       { label: "Student", email: "student@demo.com", icon: "👨‍🎓", color: "hover:bg-primary/10 hover:text-primary hover:border-primary/40" },
                       { label: "Instructor", email: "instructor@demo.com", icon: "👨‍🏫", color: "hover:bg-accent/10 hover:text-accent-foreground hover:border-accent/40" },
-                      { label: "University", email: "university@demo.com", icon: "🏛️", color: "hover:bg-indigo-500/10 hover:text-indigo-600 hover:border-indigo-400/40" },
+                      { label: "HR Manager", email: "hr@demo.com", icon: "🏢", color: "hover:bg-indigo-600/10 hover:text-indigo-700 hover:border-indigo-500/40" },
                       { label: "Admin", email: "admin@demo.com", icon: "🛡️", color: "hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-400/40" },
                     ].map((acct) => (
                       <button
@@ -238,6 +238,31 @@ const Auth = () => {
                         </div>
                         <div className="text-center">
                           <p className="font-medium text-sm">University</p>
+                          <p className="text-xs text-muted-foreground">Collab</p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole("hr")}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                          selectedRole === "hr"
+                            ? "border-indigo-600 bg-indigo-50 shadow-soft"
+                            : "border-border/50 hover:border-indigo-500/50"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center",
+                          selectedRole === "hr" ? "bg-indigo-600 text-white" : "bg-muted"
+                        )}>
+                          <Shield className={cn(
+                            "w-6 h-6",
+                            selectedRole === "hr" ? "text-white" : "text-muted-foreground"
+                          )} />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-sm">HR Manager</p>
                           <p className="text-xs text-muted-foreground">Manage</p>
                         </div>
                       </button>

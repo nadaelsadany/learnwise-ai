@@ -754,7 +754,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "applicant" | "instructor" | "university"
+      app_role: "applicant" | "instructor" | "university" | "admin" | "hr"
       course_status: "draft" | "published" | "archived"
       lesson_type: "video" | "reading" | "quiz" | "assignment" | "interactive"
     }

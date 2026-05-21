@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'applicant' | 'instructor' | 'university' | 'admin';
+export type AppRole = 'applicant' | 'instructor' | 'university' | 'admin' | 'hr';
 
 // ─── Mock demo accounts ────────────────────────────────────────────────────
 const MOCK_USERS: Record<string, { password: string; role: AppRole; fullName: string }> = {
@@ -10,6 +10,7 @@ const MOCK_USERS: Record<string, { password: string; role: AppRole; fullName: st
   'instructor@demo.com': { password: 'demo1234', role: 'instructor', fullName: 'Demo Instructor' },
   'university@demo.com': { password: 'demo1234', role: 'university', fullName: 'Demo University' },
   'admin@demo.com': { password: 'demo1234', role: 'admin', fullName: 'Demo Admin' },
+  'hr@demo.com': { password: 'demo1234', role: 'hr', fullName: 'Demo HR' },
 };
 
 const MOCK_SESSION_KEY = 'learnwise_mock_session';
@@ -172,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
 
       if (data.user) {
-        const dbRole = selectedRole as "applicant" | "instructor" | "university";
+        const dbRole = selectedRole as AppRole;
         await supabase.from('profiles').insert([{ user_id: data.user.id, full_name: fullName }]);
         await supabase.from('user_roles').insert([{ user_id: data.user.id, role: dbRole }]);
         setRole(selectedRole);

@@ -76,6 +76,13 @@ import Reporting from "./pages/Reporting";
 import Learning from "./pages/Learning";
 import Discussions from "./pages/Discussions";
 import InstructorProfile from "./pages/InstructorProfile";
+import HRDashboard from "./pages/HRDashboard";
+import HREmployees from "./pages/HREmployees";
+import HRAssignments from "./pages/HRAssignments";
+import HRCertifications from "./pages/HRCertifications";
+import HRReports from "./pages/HRReports";
+import HRAIInsights from "./pages/HRAIInsights";
+import HRSettings from "./pages/HRSettings";
 import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 
 const queryClient = new QueryClient();
@@ -103,6 +110,7 @@ const LandingOrDashboard = () => {
   if (role === "instructor") return <Navigate to="/instructor" replace />;
   if (role === "university") return <Navigate to="/university" replace />;
   if (role === "admin") return <Navigate to="/admin" replace />;
+  if (role === "hr") return <Navigate to="/hr" replace />;
   return <Navigate to="/dashboard" replace />;
 };
 
@@ -648,6 +656,64 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <AdminSettings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* HR routes */}
+      <Route
+        path="/hr"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/employees"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HREmployees />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/assignments"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRAssignments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/certifications"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRCertifications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/reports"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRReports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/ai-insights"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRAIInsights />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/settings"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRSettings />
           </ProtectedRoute>
         }
       />
