@@ -132,10 +132,10 @@ const Auth = () => {
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: "Student", email: "student@demo.com", icon: "👨‍🎓", color: "hover:bg-primary/10 hover:text-primary hover:border-primary/40" },
+                      { label: "Employee", email: "student@demo.com", icon: "👨‍🎓", color: "hover:bg-primary/10 hover:text-primary hover:border-primary/40" },
                       { label: "Instructor", email: "instructor@demo.com", icon: "👨‍🏫", color: "hover:bg-accent/10 hover:text-accent-foreground hover:border-accent/40" },
                       { label: "HR Manager", email: "hr@demo.com", icon: "🏢", color: "hover:bg-indigo-600/10 hover:text-indigo-700 hover:border-indigo-500/40" },
-                      { label: "Admin", email: "admin@demo.com", icon: "🛡️", color: "hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-400/40" },
+                      { label: "System Administrator", email: "admin@demo.com", icon: "🛡️", color: "hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-400/40" },
                     ].map((acct) => (
                       <button
                         key={acct.label}
@@ -146,7 +146,7 @@ const Auth = () => {
                           setErrors({});
                         }}
                         className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-background text-sm font-medium transition-all",
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-background text-[11px] sm:text-xs font-medium transition-all",
                           acct.color
                         )}
                       >
@@ -155,6 +155,19 @@ const Auth = () => {
                       </button>
                     ))}
                   </div>
+                  {email.toLowerCase() === "admin@demo.com" && (
+                    <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50/50 p-2.5 text-center space-y-1.5 animate-in fade-in duration-200">
+                      <p className="text-xs text-rose-800 font-bold">System Administrator Console</p>
+                      <p className="text-[11px] text-muted-foreground">Manage organization, integrations, and automation</p>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        className="w-full bg-rose-600 hover:bg-rose-700 text-white text-[11px] h-8 font-semibold"
+                      >
+                        Go to Admin Console
+                      </Button>
+                    </div>
+                  )}
                   <p className="text-[11px] text-muted-foreground text-center">
                     Password: <span className="font-mono font-semibold">demo1234</span>
                   </p>
@@ -187,8 +200,8 @@ const Auth = () => {
                           )} />
                         </div>
                         <div className="text-center">
-                          <p className="font-medium text-sm">Student</p>
-                          <p className="text-xs text-muted-foreground">Learn</p>
+                          <p className="font-medium text-sm">Employee</p>
+                          <p className="text-xs text-muted-foreground">Learn & Train</p>
                         </div>
                       </button>
 

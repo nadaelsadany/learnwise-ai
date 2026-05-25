@@ -10,24 +10,26 @@ import {
     Award,
     Briefcase,
     Sparkles,
+    FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-
+ 
 interface SidebarProps {
     onCollapse?: (collapsed: boolean) => void;
 }
-
+ 
 const menuItems = [
-    { icon: LayoutDashboard, label: "Overview", path: "/hr" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/hr" },
     { icon: Users, label: "Employees", path: "/hr/employees" },
-    { icon: BookOpen, label: "Assignments", path: "/hr/assignments" },
-    { icon: Award, label: "Certifications", path: "/hr/certifications" },
-    { icon: BarChart2, label: "Reports", path: "/hr/reports" },
-    { icon: Sparkles, label: "AI Insights", path: "/hr/ai-insights" },
+    { icon: BookOpen, label: "Learning & Career Paths", path: "/hr/assignments" },
+    { icon: Sparkles, label: "AI Recommendations", path: "/hr/ai-insights" },
+    { icon: Award, label: "Progress Tracking", path: "/hr/certifications" },
+    { icon: BarChart2, label: "Performance Insights", path: "/hr/performance" },
+    { icon: FileText, label: "Reports", path: "/hr/reports" },
 ];
 
 export const HRSidebarContent = ({ collapsed }: { collapsed: boolean }) => {

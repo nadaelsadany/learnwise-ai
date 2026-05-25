@@ -16,31 +16,41 @@ import {
 } from "@/components/ui/select";
 import {
     Users, Plus, Upload, Mail, Search, Filter, MoreHorizontal,
-    UserCheck, UserX, Building2, Shield,
+    UserCheck, UserX, Building2, Shield, Edit2, Trash2, CheckCircle2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-type User = {
-    id: number; name: string; email: string;
-    team: string; department: string; role: string; status: "Active" | "Invited" | "Inactive";
-};
+import { getAdminUsers, saveAdminUsers, addAdminActivity, AdminUser as User } from "@/lib/adminData";
 
-const initialUsers: User[] = [
-    { id: 1, name: "Sarah Johnson", email: "sarah@acme.com", team: "Marketing", department: "Sales & Marketing", role: "Employee", status: "Active" },
-    { id: 2, name: "David Park", email: "david@acme.com", team: "Engineering", department: "Technology", role: "Manager", status: "Active" },
-    { id: 3, name: "Lena Müller", email: "lena@acme.com", team: "Design", department: "Product", role: "Employee", status: "Active" },
-    { id: 4, name: "Carlos Rivera", email: "carlos@acme.com", team: "Operations", department: "Operations", role: "Employee", status: "Invited" },
-    { id: 5, name: "Aisha Nwosu", email: "aisha@acme.com", team: "Finance", department: "Finance", role: "Manager", status: "Active" },
-    { id: 6, name: "Tom Chen", email: "tom@acme.com", team: "Engineering", department: "Technology", role: "Employee", status: "Inactive" },
+const previewImportUsers = [
+    { name: "Alice Mercer", email: "alice@acme.com", team: "Marketing", department: "Sales & Marketing", role: "Employee", manager: "Sarah Johnson" },
+    { name: "Ben Luca", email: "ben@acme.com", team: "Engineering", department: "Technology", role: "Employee", manager: "David Park" },
+    { name: "Clara Hughes", email: "clara@acme.com", team: "Design", department: "Product", role: "Manager", manager: "Aisha Nwosu" }
 ];
 
 const AdminUsers = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [users, setUsers] = useState<User[]>(() => getAdminUsers());
     const [search, setSearch] = useState("");
     const [filterDept, setFilterDept] = useState("all");
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [newUser, setNewUser] = useState({ name: "", email: "", team: "", department: "", role: "Employee" });
+    
+    // Upload CSV States
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null);
+    const [isValidating, setIsValidating] = useState(false);
+    
+    // Edit User States
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+
     const { toast } = useToast();
 
     const departments = ["all", "Sales & Marketing", "Technology", "Product", "Operations", "Finance"];
@@ -56,22 +66,84 @@ const AdminUsers = () => {
             toast({ variant: "destructive", title: "Missing fields", description: "Name and email are required." });
             return;
         }
-        setUsers([...users, { id: Date.now(), ...newUser, status: "Invited" } as User]);
+        const updated = [...users, { id: Date.now(), ...newUser, status: "Invited" } as User];
+        setUsers(updated);
+        saveAdminUsers(updated);
+        addAdminActivity(`Employee ${newUser.name} added to organization`, "success");
         setIsAddOpen(false);
         setNewUser({ name: "", email: "", team: "", department: "", role: "Employee" });
         toast({ title: "User Added", description: `${newUser.name} has been added and invited.` });
     };
 
-    const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const triggerFileSelect = () => {
+        document.getElementById("dialog-file-upload")?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
-        toast({ title: "CSV Imported", description: `${file.name} uploaded. Processing users…` });
-        // Mock: add 3 fake users
-        setUsers(prev => [
-            ...prev,
-            { id: Date.now() + 1, name: "Alice Mercer", email: "alice@acme.com", team: "Marketing", department: "Sales & Marketing", role: "Employee", status: "Invited" },
-            { id: Date.now() + 2, name: "Ben Luca", email: "ben@acme.com", team: "Engineering", department: "Technology", role: "Employee", status: "Invited" },
-        ]);
+        if (file) {
+            setUploadedFile({ name: file.name, size: file.size });
+        }
+    };
+
+    const handleImportUsers = () => {
+        setIsValidating(true);
+        setTimeout(() => {
+            const imported: User[] = previewImportUsers.map((u, i) => ({
+                id: Date.now() + i,
+                name: u.name,
+                email: u.email,
+                team: u.team,
+                department: u.department,
+                role: u.role,
+                status: "Invited" as const
+            }));
+            const updated = [...users, ...imported];
+            setUsers(updated);
+            saveAdminUsers(updated);
+            addAdminActivity(`Imported ${imported.length} new employees via CSV`, "success");
+            setIsValidating(false);
+            setIsUploadOpen(false);
+            setUploadedFile(null);
+            toast({ title: "Import Successful", description: `${imported.length} new employees have been added to the directory.` });
+        }, 1500);
+    };
+
+    const handleToggleStatus = (id: number, currentStatus: "Active" | "Invited" | "Inactive") => {
+        const nextStatus = currentStatus === "Active" ? "Inactive" : "Active";
+        const updated = users.map(u => u.id === id ? { ...u, status: nextStatus } : u);
+        setUsers(updated);
+        saveAdminUsers(updated);
+        const userObj = users.find(u => u.id === id);
+        if (userObj) {
+            addAdminActivity(`Employee ${userObj.name} status changed to ${nextStatus}`, "info");
+        }
+        toast({ title: "Status Updated", description: `User status changed to ${nextStatus}.` });
+    };
+
+    const handleDeleteUser = (id: number) => {
+        const userToDelete = users.find(u => u.id === id);
+        const updated = users.filter(u => u.id !== id);
+        setUsers(updated);
+        saveAdminUsers(updated);
+        if (userToDelete) {
+            addAdminActivity(`Employee ${userToDelete.name} removed from organization`, "warn");
+        }
+        toast({ title: "User Deleted", description: "User has been removed from the directory." });
+    };
+
+    const handleSaveEditUser = () => {
+        if (!editingUser || !editingUser.name || !editingUser.email) {
+            toast({ variant: "destructive", title: "Missing Fields" });
+            return;
+        }
+        const updated = users.map(u => u.id === editingUser.id ? editingUser : u);
+        setUsers(updated);
+        saveAdminUsers(updated);
+        addAdminActivity(`Profile of ${editingUser.name} updated`, "info");
+        setIsEditOpen(false);
+        setEditingUser(null);
+        toast({ title: "User Profile Updated" });
     };
 
     const handleSendInvite = () => {
@@ -99,12 +171,98 @@ const AdminUsers = () => {
                             <p className="text-muted-foreground text-sm mt-1">Add, invite, and organise your employees</p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <label htmlFor="csv-upload">
-                                <Button variant="outline" className="cursor-pointer" asChild>
-                                    <span><Upload className="w-4 h-4 mr-2" /> Upload CSV</span>
-                                </Button>
-                            </label>
-                            <input id="csv-upload" type="file" accept=".csv,.xlsx" className="hidden" onChange={handleCSVUpload} />
+                            <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline">
+                                        <Upload className="w-4 h-4 mr-2" /> Upload CSV / Excel
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[500px]">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2"><Upload className="w-5 h-5 text-rose-500" /> Upload Employee Directory</DialogTitle>
+                                        <DialogDescription>
+                                            Upload a CSV or Excel spreadsheet containing your employee records.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    
+                                    {!uploadedFile ? (
+                                        <div 
+                                            className="border-2 border-dashed border-border/80 rounded-xl p-8 text-center bg-muted/20 hover:bg-muted/30 hover:border-rose-500/50 transition-all cursor-pointer flex flex-col items-center justify-center space-y-3"
+                                            onClick={triggerFileSelect}
+                                        >
+                                            <Upload className="w-10 h-10 text-muted-foreground" />
+                                            <div>
+                                                <p className="font-semibold text-sm">Drag and drop file here, or click to browse</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Supports .csv, .xls, .xlsx files up to 10MB</p>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                id="dialog-file-upload" 
+                                                className="hidden" 
+                                                accept=".csv,.xlsx,.xls" 
+                                                onChange={handleFileChange} 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between bg-muted/40 p-2.5 rounded-lg border">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-rose-500/10 text-rose-500 p-1.5 rounded-md font-mono text-xs font-bold">XLSX</div>
+                                                    <div>
+                                                        <p className="text-xs font-bold truncate max-w-[240px]">{uploadedFile.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
+                                                    </div>
+                                                </div>
+                                                <Button size="xs" variant="ghost" className="text-xs text-muted-foreground hover:text-rose-500" onClick={() => setUploadedFile(null)}>Remove</Button>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-muted-foreground uppercase">File Data Preview:</Label>
+                                                <div className="border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                                                    <table className="w-full text-[11px] text-left">
+                                                        <thead>
+                                                            <tr className="bg-muted border-b font-bold">
+                                                                <th className="p-2">Name</th>
+                                                                <th className="p-2">Email</th>
+                                                                <th className="p-2">Department</th>
+                                                                <th className="p-2">Role</th>
+                                                                <th className="p-2">Manager</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {previewImportUsers.map((p, idx) => (
+                                                                <tr key={idx} className="border-b last:border-0 hover:bg-muted/10">
+                                                                    <td className="p-2 font-semibold">{p.name}</td>
+                                                                    <td className="p-2 font-mono">{p.email}</td>
+                                                                    <td className="p-2">{p.department}</td>
+                                                                    <td className="p-2">{p.role}</td>
+                                                                    <td className="p-2">{p.manager}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-[11px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 p-2.5 rounded-lg font-medium flex items-center gap-1.5">
+                                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                                All schemas validated. 3 ready to import, 0 validation errors.
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
+                                        <Button 
+                                            className="bg-rose-500 hover:bg-rose-600 text-white border-0 font-semibold" 
+                                            disabled={!uploadedFile || isValidating}
+                                            onClick={handleImportUsers}
+                                        >
+                                            {isValidating ? "Importing..." : "Validate & Create"}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                             <Button variant="outline" onClick={handleSendInvite}>
                                 <Mail className="w-4 h-4 mr-2" /> Send Invite Link
                             </Button>
@@ -241,9 +399,27 @@ const AdminUsers = () => {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-5 py-3.5 text-right">
-                                                    <Button variant="ghost" size="icon" className="w-8 h-8">
-                                                        <MoreHorizontal className="w-4 h-4" />
-                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="w-8 h-8">
+                                                                <MoreHorizontal className="w-4 h-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-40">
+                                                            <DropdownMenuItem className="text-xs flex items-center gap-2 cursor-pointer" onClick={() => {
+                                                                setEditingUser(user);
+                                                                setIsEditOpen(true);
+                                                            }}>
+                                                                <Edit2 className="w-3.5 h-3.5" /> Edit Profile
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-xs flex items-center gap-2 cursor-pointer" onClick={() => handleToggleStatus(user.id, user.status)}>
+                                                                <UserCheck className="w-3.5 h-3.5" /> {user.status === "Active" ? "Deactivate" : "Activate"}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-xs flex items-center gap-2 cursor-pointer text-destructive hover:bg-destructive/10" onClick={() => handleDeleteUser(user.id)}>
+                                                                <Trash2 className="w-3.5 h-3.5" /> Delete User
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </td>
                                             </tr>
                                         ))}
@@ -259,6 +435,58 @@ const AdminUsers = () => {
                     </Card>
                 </div>
             </main>
+
+            {/* Edit User Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="sm:max-w-[440px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit User Profile</DialogTitle>
+                        <DialogDescription>Modify user organizational data and access role.</DialogDescription>
+                    </DialogHeader>
+                    {editingUser && (
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-name">Full Name</Label>
+                                <Input id="edit-name" value={editingUser.name} onChange={(e) => setEditingUser({...editingUser, name: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-email">Email</Label>
+                                <Input id="edit-email" value={editingUser.email} onChange={(e) => setEditingUser({...editingUser, email: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-team">Team</Label>
+                                <Input id="edit-team" value={editingUser.team} onChange={(e) => setEditingUser({...editingUser, team: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-dept">Department</Label>
+                                <Select value={editingUser.department} onValueChange={(v) => setEditingUser({...editingUser, department: v})}>
+                                    <SelectTrigger id="edit-dept"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {departments.filter(d => d !== "all").map((d) => (
+                                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-role">Role</Label>
+                                <Select value={editingUser.role} onValueChange={(v) => setEditingUser({...editingUser, role: v})}>
+                                    <SelectTrigger id="edit-role"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {["Employee", "Manager", "HR Admin"].map((r) => (
+                                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveEditUser} className="bg-rose-500 hover:bg-rose-600 text-white border-0">Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

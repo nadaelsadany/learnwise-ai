@@ -20,25 +20,11 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type CourseStatus = "Draft" | "Processing" | "Active";
-type Course = {
-    id: number; title: string; description: string;
-    audience: string; duration: string; status: CourseStatus;
-    enrolled: number; completion: number; aiScore: number;
-    processing?: number;
-};
-
-const initialCourses: Course[] = [
-    { id: 1, title: "React Fundamentals", description: "Core concepts of React for frontend developers", audience: "Engineering", duration: "6h", status: "Active", enrolled: 48, completion: 82, aiScore: 91 },
-    { id: 2, title: "Python for Data Science", description: "Python basics and data manipulation", audience: "Analytics Team", duration: "8h", status: "Active", enrolled: 36, completion: 74, aiScore: 88 },
-    { id: 3, title: "Leadership Essentials", description: "Soft skills for new managers", audience: "All Managers", duration: "4h", status: "Active", enrolled: 64, completion: 91, aiScore: 94 },
-    { id: 4, title: "Excel & Data Analysis", description: "Spreadsheet mastery", audience: "Finance & Ops", duration: "5h", status: "Active", enrolled: 29, completion: 65, aiScore: 79 },
-    { id: 5, title: "Cybersecurity Basics", description: "Security awareness for all staff", audience: "All Employees", duration: "3h", status: "Processing", enrolled: 0, completion: 0, aiScore: 0, processing: 65 },
-];
+import { getAdminCourses, saveAdminCourses, addAdminActivity, AdminCourse as Course, CourseStatus } from "@/lib/adminData";
 
 const AdminCourses = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [courses, setCourses] = useState<Course[]>(initialCourses);
+    const [courses, setCourses] = useState<Course[]>(() => getAdminCourses());
     const [search, setSearch] = useState("");
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [uploadCourseId, setUploadCourseId] = useState<number | null>(null);
@@ -54,7 +40,10 @@ const AdminCourses = () => {
             return;
         }
         const created: Course = { id: Date.now(), ...newCourse, status: "Draft", enrolled: 0, completion: 0, aiScore: 0 };
-        setCourses([...courses, created]);
+        const updated = [...courses, created];
+        setCourses(updated);
+        saveAdminCourses(updated);
+        addAdminActivity(`Course "${created.title}" created as draft`, "info");
         setIsCreateOpen(false);
         setNewCourse({ title: "", description: "", audience: "", duration: "" });
         toast({ title: "Course Created", description: `"${created.title}" added. Upload content to activate it.` });
@@ -62,18 +51,35 @@ const AdminCourses = () => {
 
     const handleUpload = (files: FileList | null, courseId: number) => {
         if (!files?.length) return;
-        toast({ title: "Upload Started", description: `Processing ${files[0].name}` });
-        setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: "Processing" as CourseStatus, processing: 0 } : c));
+        const fileName = files[0].name;
+        toast({ title: "Upload Started", description: `Processing ${fileName}` });
+        
+        const initialProcessingState = courses.map(c => c.id === courseId ? { ...c, status: "Processing" as CourseStatus, processing: 0 } : c);
+        setCourses(initialProcessingState);
+        saveAdminCourses(initialProcessingState);
+        
         setUploadCourseId(null);
         let pct = 0;
         const iv = setInterval(() => {
             pct += 20;
             if (pct >= 100) {
                 clearInterval(iv);
-                setCourses(prev => prev.map(c => c.id === courseId ? { ...c, status: "Active" as CourseStatus, processing: 100, enrolled: 0, completion: 0, aiScore: 85 } : c));
+                setCourses(prev => {
+                    const finalState = prev.map(c => c.id === courseId ? { ...c, status: "Active" as CourseStatus, processing: 100, enrolled: 0, completion: 0, aiScore: 85 } : c);
+                    saveAdminCourses(finalState);
+                    const courseObj = finalState.find(c => c.id === courseId);
+                    if (courseObj) {
+                        addAdminActivity(`AI processing completed for course "${courseObj.title}"`, "success");
+                    }
+                    return finalState;
+                });
                 toast({ title: "AI Processing Complete!", description: "Content indexed. Draft questions ready." });
             } else {
-                setCourses(prev => prev.map(c => c.id === courseId ? { ...c, processing: pct } : c));
+                setCourses(prev => {
+                    const progressState = prev.map(c => c.id === courseId ? { ...c, processing: pct } : c);
+                    saveAdminCourses(progressState);
+                    return progressState;
+                });
             }
         }, 600);
     };

@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import {
     Users, BookOpen, TrendingUp, AlertTriangle, Activity,
     ArrowUpRight, ArrowDownRight, Zap, ChevronRight, Shield,
-    CheckCircle2, Clock, BarChart2,
+    CheckCircle2, Clock, BarChart2, Cable, Bot, Building2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -58,24 +58,43 @@ const StatCard = ({
     );
 };
 
+import { getAdminUsers, getAdminCourses, getAdminActivities, formatRelativeTime } from "@/lib/adminData";
+
 const AdminDashboard = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const navigate = useNavigate();
 
-    const recentActivity = [
-        { event: "Sarah Johnson enrolled in React Basics", time: "10m ago", type: "success" },
-        { event: "Team Alpha completed Python Fundamentals", time: "1h ago", type: "success" },
-        { event: "3 employees flagged for low performance", time: "2h ago", type: "warn" },
-        { event: "New course 'Data Analysis' published", time: "4h ago", type: "info" },
-        { event: "Quarterly report exported", time: "Yesterday", type: "info" },
-    ];
+    const users = getAdminUsers();
+    const courses = getAdminCourses();
+    const rawActivities = getAdminActivities();
 
-    const topCourses = [
-        { name: "React Fundamentals", enrolled: 48, completion: 82, score: 91 },
-        { name: "Python for Data Science", enrolled: 36, completion: 74, score: 88 },
-        { name: "Leadership Essentials", enrolled: 64, completion: 91, score: 94 },
-        { name: "Excel & Data Analysis", enrolled: 29, completion: 65, score: 79 },
-    ];
+    const totalEmployees = users.length;
+    
+    const activeCourses = courses.filter(c => c.status === "Active");
+    const avgCompletion = activeCourses.length > 0
+        ? Math.round(activeCourses.reduce((sum, c) => sum + c.completion, 0) / activeCourses.length)
+        : 0;
+
+    const avgPerformance = activeCourses.length > 0
+        ? Math.round(activeCourses.reduce((sum, c) => sum + c.aiScore, 0) / activeCourses.length)
+        : 0;
+
+    const recentActivity = rawActivities.slice(0, 5).map(act => ({
+        event: act.event,
+        time: formatRelativeTime(act.timestamp),
+        type: act.type
+    }));
+
+    const topCourses = [...courses]
+        .filter(c => c.status === "Active")
+        .sort((a, b) => b.enrolled - a.enrolled)
+        .slice(0, 4)
+        .map(c => ({
+            name: c.title,
+            enrolled: c.enrolled,
+            completion: c.completion,
+            score: c.aiScore
+        }));
 
     return (
         <div className="min-h-screen bg-background">
@@ -124,10 +143,10 @@ const AdminDashboard = () => {
                         </div>
                         <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/20">
                             {[
-                                { label: "Total Employees", val: "248", icon: Users },
-                                { label: "Active Courses", val: "14", icon: BookOpen },
-                                { label: "Avg Completion", val: "76%", icon: TrendingUp },
-                                { label: "At-Risk", val: "12", icon: AlertTriangle },
+                                { label: "Total Employees", val: totalEmployees.toString(), icon: Users },
+                                { label: "Learning Progress", val: `${avgCompletion}%`, icon: TrendingUp },
+                                { label: "Performance Avg", val: `${avgPerformance}%`, icon: BarChart2 },
+                                { label: "Integration", val: "Elevate Path", icon: Cable },
                             ].map((item) => (
                                 <div key={item.label} className="flex items-center gap-3">
                                     <item.icon className="w-4 h-4 opacity-60 shrink-0" />
@@ -142,10 +161,10 @@ const AdminDashboard = () => {
 
                     {/* Stat Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Total Employees" value={248} sub="Across all teams" icon={Users} trend={{ value: 8, positive: true }} color="primary" />
-                        <StatCard title="Active Courses" value={14} sub="Published & running" icon={BookOpen} trend={{ value: 3, positive: true }} color="rose" />
-                        <StatCard title="Avg Completion" value="76%" sub="Organisation-wide" icon={TrendingUp} trend={{ value: 5, positive: true }} color="emerald" />
-                        <StatCard title="At-Risk Employees" value={12} sub="Below 50% score" icon={AlertTriangle} trend={{ value: 2, positive: false }} color="amber" />
+                        <StatCard title="Total Employees" value={totalEmployees} sub="Across all teams" icon={Users} trend={{ value: 8, positive: true }} color="primary" />
+                        <StatCard title="Learning Progress" value={`${avgCompletion}%`} sub="Avg Completion %" icon={TrendingUp} trend={{ value: 5, positive: true }} color="emerald" />
+                        <StatCard title="Performance Avg" value={`${avgPerformance}%`} sub="Skill/KPI indicators" icon={BarChart2} trend={{ value: 4, positive: true }} color="rose" />
+                        <StatCard title="Integration Status" value="Connected" sub="Elevate Path / SAP" icon={Cable} color="amber" />
                     </div>
 
                     {/* Main Grid */}
@@ -207,10 +226,11 @@ const AdminDashboard = () => {
                                 </CardHeader>
                                 <CardContent className="space-y-2">
                                     {[
+                                        { label: "Configure Organization", path: "/admin/organization", icon: Building2 },
                                         { label: "Add New User", path: "/admin/users", icon: Users },
-                                        { label: "Create Course", path: "/admin/courses", icon: BookOpen },
+                                        { label: "Manage Integrations", path: "/admin/integrations", icon: Cable },
+                                        { label: "AI Automation Rules", path: "/admin/ai-automation", icon: Bot },
                                         { label: "View Analytics", path: "/admin/analytics", icon: BarChart2 },
-                                        { label: "Manage Enrollments", path: "/admin/enrollments", icon: CheckCircle2 },
                                     ].map((a) => (
                                         <Button key={a.label} variant="ghost" className="w-full justify-start gap-3 text-sm" onClick={() => navigate(a.path)}>
                                             <a.icon className="w-4 h-4 text-rose-500" /> {a.label}

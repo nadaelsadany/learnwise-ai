@@ -1,14 +1,15 @@
 import {
     LayoutDashboard,
+    Building2,
     Users,
-    BookOpen,
+    GraduationCap,
+    Cable,
+    Bot,
+    BarChart2,
     Settings,
     LogOut,
-    Menu,
     ChevronLeft,
     ChevronRight,
-    BarChart2,
-    ListChecks,
     Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,10 +24,13 @@ interface SidebarProps {
 
 const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+    { icon: Building2, label: "Organization", path: "/admin/organization" },
     { icon: Users, label: "Users", path: "/admin/users" },
-    { icon: BookOpen, label: "Courses", path: "/admin/courses" },
-    { icon: ListChecks, label: "Enrollments", path: "/admin/enrollments" },
+    { icon: GraduationCap, label: "Learning Setup", path: "/admin/learning-setup" },
+    { icon: Cable, label: "Integrations", path: "/admin/integrations" },
+    { icon: Bot, label: "AI Automation", path: "/admin/ai-automation" },
     { icon: BarChart2, label: "Analytics", path: "/admin/analytics" },
+    { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
 
 export const AdminSidebarContent = ({ collapsed }: { collapsed: boolean }) => {

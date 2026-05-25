@@ -72,6 +72,10 @@ import AdminCourses from "./pages/AdminCourses";
 import AdminEnrollments from "./pages/AdminEnrollments";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminSettings from "./pages/AdminSettings";
+import AdminOrganization from "./pages/AdminOrganization";
+import AdminLearningSetup from "./pages/AdminLearningSetup";
+import AdminIntegrations from "./pages/AdminIntegrations";
+import AdminAIAutomation from "./pages/AdminAIAutomation";
 import Reporting from "./pages/Reporting";
 import Learning from "./pages/Learning";
 import Discussions from "./pages/Discussions";
@@ -83,6 +87,7 @@ import HRCertifications from "./pages/HRCertifications";
 import HRReports from "./pages/HRReports";
 import HRAIInsights from "./pages/HRAIInsights";
 import HRSettings from "./pages/HRSettings";
+import HRPerformanceInsights from "./pages/HRPerformanceInsights";
 import { FloatingCoachButton } from "@/components/dashboard/FloatingCoachButton";
 
 const queryClient = new QueryClient();
@@ -620,10 +625,42 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/admin/organization"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminOrganization />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/users"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <AdminUsers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/learning-setup"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLearningSetup />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/integrations"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminIntegrations />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ai-automation"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminAIAutomation />
           </ProtectedRoute>
         }
       />
@@ -714,6 +751,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["hr"]}>
             <HRSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/hr/performance"
+        element={
+          <ProtectedRoute allowedRoles={["hr"]}>
+            <HRPerformanceInsights />
           </ProtectedRoute>
         }
       />

@@ -17,64 +17,45 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
-type EnrolledUser = { id: number; name: string; team: string; progress: number; dueDate?: string; };
-type EnrollableCourse = {
-    id: number; title: string; enrolled: number; openEnroll: boolean;
-    deadline?: string; users: EnrolledUser[];
-};
-
-const initialCourses: EnrollableCourse[] = [
-    {
-        id: 1, title: "React Fundamentals", enrolled: 48, openEnroll: false, deadline: "2026-03-31",
-        users: [
-            { id: 1, name: "Sarah Johnson", team: "Engineering", progress: 82, dueDate: "2026-03-31" },
-            { id: 2, name: "David Park", team: "Engineering", progress: 45, dueDate: "2026-03-31" },
-            { id: 3, name: "Tom Chen", team: "Engineering", progress: 10, dueDate: "2026-03-31" },
-        ],
-    },
-    {
-        id: 2, title: "Leadership Essentials", enrolled: 24, openEnroll: true,
-        users: [
-            { id: 4, name: "Aisha Nwosu", team: "Finance", progress: 100 },
-            { id: 5, name: "Carlos Rivera", team: "Operations", progress: 68 },
-        ],
-    },
-    {
-        id: 3, title: "Excel & Data Analysis", enrolled: 15, openEnroll: false, deadline: "2026-04-15",
-        users: [
-            { id: 6, name: "Lena Müller", team: "Design", progress: 55 },
-        ],
-    },
-];
-
-const allUsers = ["Sarah Johnson", "David Park", "Tom Chen", "Aisha Nwosu", "Carlos Rivera", "Lena Müller", "Alice Mercer", "Ben Luca"];
-const allCourseNames = initialCourses.map((c) => c.title);
+import { getAdminUsers, getEnrollableCourses, saveEnrollableCourses, addAdminActivity, EnrollableCourse } from "@/lib/adminData";
 
 const AdminEnrollments = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [courses, setCourses] = useState<EnrollableCourse[]>(initialCourses);
-    const [selectedCourse, setSelectedCourse] = useState<string>(allCourseNames[0]);
+    const [courses, setCourses] = useState<EnrollableCourse[]>(() => getEnrollableCourses());
+    const { toast } = useToast();
+
+    const allUsers = getAdminUsers().map(u => u.name);
+    const allCourseNames = courses.map((c) => c.title);
+
+    const [selectedCourse, setSelectedCourse] = useState<string>(allCourseNames[0] || "");
     const [selectedUser, setSelectedUser] = useState<string>("");
     const [deadline, setDeadline] = useState<string>("");
     const [search, setSearch] = useState("");
-    const { toast } = useToast();
 
     const activeCourse = courses.find((c) => c.title === selectedCourse);
 
     const handleDirectAssign = () => {
         if (!selectedUser) { toast({ variant: "destructive", title: "Select a user first" }); return; }
-        setCourses(prev => prev.map(c => c.title !== selectedCourse ? c : {
+        const updated = courses.map(c => c.title !== selectedCourse ? c : {
             ...c, enrolled: c.enrolled + 1,
             users: [...c.users, { id: Date.now(), name: selectedUser, team: "Unknown", progress: 0, dueDate: deadline || undefined }],
-        }));
+        });
+        setCourses(updated);
+        saveEnrollableCourses(updated);
+        addAdminActivity(`Assigned course "${selectedCourse}" to ${selectedUser}`, "success");
         toast({ title: "Enrolled!", description: `${selectedUser} assigned to "${selectedCourse}".` });
         setSelectedUser("");
         setDeadline("");
     };
 
     const toggleOpenEnroll = (courseId: number) => {
-        setCourses(prev => prev.map(c => c.id === courseId ? { ...c, openEnroll: !c.openEnroll } : c));
+        const updated = courses.map(c => c.id === courseId ? { ...c, openEnroll: !c.openEnroll } : c);
+        setCourses(updated);
+        saveEnrollableCourses(updated);
         const c = courses.find(c => c.id === courseId);
+        if (c) {
+            addAdminActivity(`Toggled open enrollment for "${c.title}" to ${!c.openEnroll ? "Enabled" : "Disabled"}`, "info");
+        }
         toast({ title: `Open Enrollment ${c?.openEnroll ? "Disabled" : "Enabled"}`, description: `"${c?.title}" updated.` });
     };
 

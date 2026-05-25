@@ -58,35 +58,63 @@ const StatCard = ({
     );
 };
 
+import { getHREmployees, getHRCertifications, getHRActivityLog } from "@/lib/hrData";
+
 const HRDashboard = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const navigate = useNavigate();
 
-    const atRiskEmployees = [
-        { name: "Michael Chen", dept: "Engineering", progress: 24, reason: "Low Exam Score" },
-        { name: "Sarah Miller", dept: "Marketing", progress: 38, reason: "Inactive > 2 weeks" },
-        { name: "David Wilson", dept: "Sales", progress: 15, reason: "Failed Certification" },
-    ];
+    const employees = getHREmployees();
+    const certs = getHRCertifications();
+    const rawActivities = getHRActivityLog();
 
-    const teamPerformance = [
-        { name: "Engineering", completion: 82, active: 45, certs: 12 },
-        { name: "Marketing", completion: 64, active: 28, certs: 5 },
-        { name: "Sales", completion: 71, active: 32, certs: 8 },
-        { name: "Product", completion: 91, active: 18, certs: 14 },
-    ];
+    const totalEmployees = employees.length;
+    const activeLearners = employees.filter(e => e.progress > 0 && e.courses > 0).length;
+    const avgCompletion = totalEmployees > 0 
+        ? Math.round(employees.reduce((sum, e) => sum + e.progress, 0) / totalEmployees) 
+        : 0;
+    
+    const approvedCerts = certs.filter(c => c.status === "Approved").length;
+    const certRate = certs.length > 0 
+        ? Math.round((approvedCerts / certs.length) * 100) 
+        : 0;
 
-    const certStatus = [
-        { name: "ISTQB Foundation", employee: "Emma Thompson", status: "Pending Approval", date: "2h ago" },
-        { name: "AWS Cloud Practitioner", employee: "James Rodriguez", status: "Completed", date: "5h ago" },
-        { name: "React Professional", employee: "Lisa Wang", status: "Pending Approval", date: "Yesterday" },
-    ];
+    const atRiskEmployees = employees
+        .filter(e => e.status === "At Risk")
+        .map(e => ({
+            name: e.name,
+            dept: e.dept,
+            progress: e.progress,
+            reason: e.performanceScore < 40 ? "Low Perf Score" : "Needs support"
+        }));
+
+    const depts = Array.from(new Set(employees.map(e => e.dept)));
+    const teamPerformance = depts.map(deptName => {
+        const deptEmps = employees.filter(e => e.dept === deptName);
+        const activeCount = deptEmps.filter(e => e.progress > 0).length;
+        const avgComp = deptEmps.length > 0 ? Math.round(deptEmps.reduce((sum, e) => sum + e.progress, 0) / deptEmps.length) : 0;
+        const certCount = certs.filter(c => c.status === "Approved" && deptEmps.some(e => e.name === c.employee)).length;
+        return {
+            name: deptName,
+            completion: avgComp,
+            active: activeCount,
+            certs: certCount
+        };
+    });
+
+    const certStatus = certs.slice(0, 3).map(c => ({
+        name: c.name,
+        employee: c.employee,
+        status: c.status,
+        date: c.date
+    }));
 
     return (
         <div className="min-h-screen bg-background">
             <HRSidebar onCollapse={setSidebarCollapsed} />
             <Header
                 sidebarCollapsed={sidebarCollapsed}
-                userRole="HR Manager"
+                userRole="Talent Manager"
                 mobileSidebar={<HRSidebarContent collapsed={false} />}
             />
             <main className={cn("pt-20 pb-12 px-4 sm:px-6 transition-all duration-300", sidebarCollapsed ? "lg:ml-20" : "lg:ml-64")}>
@@ -105,8 +133,11 @@ const HRDashboard = () => {
                                     <span className="text-xs font-semibold uppercase tracking-widest opacity-80">HR Intelligence</span>
                                 </div>
                                 <h1 className="text-4xl font-black tracking-tight">Talent Development Center</h1>
-                                <p className="text-indigo-100 mt-1 text-sm">
-                                    Managing the growth of {teamPerformance.length} departments · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                <p className="text-indigo-100 mt-2 text-sm max-w-xl font-medium">
+                                    Manage employees, assign learning, and track performance
+                                </p>
+                                <p className="text-indigo-200/80 mt-1 text-xs">
+                                    Managing the growth of {depts.length} departments · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                                 </p>
                             </div>
                             <div className="flex gap-3">
@@ -130,10 +161,10 @@ const HRDashboard = () => {
 
                     {/* TOP OVERVIEW Stat Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Total Employees" value={184} sub="Managed accounts" icon={Users} trend={{ value: 12, positive: true }} color="indigo" />
-                        <StatCard title="Active Learners" value={142} sub="Enrolled in courses" icon={Zap} trend={{ value: 5, positive: true }} color="violet" />
-                        <StatCard title="Completion Rate" value="78%" sub="Course completion avg" icon={CheckCircle2} trend={{ value: 3, positive: true }} color="emerald" />
-                        <StatCard title="Certification Rate" value="64%" sub="Employees certified" icon={Award} trend={{ value: 8, positive: true }} color="amber" />
+                        <StatCard title="Total Employees" value={totalEmployees} sub="Managed accounts" icon={Users} trend={{ value: 12, positive: true }} color="indigo" />
+                        <StatCard title="Active Learners" value={activeLearners} sub="Enrolled in courses" icon={Zap} trend={{ value: 5, positive: true }} color="violet" />
+                        <StatCard title="Completion Rate" value={`${avgCompletion}%`} sub="Course completion avg" icon={CheckCircle2} trend={{ value: 3, positive: true }} color="emerald" />
+                        <StatCard title="Certification Rate" value={`${certRate}%`} sub="Employees certified" icon={Award} trend={{ value: 8, positive: true }} color="amber" />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -144,7 +175,7 @@ const HRDashboard = () => {
                                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                                         <TrendingUp className="w-5 h-5 text-indigo-500" /> Team Performance
                                     </CardTitle>
-                                    <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-indigo-600">
+                                    <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-indigo-600" onClick={() => navigate("/hr/performance")}>
                                         View Details <ChevronRight className="w-3 h-3 ml-1" />
                                     </Button>
                                 </CardHeader>
@@ -182,30 +213,34 @@ const HRDashboard = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        {atRiskEmployees.map((emp) => (
-                                            <div key={emp.name} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors group cursor-pointer">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs">
-                                                        {emp.name.split(' ').map(n => n[0]).join('')}
+                                        {atRiskEmployees.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground text-center py-6">No at-risk employees currently detected. Good job!</p>
+                                        ) : (
+                                            atRiskEmployees.map((emp) => (
+                                                <div key={emp.name} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors group cursor-pointer" onClick={() => navigate("/hr/employees")}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs">
+                                                            {emp.name.split(' ').map(n => n[0]).join('')}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold">{emp.name}</p>
+                                                            <p className="text-[10px] text-muted-foreground">{emp.dept}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-bold">{emp.name}</p>
-                                                        <p className="text-[10px] text-muted-foreground">{emp.dept}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <Badge variant="outline" className="text-[10px] bg-amber-500/5 text-amber-600 border-amber-500/20 mb-1">
-                                                        {emp.reason}
-                                                    </Badge>
-                                                    <div className="flex items-center gap-2 justify-end">
-                                                        <span className="text-[10px] font-bold">{emp.progress}%</span>
-                                                        <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
-                                                            <div className="h-full bg-amber-500" style={{ width: `${emp.progress}%` }} />
+                                                    <div className="text-right">
+                                                        <Badge variant="outline" className="text-[10px] bg-amber-500/5 text-amber-600 border-amber-500/20 mb-1">
+                                                            {emp.reason}
+                                                        </Badge>
+                                                        <div className="flex items-center gap-2 justify-end">
+                                                            <span className="text-[10px] font-bold">{emp.progress}%</span>
+                                                            <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
+                                                                <div className="h-full bg-amber-500" style={{ width: `${emp.progress}%` }} />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -217,7 +252,7 @@ const HRDashboard = () => {
                             <Card className="border-border/50 shadow-soft">
                                 <CardHeader>
                                     <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                        <Award className="w-4 h-4 text-violet-500" /> Certification Status
+                                        <Award className="w-4 h-4 text-violet-500" /> Certification Approvals
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -228,16 +263,16 @@ const HRDashboard = () => {
                                                     <p className="text-xs font-bold leading-none">{cert.name}</p>
                                                     <p className="text-[10px] text-muted-foreground mt-1">{cert.employee}</p>
                                                 </div>
-                                                <Badge variant={cert.status === "Completed" ? "default" : "secondary"} className="text-[8px] h-4 uppercase tracking-tighter">
+                                                <Badge variant={cert.status === "Approved" ? "default" : cert.status === "Rejected" ? "destructive" : "secondary"} className="text-[8px] h-4 uppercase tracking-tighter">
                                                     {cert.status}
                                                 </Badge>
                                             </div>
                                             <p className="text-[9px] text-muted-foreground flex items-center gap-1">
-                                                <Clock className="w-2.5 h-2.5" /> Uploaded {cert.date}
+                                                <Clock className="w-2.5 h-2.5" /> {cert.date}
                                             </p>
                                         </div>
                                     ))}
-                                    <Button variant="outline" className="w-full text-xs h-9 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600">
+                                    <Button variant="outline" className="w-full text-xs h-9 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600" onClick={() => navigate("/hr/certifications")}>
                                         Review All Certificates
                                     </Button>
                                 </CardContent>
@@ -251,22 +286,28 @@ const HRDashboard = () => {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    {[
-                                        { title: "Course Assigned", desc: "React Basics to Dev Team", time: "10m ago", icon: Zap, color: "text-indigo-500" },
-                                        { title: "Certificate Approved", desc: "ISTQB for Emma Thompson", time: "1h ago", icon: CheckCircle2, color: "text-emerald-500" },
-                                        { title: "Learning Path Update", desc: "Cloud Security path modified", time: "3h ago", icon: Sparkles, color: "text-violet-500" },
-                                    ].map((activity, i) => (
-                                        <div key={i} className="flex gap-3">
-                                            <div className={cn("mt-0.5", activity.color)}>
-                                                <activity.icon className="w-4 h-4" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-xs font-bold leading-tight">{activity.title}</p>
-                                                <p className="text-[10px] text-muted-foreground">{activity.desc}</p>
-                                                <p className="text-[9px] text-muted-foreground/60 mt-1">{activity.time}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {rawActivities.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground text-center py-4">No recent activity logged.</p>
+                                    ) : (
+                                        rawActivities.slice(0, 3).map((activity, i) => {
+                                            let Icon = activity.type === "success" ? CheckCircle2 : activity.type === "warn" ? AlertTriangle : Zap;
+                                            return (
+                                                <div key={i} className="flex gap-3">
+                                                    <div className={cn("mt-0.5 shrink-0", 
+                                                        activity.type === "success" ? "text-emerald-500" : 
+                                                        activity.type === "warn" ? "text-amber-500" : "text-indigo-500"
+                                                    )}>
+                                                        <Icon className="w-4 h-4" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold leading-tight truncate">{activity.title}</p>
+                                                        <p className="text-[10px] text-muted-foreground line-clamp-2">{activity.desc}</p>
+                                                        <p className="text-[9px] text-muted-foreground/60 mt-1">{activity.time}</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </CardContent>
                             </Card>
 
@@ -280,10 +321,10 @@ const HRDashboard = () => {
                                         <Sparkles className="w-4 h-4" /> AI Talent Insight
                                     </h4>
                                     <p className="text-xs text-indigo-100 leading-relaxed">
-                                        Skill gaps detected in <span className="font-bold underline italic">Data Engineering</span> across 3 teams. 
-                                        Suggested learning programs are ready for review.
+                                        Performance drops and skill gaps detected in <span className="font-bold underline italic">Sales Team</span>.
+                                        Suggested training modules are ready for review.
                                     </p>
-                                    <Button className="w-full bg-white text-indigo-600 hover:bg-white/90 text-xs h-8 font-bold">
+                                    <Button className="w-full bg-white text-indigo-600 hover:bg-white/90 text-xs h-8 font-bold animate-pulse" onClick={() => navigate("/hr/ai-insights")}>
                                         Review Insights
                                     </Button>
                                 </CardContent>
