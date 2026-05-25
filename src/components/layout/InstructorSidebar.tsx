@@ -5,21 +5,11 @@ import {
   BookOpen,
   Users,
   BarChart3,
-  Settings,
   ChevronLeft,
-  Sparkles,
   GraduationCap,
   LogOut,
-  Upload,
-  FileEdit,
-  Bell,
-  ListTree,
-  ClipboardList,
   FileQuestion,
-  MessageSquare,
-  Megaphone,
-  Layers,
-  Trophy,
+  Folder,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,19 +24,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/instructor" },
-  { icon: BookOpen, label: "My Courses", href: "/instructor/courses" },
-  { icon: Upload, label: "Create Course", href: "/instructor/create-course" },
-  { icon: ListTree, label: "Curriculum", href: "/instructor/curriculum" },
-  { icon: Users, label: "Students", href: "/instructor/students" },
-  { icon: ClipboardList, label: "Assignments", href: "/instructor/assignments" },
-  { icon: FileQuestion, label: "Quizzes & Exams", href: "/instructor/quizzes" },
-  { icon: MessageSquare, label: "Discussions", href: "/instructor/discussions" },
-  { icon: Megaphone, label: "Announcements", href: "/instructor/announcements" },
-  { icon: Layers, label: "Flashcards", href: "/instructor/flashcards" },
-  { icon: BarChart3, label: "Analytics", href: "/instructor/analytics" },
-  { icon: Trophy, label: "Leaderboard", href: "/instructor/leaderboard" },
-  { icon: FileEdit, label: "Content Tools", href: "/instructor/content" },
-  { icon: Sparkles, label: "AI Assistant", href: "/instructor/ai-tools" },
+  { icon: BookOpen, label: "Courses", href: "/instructor/courses" },
+  { icon: Folder, label: "Content Library", href: "/instructor/content" },
+  { icon: FileQuestion, label: "Assessments", href: "/instructor/quizzes" },
+  { icon: Users, label: "Learners", href: "/instructor/students" },
+  { icon: BarChart3, label: "Insights", href: "/instructor/analytics" },
 ];
 
 interface SidebarContentProps {
@@ -80,7 +62,7 @@ export const InstructorSidebarContent = ({ collapsed, onItemClick, className }: 
         {!collapsed && (
           <div className="animate-fade-in text-left">
             <h1 className="font-bold text-lg">Nafea</h1>
-            <p className="text-xs text-muted-foreground">Instructor Portal</p>
+            <p className="text-xs text-muted-foreground">Learning Manager</p>
           </div>
         )}
       </div>

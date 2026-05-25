@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import { mockCourses } from '@/components/courses/mockCourseData';
+import { 
+  getInstructorCourses, 
+  addInstructorCourse, 
+  updateInstructorCourse, 
+  deleteInstructorCourse 
+} from '@/lib/instructorData';
 
 export interface Course {
   id: string;
@@ -49,19 +54,10 @@ export const useCourses = () => {
     
     // Provide mock data for demo users or if in demo mode
     if (isMockUser || !user || !isValidUuid(user.id)) {
-      const mockPublished = mockCourses.map(c => ({
+      const mockPublished = getInstructorCourses().filter(c => c.status === 'published').map(c => ({
         ...c,
-        id: c.id,
-        title: c.title,
-        description: c.description,
-        category: c.category,
-        level: c.level,
-        duration_hours: parseInt(c.duration?.split(' ')[0] || '0'),
-        image_url: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
-        status: 'published' as const,
-        is_featured: c.isFeatured || false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        duration_hours: c.duration_hours,
+        image_url: c.image_url || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
       }));
       setCourses(mockPublished as CourseWithEnrollment[]);
       setLoading(false);
@@ -108,21 +104,9 @@ export const useCourses = () => {
 
     // Provide mock data for demo instructors
     if (isMockUser || !isValidUuid(user.id)) {
-      const mockInstructorCourses = mockCourses.slice(0, 3).map(c => ({
+      const mockInstructorCourses = getInstructorCourses().map(c => ({
         ...c,
-        id: c.id,
-        instructor_id: user.id,
-        title: c.title,
-        description: c.description,
-        category: c.category,
-        level: c.level,
-        duration_hours: parseInt(c.duration?.split(' ')[0] || '0'),
-        image_url: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
-        status: 'published' as const,
-        is_featured: c.isFeatured || false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        enrollmentCount: Math.floor(Math.random() * 100) + 10,
+        image_url: c.image_url || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
       }));
       setCourses(mockInstructorCourses as CourseWithEnrollment[]);
       setLoading(false);
@@ -170,15 +154,15 @@ export const useCourses = () => {
     
     // Provide mock data for demo users
     if (isMockUser || !isValidUuid(user.id)) {
-      const demoEnrolled = mockCourses.filter(c => (c.progress !== undefined && c.progress > 0) || c.id === 'c1' || c.id === 'c2').map(c => ({
+      const demoEnrolled = getInstructorCourses().filter(c => c.status === 'published').map(c => ({
         ...c,
         enrollment: {
           id: `mock-enroll-${c.id}`,
           student_id: user.id,
           course_id: c.id,
           enrolled_at: new Date().toISOString(),
-          completed_at: c.progress === 100 ? new Date().toISOString() : null,
-          progress_percentage: c.progress || 0,
+          completed_at: null,
+          progress_percentage: c.id === 'c1' ? 90 : (c.id === 'c2' ? 80 : 0),
         }
       }));
       setCourses(demoEnrolled as CourseWithEnrollment[]);
@@ -287,11 +271,21 @@ export const useCourses = () => {
 
     // Handle mock user faux-create
     if (isMockUser || !isValidUuid(user.id)) {
+      const newC = addInstructorCourse({
+        title: courseData.title || 'Untitled Course',
+        description: courseData.description || '',
+        category: courseData.category || '',
+        level: courseData.level || 'beginner',
+        duration_hours: courseData.duration_hours || 0,
+        image_url: null,
+        status: 'draft',
+        is_featured: false,
+      });
       toast({
         title: 'Course Created (Demo)',
         description: 'Mock course created successfully',
       });
-      return { error: null, data: { ...courseData, id: 'mock-course-id', status: 'draft', instructor_id: user.id } as Course };
+      return { error: null, data: newC as any };
     }
 
     try {
@@ -334,10 +328,12 @@ export const useCourses = () => {
     }
 
     if (isMockUser || !isValidUuid(user.id)) {
+      updateInstructorCourse(courseId, updates as any);
       toast({
         title: 'Course Updated (Demo)',
         description: 'Mock course updated successfully',
       });
+      await fetchInstructorCourses();
       return { error: null };
     }
 
@@ -382,10 +378,12 @@ export const useCourses = () => {
     }
 
     if (isMockUser || !isValidUuid(user.id)) {
+      deleteInstructorCourse(courseId);
       toast({
         title: 'Course Deleted (Demo)',
         description: 'Mock course deleted successfully',
       });
+      await fetchInstructorCourses();
       return { error: null };
     }
 
@@ -420,7 +418,11 @@ export const useCourses = () => {
     setLoading(true);
 
     if (isMockUser || !isValidUuid(courseId)) {
+      const matched = getInstructorCourses().find(c => c.id === courseId);
       setLoading(false);
+      if (matched) {
+        return { course: matched as any, error: null };
+      }
       return {
         course: { 
           id: courseId, 

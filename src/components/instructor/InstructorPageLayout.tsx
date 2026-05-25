@@ -15,7 +15,7 @@ export const InstructorPageLayout = ({ children }: InstructorPageLayoutProps) =>
       <InstructorSidebar onCollapse={setSidebarCollapsed} />
       <Header
         sidebarCollapsed={sidebarCollapsed}
-        userRole="Instructor"
+        userRole="Learning Manager"
         mobileSidebar={<InstructorSidebarContent />}
       />
       <main

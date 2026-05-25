@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Course } from '@/components/courses/types';
+import { getInstructorCourses, updateInstructorCourse } from '@/lib/instructorData';
 
 export interface Chapter {
     id: string;
@@ -24,6 +24,8 @@ export const useCourseEditor = (courseId?: string) => {
     const [analyzing, setAnalyzing] = useState(false);
     const [uploading, setUploading] = useState(false);
 
+    const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
     // Mock AI Analysis of PDF
     const analyzeSyllabus = async (file: File) => {
         setAnalyzing(true);
@@ -36,16 +38,17 @@ export const useCourseEditor = (courseId?: string) => {
             // Mock result
             const suggestedStructure = [
                 {
-                    title: "Introduction",
+                    title: "Introduction to Syllabus Topics",
                     lessons: [
-                        { title: "Course Overview", type: "video" },
-                        { title: "Key Concepts", type: "text" }
+                        { title: "Course Scope and Key Deliverables", type: "video" },
+                        { title: "Essential Terms Glossary", type: "text" }
                     ]
                 },
                 {
-                    title: "Core Fundamentals",
+                    title: "Module 1 - Core Theory",
                     lessons: [
-                        { title: "Deep Dive", type: "video" }
+                        { title: "Theoretical Foundations", type: "video" },
+                        { title: "Review Questions and Exercises", type: "quiz" }
                     ]
                 }
             ];
@@ -71,6 +74,11 @@ export const useCourseEditor = (courseId?: string) => {
     const uploadMedia = async (file: File, path: string) => {
         setUploading(true);
         try {
+            if (courseId && !isValidUuid(courseId)) {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                return URL.createObjectURL(file);
+            }
+
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random()}.${fileExt}`;
             const filePath = `${path}/${fileName}`;
@@ -101,9 +109,18 @@ export const useCourseEditor = (courseId?: string) => {
 
     const saveCurriculum = async (courseId: string, chapters: Chapter[]) => {
         setLoading(true);
+        if (!isValidUuid(courseId)) {
+            updateInstructorCourse(courseId, { chapters });
+            toast({
+                title: "Curriculum Saved (Demo)",
+                description: "Your course structure has been updated successfully.",
+            });
+            setLoading(false);
+            return true;
+        }
+
         try {
             // 1. Delete existing chapters and lessons for this course to replace them
-            // In a real app, you might want a more sophisticated sync, but this is a common "full save" pattern
             const { data: existingChapters } = await supabase
                 .from('chapters')
                 .select('id')
@@ -111,7 +128,7 @@ export const useCourseEditor = (courseId?: string) => {
 
             if (existingChapters && existingChapters.length > 0) {
                 const chapterIds = existingChapters.map(c => c.id);
-                // Delete lessons first (foreign key)
+                // Delete lessons first
                 await supabase.from('lessons').delete().in('chapter_id', chapterIds);
                 // Delete chapters
                 await supabase.from('chapters').delete().eq('course_id', courseId);
@@ -168,11 +185,11 @@ export const useCourseEditor = (courseId?: string) => {
         }
     };
 
-    const isValidUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
     const fetchCurriculum = async (courseId: string) => {
         if (!isValidUuid(courseId)) {
-            return [];
+            setLoading(false);
+            const course = getInstructorCourses().find(c => c.id === courseId);
+            return course?.chapters || [];
         }
         setLoading(true);
         try {
