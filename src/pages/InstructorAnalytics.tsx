@@ -243,7 +243,7 @@ const InstructorAnalytics = () => {
                     </Card>
                 </div>
             </div>
-        </InstructorAnalytics>
+        </InstructorPageLayout>
     );
 };
 
