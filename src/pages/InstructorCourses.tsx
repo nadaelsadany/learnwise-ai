@@ -274,7 +274,7 @@ const InstructorCourses = () => {
                     <div className="flex items-center justify-between text-sm border-t pt-3 border-border/50">
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Users className="w-4 h-4" />
-                        <span>{course.enrolledCount || 0} learners</span>
+                        <span>{course.enrollmentCount || 0} learners</span>
                       </div>
                       <Badge variant="outline" className="capitalize">
                         {course.level}

@@ -58,6 +58,7 @@ export const useCourses = () => {
         ...c,
         duration_hours: c.duration_hours,
         image_url: c.image_url || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
+        enrollmentCount: c.enrolledCount,
       }));
       setCourses(mockPublished as CourseWithEnrollment[]);
       setLoading(false);
@@ -107,6 +108,7 @@ export const useCourses = () => {
       const mockInstructorCourses = getInstructorCourses().map(c => ({
         ...c,
         image_url: c.image_url || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60`,
+        enrollmentCount: c.enrolledCount,
       }));
       setCourses(mockInstructorCourses as CourseWithEnrollment[]);
       setLoading(false);
@@ -156,6 +158,7 @@ export const useCourses = () => {
     if (isMockUser || !isValidUuid(user.id)) {
       const demoEnrolled = getInstructorCourses().filter(c => c.status === 'published').map(c => ({
         ...c,
+        enrollmentCount: c.enrolledCount,
         enrollment: {
           id: `mock-enroll-${c.id}`,
           student_id: user.id,
@@ -279,7 +282,6 @@ export const useCourses = () => {
         duration_hours: courseData.duration_hours || 0,
         image_url: null,
         status: 'draft',
-        is_featured: false,
       });
       toast({
         title: 'Course Created (Demo)',

@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Table,
     TableBody,
@@ -252,7 +254,7 @@ const AllStudents = () => {
                                                     <Badge variant="outline">{course.progress}% Complete</Badge>
                                                     {course.progress < 40 && !selectedStudent.isFlagged && (
                                                         <Button 
-                                                            size="xs" 
+                                                            size="sm" 
                                                             variant="destructive"
                                                             className="h-7 text-xs px-2.5"
                                                             onClick={() => handleFlagStudent(course.title)}
